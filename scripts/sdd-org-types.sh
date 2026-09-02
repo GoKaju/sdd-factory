@@ -14,10 +14,14 @@ case "$cmd" in
   list) existing ;;
   ensure)
     have="$(existing)" || die "cannot read issue types of '$o'. Is it an organization? Issue Types do not exist on personal accounts."
+    if ! gh api -i user 2>/dev/null | grep -i '^x-oauth-scopes' | grep -q 'admin:org'; then
+      printf 'NOTE     creating types needs the admin:org scope on your gh token. Run once:\n         gh auth refresh -h github.com -s admin:org\n'
+    fi
     create() {
-      gh api -X POST "orgs/$o/issue-types" -f "name=$1" -f "description=$2" -F is_enabled=true -f "color=$3" >/dev/null 2>&1 \
+      out="$(gh api -X POST "orgs/$o/issue-types" -f "name=$1" -f "description=$2" -F is_enabled=true -f "color=$3" 2>&1)" \
         && printf 'created  %s\n' "$1" \
-        || printf 'MANUAL   %s — create it at https://github.com/organizations/%s/settings/issue-types (name: %s, description: %s)\n' "$1" "$o" "$1" "$2"
+        || printf 'MANUAL   %s — %s\n         create it at https://github.com/organizations/%s/settings/issue-types (name: %s, description: %s)\n' \
+             "$1" "$(printf '%s' "$out" | sed -n 's/.*"message":"\([^"]*\)".*/\1/p' | head -1)" "$o" "$1" "$2"
     }
     for t in $TYPES; do
       if printf '%s\n' "$have" | grep -qx "$t"; then printf 'exists   %s\n' "$t"; else
