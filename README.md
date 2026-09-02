@@ -18,14 +18,23 @@ cd <your-repo>
 claude --plugin-dir /path/to/sdd-factory
 ```
 
-Stable, per project (`.claude/settings.json`):
+Stable (verified):
+
+```bash
+claude plugin marketplace add GoKaju/sdd-factory
+claude plugin install sdd-factory@sdd-factory
+```
+
+and, so every collaborator of a project gets it, in the project's `.claude/settings.json`:
 
 ```json
 {
-  "extraKnownMarketplaces": ["https://github.com/GoKaju/sdd-factory.git"],
-  "enabledPlugins": ["sdd-factory@sdd-factory"]
+  "extraKnownMarketplaces": { "sdd-factory": { "source": { "source": "github", "repo": "GoKaju/sdd-factory" } } },
+  "enabledPlugins": { "sdd-factory@sdd-factory": true }
 }
 ```
+
+Creating the `Change` and `Constitution` Issue Types needs the `admin:org` scope on `gh`: `gh auth refresh -h github.com -s admin:org` once.
 
 ## Flow
 
