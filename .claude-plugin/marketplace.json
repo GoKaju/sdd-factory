@@ -1,0 +1,10 @@
+{
+  "name": "sdd-factory",
+  "metadata": {
+    "description": "Spec-Driven Development factory plugin for Claude Code"
+  },
+  "owner": { "name": "GoKaju" },
+  "plugins": [
+    { "name": "sdd-factory", "source": "./" }
+  ]
+}

@@ -1,0 +1,44 @@
+# Review Gate result — attached to the pull request, never stored in docs/
+#
+# status:   PASS | FAIL | NEEDS_HUMAN | BLOCKED
+#   PASS         no BLOCKER findings
+#   FAIL         at least one BLOCKER → triggers rework
+#   NEEDS_HUMAN  gate cannot decide autonomously, or max_rework_cycles reached
+#   BLOCKED      gate could not run (red build, missing artifact)
+#
+# severity: BLOCKER | WARNING | NIT
+#   BLOCKER      fails the gate
+#   WARNING      reported; must be acknowledged at Approval Gate 4
+#   NIT          informational
+
+gate: spec-compliance | design-architecture | test-strategy | security | regression | code-quality
+issue: 123
+pr: 45
+commit: <sha>
+status: PASS
+rework_cycle: 0
+
+# Required for spec-compliance and test-strategy; optional elsewhere.
+requirements:
+  OT-001: PASS
+  OT-002: PASS
+  OT-003: FAIL
+
+findings:
+  - severity: BLOCKER
+    requirement: OT-003            # omit if not requirement-bound
+    location: contexts/payroll/src/use-cases/calculate-overtime/calculate-overtime.test.ts
+    description: >
+      No test covers rejection when the overtime policy
+      does not define a percentage.
+    required_action: Add a test asserting the exact domain error for OT-003.
+
+  - severity: WARNING
+    location: contexts/payroll/src/infrastructure/persistence/d1-overtime-repository.ts:42
+    description: >
+      Query lists rows without a tenant predicate.
+    required_action: Scope the query by this.tenantId.
+
+evidence:
+  - contexts/payroll/src/domain/overtime/
+  - contexts/payroll/src/use-cases/calculate-overtime/calculate-overtime.test.ts
