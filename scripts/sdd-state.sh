@@ -28,9 +28,9 @@ case "$cmd" in
     r="$(repo)"
     gh label create "sdd:$2" --repo "$r" --color "$(label_color "$2")" --description "SDD state: $2" --force >/dev/null
     current="$(gh issue view "$1" --repo "$r" --json labels -q '.labels[].name' | grep '^sdd:' || true)"
-    args=()
+    args=(--add-label "sdd:$2")
     for l in $current; do [ "$l" != "sdd:$2" ] && args+=(--remove-label "$l"); done
-    gh issue edit "$1" --repo "$r" --add-label "sdd:$2" "${args[@]}" >/dev/null
+    gh issue edit "$1" --repo "$r" "${args[@]}" >/dev/null
     printf '%s\n' "$2"
     ;;
   require)
