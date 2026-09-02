@@ -21,7 +21,11 @@ cmd="${1:-}"; shift || true
 case "$cmd" in
   get)
     need_issue "${1:-}"
-    gh issue view "$1" --repo "$(repo)" --json labels -q '.labels[].name' | sed -n 's/^sdd://p' | head -1
+    # Several sdd:* labels can coexist for a moment while a human adds the next state before
+    # removing the previous one; report the most advanced one in the canonical order.
+    found="$(gh issue view "$1" --repo "$(repo)" --json labels -q '.labels[].name' | sed -n 's/^sdd://p')"
+    best=""; for s in $STATES; do printf '%s\n' "$found" | grep -qx "$s" && best="$s"; done
+    [ -n "$best" ] && printf '%s\n' "$best"
     ;;
   set)
     need_issue "${1:-}"; is_state "${2:-}" || die "unknown state '${2:-}'. Valid: $STATES"
