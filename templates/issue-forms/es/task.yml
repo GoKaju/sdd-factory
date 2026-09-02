@@ -1,0 +1,31 @@
+name: Tarea de mantenimiento
+description: Trabajo técnico que no cambia lo que el sistema hace (dependencias, refactor, herramientas, documentación)
+type: Task
+title: "chore: "
+body:
+  - type: input
+    id: scope
+    attributes:
+      label: Alcance
+      placeholder: "@libs/ddd-core, CI"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: Qué hay que hacer
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Por qué
+    validations:
+      required: true
+  - type: checkboxes
+    id: guardrails
+    attributes:
+      label: Compromisos
+      options:
+        - label: No cambia ningún comportamiento observable. Los tests existentes no se tocan salvo que se elimine el código que prueban.
+          required: true

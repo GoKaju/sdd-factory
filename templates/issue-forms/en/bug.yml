@@ -1,0 +1,35 @@
+name: Bug
+description: Behavior differs from the Spec
+type: Bug
+title: "bug: "
+body:
+  - type: input
+    id: module
+    attributes:
+      label: Domain / module
+      placeholder: todos/tasks
+  - type: input
+    id: requirement
+    attributes:
+      label: Violated requirement
+      description: Leave empty if the Spec is silent; triage may reclassify as Change
+      placeholder: OT-003
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed
+      description: Steps, input, actual result
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      description: What the Spec requires
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Logs, failing test, screenshot

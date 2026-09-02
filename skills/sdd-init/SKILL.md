@@ -32,7 +32,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Templates: `${CLAUDE_PLUGIN_ROOT}/tem
 
 5. **Issue Types.** Run `sdd-org-types.sh ensure`. For every line starting with `MANUAL`, tell the human exactly what to create and where.
 
-6. **Issue forms.** From `templates/issue.template.md`, write the four YAML forms and `config.yml` into `.github/ISSUE_TEMPLATE/`.
+6. **Issue forms.** Read `Language` from the constitution's Identity section (`en` or `es`; default `en`) and copy `templates/issue-forms/<lang>/*.yml` into `.github/ISSUE_TEMPLATE/`. The forms are for non-technical authors; do not add technical fields.
 
 7. **Permissions.** Ensure `.claude/settings.json` denies `Bash(git push origin main:*)`, `Bash(git push -f:*)`, `Bash(git push --force:*)` (merge into the existing file if present).
 

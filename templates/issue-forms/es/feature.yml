@@ -1,0 +1,35 @@
+name: Nueva funcionalidad
+description: Algo que el sistema todavía no hace
+type: Feature
+title: "feat: "
+body:
+  - type: markdown
+    attributes:
+      value: "Describe qué necesitas y por qué. No hace falta explicar cómo construirlo."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema o motivación
+      description: Qué problema tienes hoy y a quién afecta
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Resultado esperado
+      description: Qué debería poder hacer el sistema cuando esto esté listo, en palabras simples
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Ejemplos de cómo debería comportarse
+      description: Casos concretos. Qué pasa cuando todo va bien, qué debe rechazarse, casos raros
+      placeholder: "- Cuando … entonces …"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto adicional
+      description: Otros issues relacionados, restricciones, fechas, capturas

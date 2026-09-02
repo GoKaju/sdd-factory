@@ -1,0 +1,31 @@
+name: Task
+description: Maintenance with no behavior change (dependencies, refactor, tooling, docs)
+type: Task
+title: "chore: "
+body:
+  - type: input
+    id: scope
+    attributes:
+      label: Scope
+      placeholder: "@libs/ddd-core, CI"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+    validations:
+      required: true
+  - type: checkboxes
+    id: guardrails
+    attributes:
+      label: Guardrails
+      options:
+        - label: No observable behavior change. Existing tests stay untouched unless their source is removed.
+          required: true

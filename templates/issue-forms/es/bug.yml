@@ -1,0 +1,29 @@
+name: Error
+description: El sistema hace algo distinto de lo que debería
+type: Bug
+title: "error: "
+body:
+  - type: textarea
+    id: observed
+    attributes:
+      label: Qué pasó
+      description: Pasos que seguiste, qué ingresaste y qué obtuviste
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Qué esperabas que pasara
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencia
+      description: Capturas de pantalla, mensajes de error, fecha y hora en que ocurrió
+  - type: input
+    id: module
+    attributes:
+      label: Parte del sistema afectada
+      description: Si la conoces; si no, déjalo vacío
+      placeholder: tareas

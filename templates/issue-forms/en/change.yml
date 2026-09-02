@@ -1,0 +1,35 @@
+name: Change
+description: Modify behavior the system already has
+type: Change
+title: "change: "
+body:
+  - type: input
+    id: module
+    attributes:
+      label: Domain / module
+      placeholder: todos/tasks
+    validations:
+      required: true
+  - type: input
+    id: requirements
+    attributes:
+      label: Affected requirements
+      placeholder: "OT-002, OT-003"
+  - type: textarea
+    id: current
+    attributes:
+      label: Current behavior
+      description: What the Spec says today
+    validations:
+      required: true
+  - type: textarea
+    id: requested
+    attributes:
+      label: Requested behavior
+      description: What it should say instead, and why
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance hints

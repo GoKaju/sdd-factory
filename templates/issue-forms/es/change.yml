@@ -1,0 +1,28 @@
+name: Cambio de comportamiento
+description: Algo que el sistema ya hace, pero debería hacerlo distinto
+type: Change
+title: "cambio: "
+body:
+  - type: input
+    id: module
+    attributes:
+      label: Parte del sistema afectada
+      description: Si la conoces; si no, déjalo vacío
+      placeholder: tareas
+  - type: textarea
+    id: current
+    attributes:
+      label: Cómo funciona hoy
+    validations:
+      required: true
+  - type: textarea
+    id: requested
+    attributes:
+      label: Cómo debería funcionar y por qué
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Ejemplos de cómo debería comportarse
+      placeholder: "- Cuando … entonces …"

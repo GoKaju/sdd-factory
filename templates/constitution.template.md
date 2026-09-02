@@ -7,6 +7,7 @@ This file is the only rule file in the repository. `CLAUDE.md` and `AGENTS.md` p
 - **Purpose:** <one sentence: what the system does and for whom>
 - **Domains:** <list of `docs/<domain>/` names>
 - **Issue types:** Feature · Change · Bug · Task · Constitution (native tracker types; the type decides the SDD path)
+- **Language:** <en | es> — prose, issue forms and tracker comments (rule C4)
 
 ## Rules
 

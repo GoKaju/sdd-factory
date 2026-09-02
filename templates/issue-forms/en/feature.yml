@@ -1,0 +1,32 @@
+name: Feature
+description: New behavior the system does not have yet
+type: Feature
+title: "feat: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: Why this is needed and who benefits
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Requested outcome
+      description: Observable behavior once done
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance hints
+      description: Examples of expected, rejected and edge behavior
+      placeholder: "- when … then …"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Dependencies / context
+      description: Related issues, constraints, deadlines
