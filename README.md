@@ -70,7 +70,7 @@ Issue type decides the path: **Feature** and **Change** take every step; **Bug**
 skills/           sdd-init, sdd-triage, sdd-spec, sdd-design, sdd-task, sdd-implement, sdd-review, sdd-status, pr-review, create-release
 agents/           completeness-checker, spec-reviewer, design-reviewer, test-reviewer, security-reviewer, regression-reviewer, quality-reviewer, ci-runner, committer
 hooks/            PreToolUse: protect docs/constitution.md and approved spec/design; deny push to main, force-push, history rewrites
-scripts/          sdd-state, sdd-type, sdd-org-types, sdd-comment, sdd-gate-result, sdd-pr  (bash over gh)
+scripts/          sdd-state, sdd-type, sdd-org-types, sdd-comment, sdd-gate-result, sdd-pr, sdd-flag  (bash over gh)
 templates/        constitution, issue forms, spec, design, task, triage, gate-result
 evals/            plugin eval cases (early access)
 ```
