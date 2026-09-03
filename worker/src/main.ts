@@ -72,7 +72,9 @@ const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void>
     const branch = await prBranch(cfg.pluginDir, j.repo.path, n)
     const cwd = await ensureWorktree(j.repo.path, n, branch)
     for (const phase of j.phases) {
+      const startedAt = new Date().toISOString()
       const r = await runPhase({ phase, issue: n, cwd, pluginDir: cfg.pluginDir, note: worktreeNote(n, branch, phase), logPath, runner })
+      store.recordPhase({ jobId: id, repo, issue: n, phase, outcome: r.outcome, startedAt, costUsd: r.costUsd, turns: r.turns })
       log(`  ${phase}: ${r.outcome}${r.costUsd !== null ? ` $${r.costUsd.toFixed(2)}` : ''}${r.turns !== null ? ` ${r.turns} turns` : ''}`)
       if (r.outcome !== 'done') {
         store.finish(id, r.outcome, `${phase}: ${r.summary.slice(0, 500)}`)
@@ -93,9 +95,17 @@ const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void>
   }
 }
 
+const printStats = (store: JobStore): void => {
+  console.log('\nPor issue:')
+  console.table(store.statsByIssue())
+  console.log('Por fase:')
+  console.table(store.statsByPhase())
+}
+
 const main = async (): Promise<void> => {
   const cfg = loadConfig()
   const store = new JobStore(cfg.home)
+  if (args.has('--stats')) { printStats(store); return }
   log(`sdd worker: ${cfg.repos.map((r) => r.nameWithOwner).join(', ')} every ${cfg.intervalSeconds}s, maxParallel ${cfg.maxParallel}, runner ${runner}${dryRun ? ', dry-run' : ''}`)
   if (once) { await tick(cfg, store); return }
   for (;;) {

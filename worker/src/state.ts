@@ -40,6 +40,20 @@ export class JobStore {
         note TEXT
       );
       CREATE INDEX IF NOT EXISTS jobs_issue ON jobs (repo, issue, started_at);
+      CREATE TABLE IF NOT EXISTS phases (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL REFERENCES jobs(id),
+        repo TEXT NOT NULL,
+        issue INTEGER NOT NULL,
+        phase TEXT NOT NULL,
+        outcome TEXT NOT NULL,
+        started_at TEXT NOT NULL,
+        finished_at TEXT NOT NULL,
+        duration_ms INTEGER NOT NULL,
+        cost_usd REAL,
+        turns INTEGER
+      );
+      CREATE INDEX IF NOT EXISTS phases_issue ON phases (repo, issue, phase);
     `)
     // A worker that died mid-job leaves 'running' rows behind; they are stale by definition on start.
     this.db.prepare(`UPDATE jobs SET status = 'failed', finished_at = ?, note = 'worker restarted' WHERE status = 'running'`)
@@ -57,6 +71,35 @@ export class JobStore {
   finish(id: number, status: JobStatus, note?: string): void {
     this.db.prepare(`UPDATE jobs SET status = ?, finished_at = ?, note = ? WHERE id = ?`)
       .run(status, new Date().toISOString(), note ?? null, id)
+  }
+
+  /** One row per executed phase: the factory's cost and time ledger. */
+  recordPhase(p: { jobId: number; repo: string; issue: number; phase: string; outcome: string; startedAt: string; costUsd: number | null; turns: number | null }): void {
+    const finished = new Date()
+    this.db.prepare(
+      `INSERT INTO phases (job_id, repo, issue, phase, outcome, started_at, finished_at, duration_ms, cost_usd, turns)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(p.jobId, p.repo, p.issue, p.phase, p.outcome, p.startedAt, finished.toISOString(),
+      finished.getTime() - Date.parse(p.startedAt), p.costUsd, p.turns)
+  }
+
+  /** Totals per issue: phases run, minutes, dollars, turns. */
+  statsByIssue(repo?: string): { repo: string; issue: number; phases: number; minutes: number; usd: number; turns: number }[] {
+    return this.db.prepare(
+      `SELECT repo, issue, COUNT(*) AS phases, ROUND(SUM(duration_ms) / 60000.0, 1) AS minutes,
+              ROUND(COALESCE(SUM(cost_usd), 0), 2) AS usd, COALESCE(SUM(turns), 0) AS turns
+       FROM phases ${repo ? 'WHERE repo = ?' : ''} GROUP BY repo, issue ORDER BY repo, issue`,
+    ).all(...(repo ? [repo] : [])) as unknown as { repo: string; issue: number; phases: number; minutes: number; usd: number; turns: number }[]
+  }
+
+  /** Averages per phase kind, to see where the time and money go. */
+  statsByPhase(repo?: string): { phase: string; runs: number; avgMinutes: number; avgUsd: number; avgTurns: number; failed: number }[] {
+    return this.db.prepare(
+      `SELECT phase, COUNT(*) AS runs, ROUND(AVG(duration_ms) / 60000.0, 1) AS avgMinutes,
+              ROUND(AVG(cost_usd), 2) AS avgUsd, ROUND(AVG(turns), 0) AS avgTurns,
+              SUM(CASE WHEN outcome <> 'done' THEN 1 ELSE 0 END) AS failed
+       FROM phases ${repo ? 'WHERE repo = ?' : ''} GROUP BY phase ORDER BY phase`,
+    ).all(...(repo ? [repo] : [])) as unknown as { phase: string; runs: number; avgMinutes: number; avgUsd: number; avgTurns: number; failed: number }[]
   }
 
   running(repo: string, issue: number): boolean {
