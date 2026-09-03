@@ -29,7 +29,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 8. **Comment.** Fill `templates/comments/<lang>/triage.md` in the constitution's language and `sdd-comment.sh upsert $1 sdd:triage <file>`. Re-running edits the same comment; never post a second one. Previously answered questions are removed or ticked, new ones added.
 
-9. **State.** `sdd-state.sh set $1 triage`. Then tell the human: the open questions (if any), or that the issue is ready for them to set `sdd:ready`. You never set `ready` yourself.
+9. **State.** Re-read the state: if a human set `ready` while you were working, leave it untouched (never downgrade a human approval); otherwise `sdd-state.sh set $1 triage`. Then tell the human: the open questions (if any), or that the issue is ready for them to set `sdd:ready`. You never set `ready` yourself.
 
 ## Rules
 
