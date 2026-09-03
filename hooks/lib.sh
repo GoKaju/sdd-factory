@@ -17,8 +17,10 @@ json_field() {
 
 project_dir() { printf '%s' "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; }
 
-flag_dir() { printf '%s/.git/sdd' "$(project_dir)"; }
+# Flags live in <repo>/.claude/sdd/ (gitignored). Writing inside .git/ is denied to agents, so
+# .git/sdd/ is only honoured as a legacy location set by hand.
+flag_dir() { printf '%s/.claude/sdd' "$(project_dir)"; }
 
-has_flag() { [ -f "$(flag_dir)/$1" ]; }
+has_flag() { [ -f "$(flag_dir)/$1" ] || [ -f "$(project_dir)/.git/sdd/$1" ]; }
 
 block() { printf 'sdd-factory: %s\n' "$1" >&2; exit 2; }

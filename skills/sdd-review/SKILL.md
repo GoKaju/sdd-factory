@@ -20,7 +20,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Result schema: `${CLAUDE_PLUGIN_ROOT}
 3. **Gates, in parallel.** Launch the six reviewer agents with the same inputs (issue, PR, spec/design paths, commit sha, `rework_cycle: <cycle>`): `spec-reviewer`, `design-reviewer`, `test-reviewer`, `security-reviewer`, `regression-reviewer`, `quality-reviewer`. Each returns one YAML block. Save each to a temp file and `sdd-gate-result.sh post $pr <file>`.
 
 4. **Aggregate.** `sdd-gate-result.sh aggregate $pr <cycle>`.
-   - `PASS` → `sdd-state.sh set $1 final-review`, `sdd-pr.sh ready $1`, remove `.git/sdd/lock-docs`. Post a short summary comment on the PR (gates, warnings to acknowledge). Done.
+   - `PASS` → `sdd-state.sh set $1 final-review`, `sdd-pr.sh ready $1`, remove `.claude/sdd/lock-docs`. Post a short summary comment on the PR (gates, warnings to acknowledge). Done.
    - `NEEDS_HUMAN` or `BLOCKED` → `sdd-state.sh set $1 final-review`; comment on the issue what needs a human. Done.
    - `FAIL` → step 5.
 

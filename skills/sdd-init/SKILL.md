@@ -34,8 +34,10 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Templates: `${CLAUDE_PLUGIN_ROOT}/tem
 
 6. **Issue forms.** Read `Language` from the constitution's Identity section (`en` or `es`; default `en`) and copy `templates/issue-forms/<lang>/*.yml` into `.github/ISSUE_TEMPLATE/`. The forms are for non-technical authors; do not add technical fields.
 
-7. **Permissions.** Ensure `.claude/settings.json` denies `Bash(git push origin main:*)`, `Bash(git push -f:*)`, `Bash(git push --force:*)` (merge into the existing file if present).
+7. **Ignore the flag dir.** Ensure `.gitignore` contains `.claude/sdd/` (runtime flags of the plugin hooks; never committed).
 
-8. **Branch protection.** Do not change it; print the recommended settings for `main`: require PR, require the CI check, one approval, no force push.
+8. **Permissions.** Ensure `.claude/settings.json` denies `Bash(git push origin main:*)`, `Bash(git push -f:*)`, `Bash(git push --force:*)` (merge into the existing file if present).
 
-9. **Report.** List files created or changed, labels and types created, remaining `<placeholders>` in the constitution, and the manual steps if any. Do not commit: hand off to the `committer` agent only if the human asks.
+9. **Branch protection.** Do not change it; print the recommended settings for `main`: require PR, require the CI check, one approval, no force push.
+
+10. **Report.** List files created or changed, labels and types created, remaining `<placeholders>` in the constitution, and the manual steps if any. Do not commit: hand off to the `committer` agent only if the human asks.
