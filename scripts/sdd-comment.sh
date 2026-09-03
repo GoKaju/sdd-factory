@@ -4,7 +4,8 @@
 #
 #   sdd-comment.sh find   <issue> <marker>           → prints the comment id, or nothing
 #   sdd-comment.sh get    <issue> <marker>           → prints the comment body
-#   sdd-comment.sh upsert <issue> <marker> <file>    → creates or edits the comment with the file's body
+#   sdd-comment.sh upsert <issue> <marker> <file|->  → creates or edits the comment with the file's body ('-' = stdin,
+#                                                      so agents can pipe a heredoc without a Write tool)
 #   sdd-comment.sh check  <issue> <marker> <T7>      → ticks the step whose line carries **T7**; refuses if an
 #                                                      earlier step is still unchecked (steps are done in order)
 #   sdd-comment.sh next   <issue> <marker>           → prints the id of the first unchecked step (empty if none)
@@ -21,7 +22,9 @@ case "$cmd" in
   find) find_id ;;
   get) id="$(find_id)"; [ -n "$id" ] || die "no $marker comment on #$issue"; body_of "$id" ;;
   upsert)
-    f="${4:-}"; [ -f "$f" ] || die "body file required"
+    f="${4:-}"; [ -n "$f" ] || die "body file required (or '-' to read the body from stdin)"
+    if [ "$f" = "-" ]; then f="$(mktemp)"; cat > "$f"; trap 'rm -f "$f"' EXIT; fi
+    [ -f "$f" ] || die "body file not found: $f"
     head -1 "$f" | grep -qF "$tag" || die "body must start with '$tag'"
     id="$(find_id)"
     if [ -n "$id" ]; then gh api -X PATCH "repos/$r/issues/comments/$id" -F body=@"$f" --jq .id
