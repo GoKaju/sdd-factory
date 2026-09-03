@@ -56,7 +56,7 @@ For each requirement ask: empty or absent input, boundary values (zero, negative
 
 ### 6. Business rules and domain errors — WARNING
 - Every rule a requirement relies on (limits, formulas, ordering, uniqueness) is stated with its parameters.
-- Every rejection the module can produce is named as a domain error, so tests can later assert the exact type.
+- Every business reason to refuse a request appears as one row of the "Rejections" section: stable English name, condition, message to the user, requirement ID; and the checking order is stated when several can apply. Naming rejections is required so the design can map each to one domain error and tests can assert the exact type. The words "error", "DomainError", "class" or "exception" in the Spec are implementation leakage (section 9).
 
 ### 7. Open questions — BLOCKER
 - The open-questions / assumptions section is empty or absent.

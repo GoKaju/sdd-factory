@@ -32,8 +32,9 @@ Use when the change touches the domain model, aggregates, use cases, or context 
 | --- | --- | --- | --- |
 
 #### Domain Errors
-| Error | Thrown when | Maps to (transport) |
-| --- | --- | --- |
+One per row of the spec's "Rejections" table, same name. Extra errors (invariants not visible to the user) are listed too.
+| Error | Rejection (spec) | Thrown when | Maps to (transport) |
+| --- | --- | --- | --- |
 
 ### Application
 

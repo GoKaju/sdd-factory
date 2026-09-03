@@ -8,7 +8,8 @@ status: draft | approved
      Does not belong here (it belongs in design.md or in the constitution): tenants and isolation,
      persistence, repositories, views or read models, events and their delivery, idempotency mechanics,
      concurrency control, HTTP/API/frontend, test doubles, class or file names, layer names.
-     "Out of scope" lists business capabilities deliberately left out, never deferred technical decisions. -->
+     "Out of scope" lists business capabilities deliberately left out, never deferred technical decisions.
+     Rejections are named here (business reason + message); the design maps them to domain errors. -->
 
 ## Purpose
 
@@ -47,6 +48,16 @@ THEN THE SYSTEM SHALL <…>.
 ## Business rules
 
 - **BR-1:** <invariant that always holds, in business language>
+
+## Rejections
+
+One row per business reason the system refuses a request. The name is part of the ubiquitous language (English, PascalCase); the design turns each row into one domain error. Never mention classes, hierarchies or `DomainError` here.
+
+| Name | Condition | Message to the user | Requirement |
+| --- | --- | --- | --- |
+| `<SomethingNotAllowed>` | <when it happens, in business terms> | <what the user reads> | <MODULE>-NNN |
+
+When one request breaks several rules at once, state which rejection wins (a fixed checking order).
 
 ## Edge cases
 
