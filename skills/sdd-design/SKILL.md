@@ -21,6 +21,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
    - **Bounded Context** is three lines: context and what it owns; relations with other contexts; multi-tenant yes or no.
    - **Domain Errors** map one to one to the spec's Rejections, same names, messages in English with context values as params; the client shows and translates the spec's user message.
    - **Layout** states only placement decisions specific to this module. **No file inventory, no test list**: they belong to the Task.
+   - **Prefer the simplest structure that satisfies the rules.** Loading an aggregate by id and throwing its NotFound error is orchestration and stays in the use case; do not wrap it in a "finder" domain service. Domain services exist for rules that need more than one aggregate (uniqueness across a collection) or pure calculations worth naming (a planner). Every extra class must earn its place in a Decisions row.
    - Record decisions and the alternatives rejected. Set `status: draft`.
 
 4. **Self-review.** Run the `design-reviewer` agent on the design file with the spec as context. Fix BLOCKERs; report WARNINGs.

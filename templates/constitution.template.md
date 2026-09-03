@@ -21,7 +21,7 @@ This file is the only rule file in the repository. `CLAUDE.md` and `AGENTS.md` p
 - **D2** Aggregates expose `create()` (invariants, ids, defaults, events) and `rehydrate()` (exact reconstruction, nothing else); both accept only domain objects.
 - **D3** Value Objects are immutable, validate on construction and offer `fromOptional()` for nullable input; never pass `null` to `create()`.
 - **D4** Aggregates expose getters, never serialization methods; persistence mappers read the getters.
-- **D5** Use cases orchestrate only: no id generation, no default derivation, no business rules, no catching domain errors, no `Result` wrappers.
+- **D5** Use cases orchestrate only: no id generation, no default derivation, no business rules, no catching domain errors, no `Result` wrappers. Loading an aggregate by id and failing with its NotFound error is orchestration, not a business rule.
 - **D6** Commands and queries are plain data without validation libraries; input is validated at the entry point.
 - **D7** Queries go through read repositories that return Views; a use case never hydrates an aggregate to build a view.
 - **D8** Persist first, publish events after; every event consumer is idempotent.
