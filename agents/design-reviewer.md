@@ -103,6 +103,9 @@ You never modify files. You never edit spec.md or design.md. You report; you do 
 - A domain service whose only job is "load by id or throw NotFound" (a *finder*) is unnecessary: that is orchestration and belongs in the use case (D5 allows it). Flag it and propose inlining.
 - More than one class where one suffices, abstractions with a single implementation and no port role, or indirection not traceable to a requirement or a rule → WARNING with the simpler alternative.
 
+### Scope — WARNING
+- Files changed outside the module's Layout and Bounded Context declared in `design.md` (other contexts, other packages, root config) without a reason in the PR body → WARNING naming each file.
+
 ### Design document hygiene — WARNING (NIT if minor)
 When reviewing `design.md` itself (not only the code):
 - Sentences that restate a constitution rule instead of recording a module-specific decision → WARNING, quote them; the fix is to delete them or replace with a rule-ID citation.
