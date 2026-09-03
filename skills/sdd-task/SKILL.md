@@ -23,7 +23,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
    - **The Task never decides.** File names, test suites, exclusions, defaults: if the plan needs one and the design does not fix it, stop, `sdd-state.sh set $1 design`, and comment on the issue exactly what the design must add. Do not fill the gap yourself.
    - No file inventory, no test list, no verification commands, no definition of done, no constraints: the design, the constitution and the implementation skill already carry them.
 
-4. **Comment.** `sdd-comment.sh upsert $1 sdd:task <file>`. Re-running edits the same comment.
+4. **Comment.** `sdd-comment.sh upsert $1 sdd:task -` fed by a Bash heredoc (no file write needed). Re-running edits the same comment.
 
 5. **State.** `sdd-state.sh set $1 task`. Report the steps and ask the human to review the comment and set `sdd:task-approved`. You never set it.
 
