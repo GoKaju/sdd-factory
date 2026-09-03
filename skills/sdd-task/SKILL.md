@@ -2,6 +2,8 @@
 description: Write the execution contract for an issue as the marked Task comment with a step checklist. Requires sdd:design-approved (Feature, Change) or sdd:ready (Bug, Task, Constitution).
 argument-hint: "<issue-number>"
 disable-model-invocation: true
+model: sonnet
+effort: medium
 allowed-tools: Read, Glob, Grep, Bash
 ---
 

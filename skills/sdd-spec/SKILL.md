@@ -2,6 +2,8 @@
 description: Write or update the module spec for an issue - branch, Draft PR, spec.md with stable requirement IDs, completeness check. Requires state sdd:ready and type Feature or Change.
 argument-hint: "<issue-number>"
 disable-model-invocation: true
+model: sonnet
+effort: medium
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 ---
 
@@ -27,7 +29,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
    - Cover edge cases and acceptance criteria per requirement. List open questions explicitly.
    - Set `status: draft`.
 
-4. **Completeness check.** Run the `completeness-checker` agent on the spec. If it returns `FAIL`, fix the spec and rerun until `PASS`, or list the questions the human must answer.
+4. **Completeness check, one pass.** Run the `completeness-checker` agent once. If it returns `FAIL`, fix the BLOCKERs once and deliver without rerunning; report in your summary what you fixed and any finding you left, so the human sees it at Gate 1. Never loop.
 
 5. **Commit.** Delegate to the `committer` agent: `docs(<module>): spec for #$1`. Push the branch (never `main`).
 

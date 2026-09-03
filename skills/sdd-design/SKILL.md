@@ -2,6 +2,8 @@
 description: Write or update design.md for an issue from its approved spec - full DDD variant or light variant. Requires state sdd:spec-approved.
 argument-hint: "<issue-number>"
 disable-model-invocation: true
+model: sonnet
+effort: medium
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 ---
 
@@ -27,7 +29,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
    - **Prefer the simplest structure that satisfies the rules.** Loading an aggregate by id and throwing its NotFound error is orchestration and stays in the use case; do not wrap it in a "finder" domain service. Domain services exist for rules that need more than one aggregate (uniqueness across a collection) or pure calculations worth naming (a planner). Every extra class must earn its place in a Decisions row.
    - Record decisions and the alternatives rejected. Set `status: draft`.
 
-4. **Self-review.** Run the `design-reviewer` agent on the design file with the spec as context. Fix BLOCKERs; report WARNINGs.
+4. **Self-review, one pass.** Run the `design-reviewer` agent once, giving it only `design.md`, `spec.md` and the constitution (no code tree: this is a document review). Fix its BLOCKERs once and deliver without rerunning; report WARNINGs and anything you left for the human at Gate 2. Never loop.
 
 5. **Commit.** Delegate to `committer`: `docs(<module>): design for #$1`. Push the branch.
 
