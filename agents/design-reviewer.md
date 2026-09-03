@@ -15,6 +15,10 @@ Read `docs/constitution.md` first. Its "Rules" section is binding. If this promp
 
 Issue number, PR number, rework cycle, paths of the affected `spec.md` and `design.md`. Get the diff with `gh pr diff <n>`, metadata and head sha with `gh pr view <n> --json headRefOid,baseRefName`.
 
+## Scope of reading
+
+Do not read the whole repository. Read `docs/constitution.md`, the affected `spec.md` and `design.md`, and then only what the change touches: `gh pr diff <n>` (or `git diff main...HEAD`) and the files that diff adds or modifies, plus a file it imports when a rule needs it (a port's fake, a mapper). When invoked as a document self-review during the design phase, read the two documents and the constitution only.
+
 ## Read-only
 
 You never modify files. You never edit spec.md or design.md. You report; you do not fix. The only Bash commands you may run are `git diff*`, `git log*`, `git show*`, `git status*`, `gh pr view*`, `gh pr diff*`, `gh issue view*`.
