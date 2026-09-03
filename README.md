@@ -86,11 +86,14 @@ evals/            plugin eval cases (early access)
 `worker/` is a zero-dependency Node 24 service (besides the Agent SDK) that polls GitHub and runs the phases headless, one git worktree per issue, so several issues can advance without touching each other.
 
 ```bash
-cp worker/config.example.json ~/.sdd/worker/config.json   # repos, plugin dir, interval, maxParallel
+cp worker/config.example.json ~/.sdd/worker/config.json   # repos, plugin dir, interval (15 s), maxParallel
 cd worker && pnpm install
 pnpm dry-run      # one tick, prints what it would run
 pnpm once         # one tick, runs it
-pnpm start        # loop; or load launchd/com.gokaju.sdd-worker.plist
+pnpm start        # loop in the foreground
+# as a service (macOS):
+cp worker/launchd/com.gokaju.sdd-worker.plist ~/Library/LaunchAgents/ && launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.gokaju.sdd-worker.plist
+# logs: ~/.sdd/worker/worker.log · stop: launchctl bootout gui/$(id -u)/com.gokaju.sdd-worker
 ```
 
 What it reacts to (see `src/rules.ts`): a new issue → triage; an author comment while in `triage` → triage again; `ready` → task for Bug/Task/Constitution (Feature/Change wait for a human unless `autoSpec`); `spec-approved` → design; `design-approved` → task, or straight to review when the Task is already complete (document-only amendment); `task-approved` and `rework` → implement then review; `in-review` → review; `implementing` idle for 45 min → resume. It never sets `ready` or `*-approved`.
