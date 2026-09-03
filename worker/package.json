@@ -9,6 +9,7 @@
     "start": "node --disable-warning=ExperimentalWarning src/main.ts",
     "once": "node --disable-warning=ExperimentalWarning src/main.ts --once",
     "dry-run": "node --disable-warning=ExperimentalWarning src/main.ts --once --dry-run",
+    "stats": "node --disable-warning=ExperimentalWarning src/main.ts --stats",
     "typecheck": "tsc --noEmit",
     "test": "node --test test/*.test.ts"
   },
