@@ -13,7 +13,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 ## Steps
 
-1. **Preconditions.** `sdd-state.sh require $1 spec-approved design`. Check out the PR branch (`sdd-pr.sh branch $1`). Read `docs/constitution.md`, the approved `spec.md` and the existing `design.md` if any. Survey the affected context under `contexts/` to reuse existing aggregates, ports and fakes rather than inventing parallel ones.
+1. **Preconditions.** `sdd-state.sh require $1 spec-approved design`. When the issue comes back from implementation (a design gap was escalated), the issue comment says what must change: amend only that, add a Decisions row with the reason and the rejected alternative, and keep everything else untouched. Check out the PR branch (`sdd-pr.sh branch $1`). Read `docs/constitution.md`, the approved `spec.md` and the existing `design.md` if any. Survey the affected context under `contexts/` to reuse existing aggregates, ports and fakes rather than inventing parallel ones.
 
 2. **Variant.** Full when the change touches aggregates, use cases, ports or context boundaries. Light when it is reporting, integration glue or tooling with no domain-model impact. Say which and why.
 

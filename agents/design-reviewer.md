@@ -106,6 +106,9 @@ You never modify files. You never edit spec.md or design.md. You report; you do 
 ### Scope — WARNING
 - Files changed outside the module's Layout and Bounded Context declared in `design.md` (other contexts, other packages, root config) without a reason in the PR body → WARNING naming each file.
 
+### Code that deviates from the design — BLOCKER
+- Any element implemented differently from `design.md` (static vs instance, different collaborator, different placement, renamed element) without a matching amendment of the design in the same PR → BLOCKER. A note in the PR body does not count: the design must be amended through the design phase so merged code and design agree.
+
 ### Design document hygiene — WARNING (NIT if minor)
 When reviewing `design.md` itself (not only the code):
 - Sentences that restate a constitution rule instead of recording a module-specific decision → WARNING, quote them; the fix is to delete them or replace with a rule-ID citation.
