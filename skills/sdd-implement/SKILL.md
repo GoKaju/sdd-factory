@@ -25,7 +25,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`.
 
 6. **Deterministic checks.** Run the `ci-runner` agent (it reads the Commands from the constitution). Fix until green.
 
-7. **Escalation.** If a step cannot be done without changing the spec, the design or the constitution: stop, remove the locks, `sdd-state.sh set $1 task`, and write on the issue what must change and why. Never edit those files in passing.
+7. **Escalation.** If a step cannot be done as the design says (a rule of the toolchain forbids it, a signature does not fit, a decision is missing) or without changing the spec or the constitution: **stop**. Remove the locks, `sdd-state.sh set $1 design` (or `spec` if the spec is wrong), and comment on the issue exactly what must change, why, and the alternative you would implement. Never edit those files yourself and **never resolve the gap by implementing a deviation and noting it in the PR**: merged code and design must say the same thing, and the change must be seen by a human. The design phase amends the document with a Decisions row, the human approves the delta, and the Task resumes where it stopped (ticked steps stay ticked).
 
 8. **Finish.** Push the branch. Update the PR body's "Resumen" section with what was built and which requirement IDs it covers. `sdd-state.sh set $1 in-review`. Leave `lock-docs` in place (review reads them, does not write them). Report: steps done, commits, checks result, and that `/sdd-review $1` is next.
 
@@ -45,3 +45,4 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`.
 - Stay inside the scope the design fixes (its Bounded Context and Layout). Touching anything outside it is recorded in the PR body with the reason; reviewers treat unexplained out-of-scope files as findings.
 - Do not run `/sdd-review` yourself unless asked; in Phase 2 the worker chains it.
 - Never remove, skip or weaken an existing test. If one must change, the Task or the spec must say why.
+- Never deviate from the design. A deviation, however small, is an escalation (step 7), not a note in the PR.
