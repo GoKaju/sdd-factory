@@ -45,4 +45,5 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`.
 - Stay inside the scope the design fixes (its Bounded Context and Layout). Touching anything outside it is recorded in the PR body with the reason; reviewers treat unexplained out-of-scope files as findings.
 - Do not run `/sdd-review` yourself unless asked; in Phase 2 the worker chains it.
 - Never remove, skip or weaken an existing test. If one must change, the Task or the spec must say why.
+- Never add a dependency or touch `package.json`/the lockfile unless a Task step says so (W3). A missing tool is an escalation, not an install. Leave no uncommitted change behind: everything you did is either committed or reverted before you finish.
 - Never deviate from the design. A deviation, however small, is an escalation (step 7), not a note in the PR.
