@@ -17,7 +17,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`.
 
 2. **Branch.** Feature/Change: check out the PR branch (`sdd-pr.sh branch $1`). Bug/Task/Constitution: if `sdd-pr.sh find $1` is empty, create `<fix|chore|constitution>/$1-<slug>` from updated `main` and `sdd-pr.sh open $1 <branch> "<type>: <title>"`.
 
-3. **Locks.** `mkdir -p .claude/sdd && touch .claude/sdd/lock-docs` so the plugin hook blocks edits to approved `spec.md`/`design.md` during implementation (`.claude/sdd/` is gitignored by `sdd-init`; never write inside `.git/`). For a Constitution-type issue also `touch .claude/sdd/allow-constitution`; remove it at the end.
+3. **Locks.** `sdd-flag.sh set lock-docs` so the plugin hook blocks edits to approved `spec.md`/`design.md` during implementation (flags live outside the repository, under `~/.sdd/`). For a Constitution-type issue also `sdd-flag.sh set allow-constitution`; `sdd-flag.sh clear allow-constitution` at the end.
 
 4. **State.** `sdd-state.sh set $1 implementing`.
 

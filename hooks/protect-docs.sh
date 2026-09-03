@@ -2,7 +2,7 @@
 # PreToolUse (Write|Edit): protects the constitution and, while an issue is being implemented,
 # the approved spec.md / design.md files.
 #
-# Flags (files under <repo>/.claude/sdd/, gitignored, written by the sdd-* skills):
+# Flags (files under ~/.sdd/<owner>-<repo>/, written by the sdd-* skills via scripts/sdd-flag.sh):
 #   allow-constitution   present while /sdd-implement runs a Constitution-type issue
 #   lock-docs            present from /sdd-implement until /sdd-review PASSes; set by the skills
 set -u

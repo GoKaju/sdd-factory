@@ -17,10 +17,17 @@ json_field() {
 
 project_dir() { printf '%s' "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; }
 
-# Flags live in <repo>/.claude/sdd/ (gitignored). Writing inside .git/ is denied to agents, so
-# .git/sdd/ is only honoured as a legacy location set by hand.
-flag_dir() { printf '%s/.claude/sdd' "$(project_dir)"; }
+# Flags live OUTSIDE the repository, in ~/.sdd/<owner>-<repo>/ (see scripts/sdd-flag.sh): agents
+# cannot write inside .git/ and .claude/ counts as a sensitive path in headless runs.
+# <repo>/.claude/sdd/ and <repo>/.git/sdd/ are still honoured as legacy locations set by hand.
+repo_slug() {
+  local url; url="$(git -C "$(project_dir)" config --get remote.origin.url 2>/dev/null || true)"
+  url="${url%.git}"; url="${url##*github.com[:/]}"; url="${url//\//-}"
+  [ -n "$url" ] || url="$(basename "$(project_dir)")"
+  printf '%s' "$url"
+}
+flag_dir() { printf '%s/%s' "${SDD_FLAG_HOME:-$HOME/.sdd}" "$(repo_slug)"; }
 
-has_flag() { [ -f "$(flag_dir)/$1" ] || [ -f "$(project_dir)/.git/sdd/$1" ]; }
+has_flag() { [ -f "$(flag_dir)/$1" ] || [ -f "$(project_dir)/.claude/sdd/$1" ] || [ -f "$(project_dir)/.git/sdd/$1" ]; }
 
 block() { printf 'sdd-factory: %s\n' "$1" >&2; exit 2; }
