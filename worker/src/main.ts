@@ -55,7 +55,7 @@ const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void>
     const branch = await prBranch(cfg.pluginDir, j.repo.path, n)
     const cwd = await ensureWorktree(j.repo.path, n, branch)
     for (const phase of j.phases) {
-      const r = await runPhase({ phase, issue: n, cwd, pluginDir: cfg.pluginDir, note: worktreeNote(n, branch), logPath, runner })
+      const r = await runPhase({ phase, issue: n, cwd, pluginDir: cfg.pluginDir, note: worktreeNote(n, branch, phase), logPath, runner })
       log(`  ${phase}: ${r.outcome}${r.costUsd !== null ? ` $${r.costUsd.toFixed(2)}` : ''}${r.turns !== null ? ` ${r.turns} turns` : ''}`)
       if (r.outcome !== 'done') {
         store.finish(id, r.outcome, `${phase}: ${r.summary.slice(0, 500)}`)
