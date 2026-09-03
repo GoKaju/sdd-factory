@@ -31,8 +31,17 @@ export const removeWorktree = async (repoPath: string, issue: number): Promise<v
   await sh('git', ['worktree', 'remove', '--force', path], repoPath)
 }
 
+import type { Phase } from './rules.ts'
+
+/** Phases that may create the issue branch; every other phase must not write to git at all. */
+const createsBranch = (phase: Phase): boolean => phase === 'spec' || phase === 'task' || phase === 'implement'
+
 /** Text appended to every phase prompt so the skill never leaves its worktree. */
-export const worktreeNote = (issue: number, branch: string | null): string =>
-  `This directory is the dedicated git worktree for issue #${issue}` +
-  (branch ? ` on branch ${branch}` : ', detached at origin/main: create the issue branch from the current HEAD with git checkout -b and never run git checkout main') +
-  '. Work only here and never switch to another branch or directory.'
+export const worktreeNote = (issue: number, branch: string | null, phase: Phase): string => {
+  const where = branch
+    ? ` on branch ${branch}`
+    : createsBranch(phase)
+      ? ', detached at origin/main: if this phase must create the issue branch, do it from the current HEAD with git checkout -b and never run git checkout main'
+      : ', detached at origin/main: this phase is read-only on git — no branches, no commits, no checkouts'
+  return `This directory is the dedicated git worktree for issue #${issue}${where}. Work only here and never switch to another branch or directory.`
+}
