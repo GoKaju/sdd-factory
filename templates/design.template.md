@@ -6,6 +6,10 @@ status: draft | approved
 
 Pick ONE variant. Delete the other. Sections are optional: keep only what applies.
 
+<!-- A Design records DECISIONS specific to this module. It never restates rules that already live in
+     docs/constitution.md; when a decision exists because of a rule, cite the rule ID in parentheses
+     ("Today enters through the Clock port (D5)"). Every element must trace to requirement IDs. -->
+
 ---
 
 ## Variant A — Full (DDD)
@@ -13,7 +17,10 @@ Pick ONE variant. Delete the other. Sections are optional: keep only what applie
 Use when the change touches the domain model, aggregates, use cases, or context boundaries.
 
 ### Bounded Context
-<which context owns this; what it does NOT own; how it talks to other contexts (events only)>
+Three lines, no more:
+- **Context:** `<name>` — owns <aggregates>.
+- **Relations:** <none | consumes/publishes which events with which contexts>.
+- **Multi-tenant:** <yes | no>. (How isolation is implemented is the constitution's T rules; do not restate them.)
 
 ### Domain Model
 
@@ -32,8 +39,8 @@ Use when the change touches the domain model, aggregates, use cases, or context 
 | --- | --- | --- | --- |
 
 #### Domain Errors
-One per row of the spec's "Rejections" table, same name. Extra errors (invariants not visible to the user) are listed too.
-| Error | Rejection (spec) | Thrown when | Maps to (transport) |
+One per row of the spec's "Rejections" table, same name. Messages in **English**; the client shows and translates the spec's user message. Context values go in params, not in the message. Extra errors (invariants not visible to the user) are listed too.
+| Error | Rejection (spec) | Thrown when | Params |
 | --- | --- | --- | --- |
 
 ### Application
@@ -65,10 +72,12 @@ One per row of the spec's "Rejections" table, same name. Extra errors (invariant
 
 #### Events published / consumed
 
-### Changes
-- **New:** <…>
-- **Modified:** <…>
-- **Removed:** <…>
+### Layout
+Only the placement decisions that are specific to this module (e.g. "domain grouped by aggregate: `domain/task/`, `domain/task-list/`, `domain/shared/`"; "contract test suite in `src/testing/`, excluded from coverage"). No file inventory and no test list: those belong to the Task ("Files expected to change", "Tests required").
+
+### Changes to existing code
+- **Modified:** <existing elements that change, or "none">
+- **Removed:** <…, or "none">
 
 ### Decisions
 | Decision | Alternatives considered | Rationale |

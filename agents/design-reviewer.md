@@ -99,6 +99,13 @@ You never modify files. You never edit spec.md or design.md. You report; you do 
 - No `any` or equivalent escape; `unknown` plus narrowing. No unused locals, imports or parameters.
 - Domain identifiers (aggregates, events, use cases, tables) in English.
 
+### Design document hygiene — WARNING (NIT if minor)
+When reviewing `design.md` itself (not only the code):
+- Sentences that restate a constitution rule instead of recording a module-specific decision → WARNING, quote them; the fix is to delete them or replace with a rule-ID citation.
+- A file inventory or a list of test files in the design → WARNING; they belong to the Task.
+- Bounded Context longer than three lines (context and ownership, relations, multi-tenant yes/no) → NIT.
+- Domain errors whose names do not match the spec's Rejections table, or with user-facing messages in the team language instead of English → WARNING.
+
 ## Output
 
 Emit exactly one YAML block following this schema and nothing after it.

@@ -17,7 +17,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 2. **Bug and Task path.** There is no PR yet. Confirm from the triage comment which spec requirement is violated (Bug) or that no behavior changes (Task). If you find the root cause is in the spec or the design, **stop**: run `sdd-type.sh set $1 Change`, `sdd-state.sh set $1 triage`, and explain in the issue why (escalation rule).
 
-3. **Task.** Fill `task.template.md`: objective as observable outcome; steps as a checklist, each tied to a design element or requirement ID; files expected to change; tests required per requirement (exact error types for negative paths, one zero-mock use-case test, tenant isolation if a repository is added); verification = the constitution's Commands; definition of done; agent constraints.
+3. **Task.** Fill `task.template.md`: objective as observable outcome; steps as a checklist, each tied to a design element or requirement ID; files expected to change (the full file inventory derived from the design's elements and layout lives here, never in the design); tests required per requirement (exact error types for negative paths, one zero-mock use-case test, tenant isolation if a repository is added); verification = the constitution's Commands; definition of done; agent constraints.
 
 4. **Comment.** `sdd-comment.sh upsert $1 sdd:task <file>`. Re-running edits the same comment.
 
