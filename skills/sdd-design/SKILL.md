@@ -20,7 +20,8 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 3. **Design.** Fill the template. Every element must trace to requirement IDs. Follow the constitution's rules but **never restate them**: the design records decisions specific to this module and cites a rule ID in parentheses when a decision exists because of it ("`Today` enters through the `Clock` port (D5)"). Delete any sentence that merely repeats a rule (naming conventions, layering, tenancy mechanics). Rules for the content:
    - **Bounded Context** is three lines: context and what it owns; relations with other contexts; multi-tenant yes or no.
    - **Domain Errors** map one to one to the spec's Rejections, same names, messages in English with context values as params; the client shows and translates the spec's user message.
-   - **Layout** states only placement decisions specific to this module. **No file inventory, no test list**: they belong to the Task.
+   - **Layout** states placement decisions and every file-level name the naming rules do not determine (mapper files, contract suites, shared helpers). The Task never decides names; if it needs one you did not fix, the issue comes back here.
+   - **Not in this change** lists what the spec allows but this change deliberately leaves out, with the reason. Test suites that are design elements (a contract suite every adapter must pass) are declared in Layout or Ports, not left to the Task.
    - **Prefer the simplest structure that satisfies the rules.** Loading an aggregate by id and throwing its NotFound error is orchestration and stays in the use case; do not wrap it in a "finder" domain service. Domain services exist for rules that need more than one aggregate (uniqueness across a collection) or pure calculations worth naming (a planner). Every extra class must earn its place in a Decisions row.
    - Record decisions and the alternatives rejected. Set `status: draft`.
 

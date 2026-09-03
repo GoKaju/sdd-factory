@@ -17,13 +17,9 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 2. **Bug and Task path.** There is no PR yet. Confirm from the triage comment which spec requirement is violated (Bug) or that no behavior changes (Task). If you find the root cause is in the spec or the design, **stop**: run `sdd-type.sh set $1 Change`, `sdd-state.sh set $1 triage`, and explain in the issue why (escalation rule).
 
-3. **Task.** Fill `task.template.md`. The Task contains **only what constitution, spec and design do not already say**:
-   - **Objective** as observable outcome.
-   - **Steps** as an ordered checklist, each naming the design element it realizes and the requirement IDs it covers, ordered so the build stays green after every step.
-   - **Decisions the design left open** (file names it did not fix, defaults the spec allows either way). Decide them here so a fresh agent does not improvise.
-   - **Tests not derivable** from the spec's acceptance criteria, the design's error table or the constitution's Q/T rules (e.g. a shared contract suite). Do not list the derivable ones.
-   - **Constraints specific to this issue**: only what does not follow from constitution, spec or design ("no real clock adapter in this feature"). Never restate rules; never repeat the implementation skill's own guardrails.
-   - No file inventory: the design's Layout fixes where things live and the naming rules fix the names. No verification commands: the constitution's Commands section is the verification.
+3. **Task.** Fill `task.template.md`. The Task is an **execution plan and nothing else**: objective as observable outcome, and an ordered checklist of steps, each naming the design element it realizes and the requirement IDs it covers, ordered so the build stays green after every step.
+   - **The Task never decides.** File names, test suites, exclusions, defaults: if the plan needs one and the design does not fix it, stop, `sdd-state.sh set $1 design`, and comment on the issue exactly what the design must add. Do not fill the gap yourself.
+   - No file inventory, no test list, no verification commands, no definition of done, no constraints: the design, the constitution and the implementation skill already carry them.
 
 4. **Comment.** `sdd-comment.sh upsert $1 sdd:task <file>`. Re-running edits the same comment.
 
@@ -31,5 +27,5 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 ## Rules
 
-- The Task never redefines requirements or design. If either is insufficient, say so instead of filling the gap with your own decisions.
+- The Task never redefines requirements or design, and never decides what they left open: it sends the issue back to `design` with the exact gap.
 - Keep it executable by a fresh agent with no memory of this conversation.

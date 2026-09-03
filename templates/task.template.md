@@ -1,10 +1,10 @@
 <!-- sdd:task -->
 <!-- Exactly one Task comment per Issue. Edit this comment on rework; never post a second one.
-     Approval = tracker state `task-approved` (human). Progress = tick the checkboxes below.
-     The Task contains ONLY what constitution, spec and design do not already say: the order of work,
-     the decisions the design left open, the tests that cannot be derived, and issue-specific constraints.
-     No file inventory (the design's Layout fixes where things live), no restated rules, no verification
-     commands (the constitution's Commands section is the verification). -->
+     Approval = tracker state `task-approved` (human). Progress = tick the checkboxes.
+     The Task is an execution plan and nothing else: the order of work. Every decision lives in the
+     design; every rule lives in the constitution; the definition of done lives in the implementation
+     skill. If the design leaves something open that the plan needs, the Task does not decide it:
+     the issue goes back to `design`. -->
 
 ## Task — <short title>
 
@@ -19,27 +19,8 @@
 
 ### Steps
 
-Ordered so that every step leaves the build green. Each step names the design element it realizes and the requirement IDs it covers.
+Ordered so that every step leaves the build green; each step names the design element it realizes and the requirement IDs it covers.
 
 - [ ] **T1** — <step> (<design element>; <MODULE>-NNN)
 - [ ] **T2** — <step>
 - [ ] **T3** — <step>
-
-### Decisions the design left open
-
-- <e.g. file names the design did not fix, a default the spec allows either way> — or "none"
-
-### Tests not derivable from spec, design or constitution
-
-- <e.g. a shared contract suite that every adapter of a port must pass> — or "none"
-
-### Definition of done
-
-- [ ] Every step above ticked
-- [ ] Deterministic checks green (constitution → Commands)
-- [ ] All Review Gates PASS
-- [ ] No edit to spec, design or constitution (or: escalated as Change #<n>)
-
-### Constraints specific to this issue
-
-- <only what does not follow from constitution, spec or design; e.g. "no real clock adapter in this feature"> — or "none"
