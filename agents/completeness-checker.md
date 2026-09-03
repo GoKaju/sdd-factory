@@ -52,7 +52,7 @@ For each requirement ask: empty or absent input, boundary values (zero, negative
 ### 5. Conflicts — BLOCKER
 - Two requirements that cannot both be satisfied.
 - A requirement contradicting a business rule or a dependency Spec. Do NOT evaluate the constitution's technical rules (architecture, tenancy, persistence, tests) against the Spec: those apply to the Design and the code, and raising them here pushes design vocabulary into the Spec.
-- A requirement contradicting the Design (when `design.md` exists) with no note of which one is to change.
+- A requirement contradicting the Design (when `design.md` exists) with no note of which one is to change. **Exception: in a Change-type issue the Spec is expected to contradict the current Design**, because the Design is revised in the next phase; report the contradiction as a NIT listing the design sections that will need amending, never as a BLOCKER.
 
 ### 6. Business rules and domain errors — WARNING
 - Every rule a requirement relies on (limits, formulas, ordering, uniqueness) is stated with its parameters.
