@@ -15,6 +15,8 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 1. **Preconditions.** `sdd-state.sh require $1 spec-approved design`. When the issue comes back from implementation (a design gap was escalated), the issue comment says what must change: amend only that, add a Decisions row with the reason and the rejected alternative, and keep everything else untouched. Check out the PR branch (`sdd-pr.sh branch $1`). Read `docs/constitution.md`, the approved `spec.md` and the existing `design.md` if any. Survey the affected context under `contexts/` to reuse existing aggregates, ports and fakes rather than inventing parallel ones.
 
+1b. **Record the Spec approval.** The human set `spec-approved`; the document must say so: set `status: approved` in `spec.md`'s front matter and commit it (`docs(<module>): spec approved for #$1`). This is the only edit to the spec this phase makes.
+
 2. **Variant.** Full when the change touches aggregates, use cases, ports or context boundaries. Light when it is reporting, integration glue or tooling with no domain-model impact. Say which and why.
 
 3. **Design.** Fill the template. Every element must trace to requirement IDs. Follow the constitution's rules but **never restate them**: the design records decisions specific to this module and cites a rule ID in parentheses when a decision exists because of it ("`Today` enters through the `Clock` port (D5)"). Delete any sentence that merely repeats a rule (naming conventions, layering, tenancy mechanics). Rules for the content:
