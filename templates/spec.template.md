@@ -4,6 +4,12 @@ module-id: <MODULE>          ← prefix for requirement IDs, e.g. OT
 domain: <domain>
 status: draft | approved
 
+<!-- A Spec describes WHAT the system does, in the language a business reader uses. It never says HOW.
+     Does not belong here (it belongs in design.md or in the constitution): tenants and isolation,
+     persistence, repositories, views or read models, events and their delivery, idempotency mechanics,
+     concurrency control, HTTP/API/frontend, test doubles, class or file names, layer names.
+     "Out of scope" lists business capabilities deliberately left out, never deferred technical decisions. -->
+
 ## Purpose
 
 <one paragraph: what this module is responsible for and for whom>
@@ -50,10 +56,6 @@ THEN THE SYSTEM SHALL <…>.
 
 - [ ] <MODULE>-001: <observable check>
 - [ ] <MODULE>-002: <observable check>
-
-## Inputs and outputs
-
-<only if the requirement itself is about a contract: payloads, events, files>
 
 ## Open questions
 

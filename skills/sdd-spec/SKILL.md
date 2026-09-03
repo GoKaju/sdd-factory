@@ -20,6 +20,9 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 3. **Spec.** For a new module copy `spec.template.md` to `docs/<domain>/<module>/spec.md`; for an existing one edit it. Rules:
    - Every requirement has a stable ID `<MODULE>-NNN`; never renumber or reuse an ID. New requirements take the next number; a Change edits the text of existing IDs and marks superseded ones as `Removed` rather than deleting them.
    - Describe observable behavior, not implementation. Use EARS forms where they add precision.
+   - **Business language only.** The reader is the person who opened the Issue. These words and ideas MUST NOT appear anywhere in the spec: tenant, tenancy, isolation, `tenantId`, repository, persistence, database, engine, fake, `InMemory`, view, read model, projection, event, publish, consumer, idempotent, delivery, concurrency, lock, HTTP, API, endpoint, frontend, test, class, layer, aggregate, use case. If a behavior needs one of them to be stated, restate it as what the user observes ("completing the same task twice never produces two next occurrences") or move it to `design.md`. Multi-tenancy is a separate concern governed by the constitution; the spec is written as if a single customer existed.
+   - **Out of scope** lists business capabilities deliberately excluded (e.g. "renaming lists", "reminders"). Never deferred technical decisions (pagination, concurrency control, HTTP, storage engine).
+   - **Domain concepts** are business nouns only. No projections, DTOs, views, records or ports.
    - Cover edge cases and acceptance criteria per requirement. List open questions explicitly.
    - Set `status: draft`.
 

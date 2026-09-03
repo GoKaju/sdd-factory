@@ -51,7 +51,7 @@ For each requirement ask: empty or absent input, boundary values (zero, negative
 
 ### 5. Conflicts — BLOCKER
 - Two requirements that cannot both be satisfied.
-- A requirement contradicting a business rule, the constitution, or a dependency Spec.
+- A requirement contradicting a business rule or a dependency Spec. Do NOT evaluate the constitution's technical rules (architecture, tenancy, persistence, tests) against the Spec: those apply to the Design and the code, and raising them here pushes design vocabulary into the Spec.
 - A requirement contradicting the Design (when `design.md` exists) with no note of which one is to change.
 
 ### 6. Business rules and domain errors — WARNING
@@ -66,8 +66,17 @@ For each requirement ask: empty or absent input, boundary values (zero, negative
 - Purpose, scope and out-of-scope sections exist and do not contradict each other.
 - The Spec covers the Issue's requested outcome; anything requested in the Issue but absent from the Spec is a WARNING quoting the Issue.
 
-### 9. Behavior, not implementation — NIT
-Requirements describe observable behavior. Prescribing structure (table names, class names, framework calls) is a NIT unless the requirement itself is architectural.
+### 9. Behavior, not implementation — BLOCKER
+The Spec is written for the person who opened the Issue and describes WHAT the system does, never HOW. Any of the following anywhere in the Spec (purpose, scope, out-of-scope, domain concepts, requirements, rules, edge cases) is a BLOCKER, with the offending sentence quoted and a business-language rewrite proposed:
+- Multi-tenancy vocabulary: tenant, tenancy, isolation, `tenantId`. Tenancy is a separate concern governed by the constitution; the Spec reads as if a single customer existed.
+- Persistence and read-side vocabulary: repository, persistence, database, storage engine, record, view, read model, projection, DTO.
+- Messaging mechanics: event, publish, consumer, delivery, idempotent (the observable rule "doing X twice produces one result" is fine; the mechanism is not).
+- Concurrency, locks, transactions, ordering of persistence versus publication.
+- Transport and UI: HTTP, API, endpoint, frontend, screen.
+- Test vocabulary: test, fake, `InMemory`, mock, coverage.
+- Code structure: class, aggregate, use case, layer, file or package names.
+- "Out of scope" entries that are deferred technical decisions (pagination, concurrency control, storage, API) instead of excluded business capabilities.
+Only exception: a requirement that is itself architectural because the customer asked for it (e.g. "data is exported as CSV").
 
 ## Output
 
