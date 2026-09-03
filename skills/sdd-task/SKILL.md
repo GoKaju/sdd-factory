@@ -17,7 +17,13 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 2. **Bug and Task path.** There is no PR yet. Confirm from the triage comment which spec requirement is violated (Bug) or that no behavior changes (Task). If you find the root cause is in the spec or the design, **stop**: run `sdd-type.sh set $1 Change`, `sdd-state.sh set $1 triage`, and explain in the issue why (escalation rule).
 
-3. **Task.** Fill `task.template.md`: objective as observable outcome; steps as a checklist, each tied to a design element or requirement ID; files expected to change (the full file inventory derived from the design's elements and layout lives here, never in the design); tests required per requirement (exact error types for negative paths, one zero-mock use-case test, tenant isolation if a repository is added); verification = the constitution's Commands; definition of done; agent constraints.
+3. **Task.** Fill `task.template.md`. The Task contains **only what constitution, spec and design do not already say**:
+   - **Objective** as observable outcome.
+   - **Steps** as an ordered checklist, each naming the design element it realizes and the requirement IDs it covers, ordered so the build stays green after every step.
+   - **Decisions the design left open** (file names it did not fix, defaults the spec allows either way). Decide them here so a fresh agent does not improvise.
+   - **Tests not derivable** from the spec's acceptance criteria, the design's error table or the constitution's Q/T rules (e.g. a shared contract suite). Do not list the derivable ones.
+   - **Constraints specific to this issue**: only what does not follow from constitution, spec or design ("no real clock adapter in this feature"). Never restate rules; never repeat the implementation skill's own guardrails.
+   - No file inventory: the design's Layout fixes where things live and the naming rules fix the names. No verification commands: the constitution's Commands section is the verification.
 
 4. **Comment.** `sdd-comment.sh upsert $1 sdd:task <file>`. Re-running edits the same comment.
 
