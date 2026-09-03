@@ -67,6 +67,11 @@ export const openIssues = async (repo: string, pluginDir: string, repoPath: stri
 
 interface RawComment { body: string; created_at: string; updated_at: string }
 
+/**
+ * New input for triage since the triage comment was last written: a comment by anyone other than
+ * the factory, or an edit of the issue title/body. Body edits are not comments nor timeline events;
+ * GitHub exposes them only as `lastEditedAt` on the Issue (GraphQL).
+ */
 const newCommentSinceTriage = async (repo: string, issue: number): Promise<boolean> => {
   const comments = JSON.parse(
     await sh('gh', ['api', `repos/${repo}/issues/${issue}/comments?per_page=100`, '--paginate']),
@@ -74,7 +79,20 @@ const newCommentSinceTriage = async (repo: string, issue: number): Promise<boole
   const triage = comments.find((c) => c.body.startsWith('<!-- sdd:triage -->'))
   if (!triage) return true
   const mark = Date.parse(triage.updated_at)
-  return comments.some((c) => !c.body.startsWith('<!-- sdd:') && Date.parse(c.created_at) > mark)
+  if (comments.some((c) => !c.body.startsWith('<!-- sdd:') && Date.parse(c.created_at) > mark)) return true
+  const edited = await lastEditedAt(repo, issue)
+  return edited !== null && edited > mark
+}
+
+const lastEditedAt = async (repo: string, issue: number): Promise<number | null> => {
+  const [owner, name] = repo.split('/')
+  const q = `{ repository(owner:"${owner}", name:"${name}") { issue(number:${issue}) { lastEditedAt } } }`
+  try {
+    const out = await sh('gh', ['api', 'graphql', '-f', `query=${q}`, '--jq', '.data.repository.issue.lastEditedAt'])
+    return out && out !== 'null' ? Date.parse(out) : null
+  } catch {
+    return null
+  }
 }
 
 /** The marked comment exists and has no unchecked box. */
