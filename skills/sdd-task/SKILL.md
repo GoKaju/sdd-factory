@@ -17,6 +17,8 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 1. **Preconditions.** Type via `sdd-type.sh get $1`. Feature/Change: `sdd-state.sh require $1 design-approved task`. Bug/Task/Constitution: `sdd-state.sh require $1 ready task`. Read `docs/constitution.md`, the issue and its triage comment, and for Feature/Change the approved `spec.md` and `design.md` on the PR branch (`sdd-pr.sh branch $1`; `git show origin/<branch>:docs/...` if not checked out).
 
+1a. **Document-only loop.** If a Task comment already exists with every step ticked and the approved spec/design amendment requires no code change (compare the Task's steps with the amendment), do not rewrite the Task: record the design approval (1b), `sdd-state.sh set $1 in-review`, and report that `/sdd-review $1` is next. An identical Task is never re-approved.
+
 1b. **Record the Design approval** (Feature/Change only). The human set `design-approved`; set `status: approved` in `design.md`'s front matter and commit it on the PR branch (`docs(<module>): design approved for #$1`). This is the only repository write this phase makes.
 
 2. **Bug and Task path.** There is no PR yet. Confirm from the triage comment which spec requirement is violated (Bug) or that no behavior changes (Task). If you find the root cause is in the spec or the design, **stop**: run `sdd-type.sh set $1 Change`, `sdd-state.sh set $1 triage`, and explain in the issue why (escalation rule).

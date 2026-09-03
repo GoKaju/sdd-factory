@@ -35,6 +35,8 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 6. **State.** `sdd-state.sh set $1 design`. Report the PR URL, the variant, the main design decisions and any WARNING. The human sets `sdd:design-approved`; you never set it.
 
+7. **Say what comes next.** If the issue came back from review or implementation for a **document-only amendment** (the Task comment exists with every step ticked and no code changes are required by the amendment), state explicitly that after `design-approved` the next command is `/sdd-review $1`, not `/sdd-task $1`: an identical Task is not re-approved. Otherwise the next command is `/sdd-task $1`.
+
 ## Rules
 
 - Do not edit `spec.md`. If the design reveals a gap in the spec, stop and report it; the issue may need to go back to `spec`.
