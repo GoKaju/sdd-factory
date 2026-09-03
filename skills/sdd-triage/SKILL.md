@@ -9,7 +9,7 @@ allowed-tools: Read, Glob, Grep, Bash
 
 Refine issue **#$1** until it is ready for Approval Gate 0 (Intake). You read the repository and the tracker; you **never modify repository files**. Your only outputs are the triage comment and the issue's type and state.
 
-Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/templates/triage.template.md`.
+Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/templates/comments/<lang>/triage.md`, where `<lang>` is the constitution's `Language` (`en` or `es`). The whole comment, headings included, is written in that language; only the marker, the checkbox syntax and identifiers stay as they are.
 
 ## Steps
 
@@ -27,7 +27,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 7. **Path and size.** From the type: Feature/Change → Spec → Design → Task → Implement → Review; Bug/Task/Constitution → Task → Implement → Review. Size S/M/L with one clause of justification.
 
-8. **Comment.** Fill `triage.template.md` and `sdd-comment.sh upsert $1 sdd:triage <file>`. Re-running edits the same comment; never post a second one. Previously answered questions are removed or ticked, new ones added.
+8. **Comment.** Fill `templates/comments/<lang>/triage.md` in the constitution's language and `sdd-comment.sh upsert $1 sdd:triage <file>`. Re-running edits the same comment; never post a second one. Previously answered questions are removed or ticked, new ones added.
 
 9. **State.** `sdd-state.sh set $1 triage`. Then tell the human: the open questions (if any), or that the issue is ready for them to set `sdd:ready`. You never set `ready` yourself.
 

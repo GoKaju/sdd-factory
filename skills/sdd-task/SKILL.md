@@ -9,7 +9,7 @@ allowed-tools: Read, Glob, Grep, Bash
 
 Write the Task for issue **#$1** as a single marked comment on the issue, for Approval Gate 3. Read-only on the repository except for recording the design approval (step 1b).
 
-Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/templates/task.template.md`.
+Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/templates/comments/<lang>/task.md`, where `<lang>` is the constitution's `Language` (`en` or `es`). The whole comment, headings included, is written in that language; the marker, the `- [ ] **T<n>**` step syntax and identifiers stay as they are.
 
 ## Steps
 
@@ -19,7 +19,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 2. **Bug and Task path.** There is no PR yet. Confirm from the triage comment which spec requirement is violated (Bug) or that no behavior changes (Task). If you find the root cause is in the spec or the design, **stop**: run `sdd-type.sh set $1 Change`, `sdd-state.sh set $1 triage`, and explain in the issue why (escalation rule).
 
-3. **Task.** Fill `task.template.md`. The Task is an **execution plan and nothing else**: objective as observable outcome, and an ordered checklist of steps, each naming the design element it realizes and the requirement IDs it covers, ordered so the build stays green after every step.
+3. **Task.** Fill `templates/comments/<lang>/task.md` in the constitution's language. The Task is an **execution plan and nothing else**: objective as observable outcome, and an ordered checklist of steps, each naming the design element it realizes and the requirement IDs it covers, ordered so the build stays green after every step.
    - **The Task never decides.** File names, test suites, exclusions, defaults: if the plan needs one and the design does not fix it, stop, `sdd-state.sh set $1 design`, and comment on the issue exactly what the design must add. Do not fill the gap yourself.
    - No file inventory, no test list, no verification commands, no definition of done, no constraints: the design, the constitution and the implementation skill already carry them.
 

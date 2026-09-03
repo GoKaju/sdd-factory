@@ -20,4 +20,4 @@ created by `sdd-init` (organization admin and `admin:org` scope required).
 A `Constitution` Issue has no form: it is opened by hand, typed `Constitution`, and describes the
 amendment and its motivation. It is the only Issue type allowed to edit `docs/constitution.md`.
 
-Triage and Task comments are written in the same `Language`, per rule C4 of the constitution.
+Triage and Task comments use `templates/comments/<lang>/` and are written entirely in the same `Language`, headings included, per rule C4 of the constitution.
