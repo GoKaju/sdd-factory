@@ -96,7 +96,7 @@ cp worker/launchd/com.gokaju.sdd-worker.plist ~/Library/LaunchAgents/ && launchc
 # logs: ~/.sdd/worker/worker.log · stop: launchctl bootout gui/$(id -u)/com.gokaju.sdd-worker
 ```
 
-What it reacts to (see `src/rules.ts`): a new issue → triage; an author comment while in `triage` → triage again; `ready` → task for Bug/Task/Constitution (Feature/Change wait for a human unless `autoSpec`); `spec-approved` → design; `design-approved` → task, or straight to review when the Task is already complete (document-only amendment); `task-approved` and `rework` → implement then review; `in-review` → review; `implementing` idle for 45 min → resume. It never sets `ready` or `*-approved`.
+What it reacts to (see `src/rules.ts`): a new issue → triage; an author comment or an edit of the issue title/body while in `triage` → triage again; `ready` → task for Bug/Task/Constitution (Feature/Change wait for a human unless `autoSpec`); `spec-approved` → design; `design-approved` → task, or straight to review when the Task is already complete (document-only amendment); `task-approved` and `rework` → implement then review; `in-review` → review; `implementing` idle for 45 min → resume. It never sets `ready` or `*-approved`.
 
 Guarantees: one job per issue at a time; a failed job is not retried until the issue changes (new comment, label, edit); a quota error pauses polling; a phase over its time budget is aborted; every run logs to `~/.sdd/worker/logs/` and records itself in `~/.sdd/worker/jobs.sqlite`; when a job fails the worker leaves the issue state untouched and comments the reason on the issue.
 

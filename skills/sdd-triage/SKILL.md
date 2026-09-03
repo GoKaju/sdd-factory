@@ -17,7 +17,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 1. **State.** `sdd-state.sh get $1`. Allowed: empty or `triage`. Any other state means the issue is already in the pipeline: stop and say so.
 
-2. **Read.** `gh issue view $1 --comments` and `sdd-type.sh get $1`. Read `docs/constitution.md` (Identity and Rules) and list `docs/*/*/spec.md`.
+2. **Read.** `gh issue view $1 --comments` and `sdd-type.sh get $1`. The issue body may have been edited since your last triage: always re-read it in full and answer to its current text, not to what your previous comment assumed. Read `docs/constitution.md` (Identity and Rules) and list `docs/*/*/spec.md`.
 
 3. **Completeness.** Check the form fields for the issue's type: Feature/Change need problem, outcome, acceptance hints; Bug needs observed, expected, evidence; Task needs what, why, scope. Missing or vague fields become open questions.
 
