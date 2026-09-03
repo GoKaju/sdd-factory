@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.gokaju.sdd-worker</string>
+  <key>ProgramArguments</key><array>
+    <string>/Users/gokaju/.nvm/versions/node/v24.14.0/bin/node</string>
+    <string>--disable-warning=ExperimentalWarning</string>
+    <string>/Users/gokaju/dev/projects/sdd-factory/worker/src/main.ts</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Users/gokaju/dev/projects/sdd-factory/worker</string>
+  <key>EnvironmentVariables</key><dict>
+    <key>PATH</key><string>/Users/gokaju/.nvm/versions/node/v24.14.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>HOME</key><string>/Users/gokaju</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>/Users/gokaju/.sdd/worker/worker.log</string>
+  <key>StandardErrorPath</key><string>/Users/gokaju/.sdd/worker/worker.err.log</string>
+</dict></plist>

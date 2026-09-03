@@ -1,0 +1,22 @@
+{
+  "name": "@sdd-factory/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase 2 of the SDD factory: polls GitHub and runs the sdd-* phases headless, one worktree per issue.",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/main.ts",
+    "once": "node --disable-warning=ExperimentalWarning src/main.ts --once",
+    "dry-run": "node --disable-warning=ExperimentalWarning src/main.ts --once --dry-run",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.259"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "typescript": "^5.9.3"
+  }
+}

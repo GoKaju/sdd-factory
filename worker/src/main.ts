@@ -1,0 +1,90 @@
+import { join } from 'node:path'
+import { loadConfig, type RepoConfig, type WorkerConfig } from './config.ts'
+import { comment, isClosed, openIssues, prBranch, type OpenIssue } from './github.ts'
+import { decide, type Phase } from './rules.ts'
+import { runPhase } from './runner.ts'
+import { JobStore } from './state.ts'
+import { ensureWorktree, removeWorktree, worktreeNote } from './worktree.ts'
+
+interface Job { repo: RepoConfig; issue: OpenIssue; phases: Phase[]; reason: string }
+
+const args = new Set(process.argv.slice(2))
+const once = args.has('--once')
+const dryRun = args.has('--dry-run')
+const runner: 'sdk' | 'cli' = args.has('--cli') ? 'cli' : 'sdk'
+
+const log = (s: string): void => { console.log(`${new Date().toISOString()} ${s}`) }
+
+let pausedUntil = 0
+
+/** One tick: read GitHub, decide, run what fits in the parallel budget. */
+const tick = async (cfg: WorkerConfig, store: JobStore): Promise<void> => {
+  if (Date.now() < pausedUntil) { log(`paused until ${new Date(pausedUntil).toISOString()} (quota)`); return }
+  const jobs: Job[] = []
+  for (const repo of cfg.repos) {
+    let issues: OpenIssue[]
+    try { issues = await openIssues(repo.nameWithOwner, cfg.pluginDir, repo.path) }
+    catch (e) { log(`! ${repo.nameWithOwner}: cannot list issues: ${String(e)}`); continue }
+    for (const issue of issues) {
+      const d = decide(issue, { autoSpec: repo.autoSpec, staleImplementingMinutes: cfg.staleImplementingMinutes })
+      if (!d) continue
+      if (store.running(repo.nameWithOwner, issue.number)) continue
+      if (store.alreadyTried(repo.nameWithOwner, issue.number, issue.state ?? 'none', issue.updatedAt)) continue
+      jobs.push({ repo, issue, phases: d.phases, reason: d.reason })
+    }
+  }
+  if (jobs.length === 0) { log('nothing to do'); return }
+  for (const j of jobs) log(`plan ${j.repo.nameWithOwner}#${j.issue.number} [${j.issue.state ?? 'none'}] → ${j.phases.join(' → ')} (${j.reason})`)
+  if (dryRun) return
+  const running: Promise<void>[] = []
+  for (const j of jobs) {
+    if (store.runningCount() + running.length >= cfg.maxParallel) break
+    running.push(runJob(cfg, store, j))
+  }
+  await Promise.all(running)
+}
+
+const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void> => {
+  const repo = j.repo.nameWithOwner
+  const n = j.issue.number
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const logPath = join(cfg.home, 'logs', repo.replace('/', '-'), `${n}-${j.phases.join('+')}-${stamp}.log`)
+  const id = store.start({ repo, issue: n, phases: j.phases.join('+'), stateAtStart: j.issue.state ?? 'none', issueUpdatedAt: j.issue.updatedAt, logPath })
+  log(`start job ${id}: ${repo}#${n} ${j.phases.join(' → ')}`)
+  try {
+    const branch = await prBranch(cfg.pluginDir, j.repo.path, n)
+    const cwd = await ensureWorktree(j.repo.path, n, branch)
+    for (const phase of j.phases) {
+      const r = await runPhase({ phase, issue: n, cwd, pluginDir: cfg.pluginDir, note: worktreeNote(n, branch), logPath, runner })
+      log(`  ${phase}: ${r.outcome}${r.costUsd !== null ? ` $${r.costUsd.toFixed(2)}` : ''}${r.turns !== null ? ` ${r.turns} turns` : ''}`)
+      if (r.outcome !== 'done') {
+        store.finish(id, r.outcome, `${phase}: ${r.summary.slice(0, 500)}`)
+        if (r.outcome === 'quota') {
+          pausedUntil = Date.now() + cfg.quotaPauseMinutes * 60_000
+          log(`quota hit; pausing ${cfg.quotaPauseMinutes} min`)
+        } else {
+          await comment(repo, n, `**Worker sdd-factory:** la fase \`${phase}\` terminó con \`${r.outcome}\`. El estado del Issue no cambió; revisa el log \`${logPath}\` y corrige o relanza a mano.\n\n\`\`\`\n${r.summary.slice(-1200)}\n\`\`\``)
+        }
+        return
+      }
+    }
+    store.finish(id, 'done')
+    if (await isClosed(repo, n)) await removeWorktree(j.repo.path, n)
+  } catch (e) {
+    store.finish(id, 'failed', String(e).slice(0, 500))
+    log(`! job ${id} failed: ${String(e)}`)
+  }
+}
+
+const main = async (): Promise<void> => {
+  const cfg = loadConfig()
+  const store = new JobStore(cfg.home)
+  log(`sdd worker: ${cfg.repos.map((r) => r.nameWithOwner).join(', ')} every ${cfg.intervalSeconds}s, maxParallel ${cfg.maxParallel}, runner ${runner}${dryRun ? ', dry-run' : ''}`)
+  if (once) { await tick(cfg, store); return }
+  for (;;) {
+    await tick(cfg, store)
+    await new Promise((r) => setTimeout(r, cfg.intervalSeconds * 1000))
+  }
+}
+
+main().catch((e) => { console.error(e); process.exit(1) })
