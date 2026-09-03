@@ -13,7 +13,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Result schema: `${CLAUDE_PLUGIN_ROOT}
 
 ## Steps
 
-1. **Preconditions.** `sdd-state.sh require $1 in-review rework`. `pr=$(sdd-pr.sh find $1)`; check out its branch. Read `docs/constitution.md` (Rules, Commands, Verification: gates and `max_rework_cycles`), the Task comment, and the affected `spec.md`/`design.md`. `cycle` = number of previous aggregate results on the PR (`sdd-gate-result.sh list $pr | ...`), starting at 0.
+1. **Preconditions.** `sdd-state.sh require $1 in-review rework design-approved`. In `design-approved` you are being invoked after a document-only amendment (Task unchanged, code unchanged): record the design approval (`status: approved` in `design.md`, commit) and continue as `in-review`. `pr=$(sdd-pr.sh find $1)`; check out its branch. Read `docs/constitution.md` (Rules, Commands, Verification: gates and `max_rework_cycles`), the Task comment, and the affected `spec.md`/`design.md`. `cycle` = number of previous aggregate results on the PR (`sdd-gate-result.sh list $pr | ...`), starting at 0.
 
 2. **Deterministic checks first.** Run the `ci-runner` agent. If red: publish one result with `gate: deterministic-checks`, `status: BLOCKED`, and stop with `sdd-state.sh set $1 rework`. Gates never run on a red build.
 

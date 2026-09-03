@@ -21,7 +21,7 @@ For each issue print one row: number · title · `sdd-type.sh get` · `sdd-state
 | spec | human reviews the PR diff, sets `sdd:spec-approved` |
 | spec-approved | `/sdd-design <n>` |
 | design | human sets `sdd:design-approved` |
-| design-approved | `/sdd-task <n>` |
+| design-approved | `/sdd-task <n>` (or `/sdd-review <n>` when the Task already exists with every step ticked: document-only amendment) |
 | task | human reviews the Task comment, sets `sdd:task-approved` |
 | task-approved, rework | `/sdd-implement <n>` |
 | implementing | implementation in progress |
