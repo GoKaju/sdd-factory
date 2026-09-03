@@ -27,7 +27,7 @@ This file is the only rule file in the repository. `CLAUDE.md` and `AGENTS.md` p
 - **D8** Persist first, publish events after; every event consumer is idempotent.
 
 ### Errors
-- **E1** One `DomainError` subclass per scenario, `name` equals the class name, business message, no infrastructure detail.
+- **E1** One `DomainError` subclass per scenario, `name` equals the class name, business message in English with context in params, no infrastructure detail; user-facing translation is the client's job.
 - **E2** Domain throws, application propagates, the entry point translates once.
 
 ### Multi-tenancy

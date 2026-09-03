@@ -17,7 +17,11 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 2. **Variant.** Full when the change touches aggregates, use cases, ports or context boundaries. Light when it is reporting, integration glue or tooling with no domain-model impact. Say which and why.
 
-3. **Design.** Fill the template. Every element must trace to requirement IDs. Respect the constitution's rules: aggregates with `create`/`rehydrate`, value objects, one `DomainError` per scenario, use cases that orchestrate only, read repositories for queries, every port with its `InMemory` fake, `tenantId` only in adapter constructors, contexts communicating by events only. Record decisions and the alternatives rejected. Set `status: draft`.
+3. **Design.** Fill the template. Every element must trace to requirement IDs. Follow the constitution's rules but **never restate them**: the design records decisions specific to this module and cites a rule ID in parentheses when a decision exists because of it ("`Today` enters through the `Clock` port (D5)"). Delete any sentence that merely repeats a rule (naming conventions, layering, tenancy mechanics). Rules for the content:
+   - **Bounded Context** is three lines: context and what it owns; relations with other contexts; multi-tenant yes or no.
+   - **Domain Errors** map one to one to the spec's Rejections, same names, messages in English with context values as params; the client shows and translates the spec's user message.
+   - **Layout** states only placement decisions specific to this module. **No file inventory, no test list**: they belong to the Task.
+   - Record decisions and the alternatives rejected. Set `status: draft`.
 
 4. **Self-review.** Run the `design-reviewer` agent on the design file with the spec as context. Fix BLOCKERs; report WARNINGs.
 
