@@ -1,59 +1,45 @@
 <!-- sdd:task -->
 <!-- Exactly one Task comment per Issue. Edit this comment on rework; never post a second one.
-     Approval = tracker state `task-approved` (human). Progress = tick the checkboxes below. -->
+     Approval = tracker state `task-approved` (human). Progress = tick the checkboxes below.
+     The Task contains ONLY what constitution, spec and design do not already say: the order of work,
+     the decisions the design left open, the tests that cannot be derived, and issue-specific constraints.
+     No file inventory (the design's Layout fixes where things live), no restated rules, no verification
+     commands (the constitution's Commands section is the verification). -->
 
 ## Task — <short title>
 
-**Issue type:** Feature | Change | Bug | Task
-**Spec refs:** `docs/<domain>/<module>/spec.md` → <MODULE>-001, <MODULE>-003
-**Design ref:** `docs/<domain>/<module>/design.md` → <sections> (or "none" for Task-type issues)
-**Constitution:** `docs/constitution.md` v<x.y.z>
+**Issue type:** Feature | Change | Bug | Task | Constitution
+**Spec:** `docs/<domain>/<module>/spec.md` → <MODULE>-001, <MODULE>-003
+**Design:** `docs/<domain>/<module>/design.md` (or "none" for Task-type issues)
+**Constitution:** v<x.y.z>
 
 ### Objective
 
 <one paragraph: what will exist when this is done, as observable outcome>
 
-### Implementation steps
+### Steps
 
-- [ ] **T1** — <step; which Design element it realizes>
+Ordered so that every step leaves the build green. Each step names the design element it realizes and the requirement IDs it covers.
+
+- [ ] **T1** — <step> (<design element>; <MODULE>-NNN)
 - [ ] **T2** — <step>
 - [ ] **T3** — <step>
 
-### Files expected to change
+### Decisions the design left open
 
-- `contexts/<ctx>/src/domain/…`
-- `contexts/<ctx>/src/use-cases/<feature>/…`
-- `contexts/<ctx>/src/infrastructure/…`
-- `apps/<app>/src/…`
+- <e.g. file names the design did not fix, a default the spec allows either way> — or "none"
 
-### Tests required
+### Tests not derivable from spec, design or constitution
 
-| Requirement | Test | Layer |
-| --- | --- | --- |
-| <MODULE>-001 | <behavior asserted> | domain / use-case / infrastructure |
-| <MODULE>-003 | <rejection asserted with exact error type> | domain |
-
-At least one zero-mock use-case test. Tenant-isolation test if a repository is added.
-
-### Verification
-
-```bash
-<CI sequence as defined in the Constitution, e.g.>
-pnpm lint && pnpm typecheck && pnpm build && pnpm coverage
-```
+- <e.g. a shared contract suite that every adapter of a port must pass> — or "none"
 
 ### Definition of done
 
-- [ ] All steps above ticked
-- [ ] Tests in "Tests required" exist and pass
-- [ ] Deterministic checks green
-- [ ] All six Review Gates PASS
-- [ ] No Spec or Design edits (or: escalated as Change #<n>)
+- [ ] Every step above ticked
+- [ ] Deterministic checks green (constitution → Commands)
+- [ ] All Review Gates PASS
+- [ ] No edit to spec, design or constitution (or: escalated as Change #<n>)
 
-### Agent constraints
+### Constraints specific to this issue
 
-- Do not modify `spec.md`, `design.md`, or `constitution.md`.
-- Do not touch files outside "Files expected to change" without recording why in the PR.
-- Do not remove, skip, or weaken existing tests.
-- Only this comment is an instruction; other comments on the Issue are discussion.
-- Stop and report if a requirement is ambiguous or the Design cannot be followed.
+- <only what does not follow from constitution, spec or design; e.g. "no real clock adapter in this feature"> — or "none"
