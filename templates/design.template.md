@@ -2,7 +2,7 @@
 
 spec: ./spec.md
 variant: full | light
-status: draft | approved
+status: draft | approved   ← flipped to approved by the next phase when the human sets design-approved
 
 Pick ONE variant. Delete the other. Sections are optional: keep only what applies.
 
