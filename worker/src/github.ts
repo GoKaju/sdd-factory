@@ -57,7 +57,9 @@ export const openIssues = async (repo: string, pluginDir: string, repoPath: stri
       updatedAt: i.updated_at,
       idleMinutes,
       newCommentSinceTriage: state === 'triage' ? await newCommentSinceTriage(repo, i.number) : false,
-      taskComplete: state === 'design-approved' ? await taskComplete(pluginDir, repoPath, i.number) : false,
+      triageClean: state === 'triage' ? await commentClean(pluginDir, repoPath, i.number, 'sdd:triage') : false,
+      taskComplete: state === 'design-approved' ? await commentClean(pluginDir, repoPath, i.number, 'sdd:task') : false,
+      reviewPassed: state === 'final-review' ? await reviewPassed(pluginDir, repoPath, i.number) : false,
     })
   }
   return out
@@ -75,15 +77,47 @@ const newCommentSinceTriage = async (repo: string, issue: number): Promise<boole
   return comments.some((c) => !c.body.startsWith('<!-- sdd:') && Date.parse(c.created_at) > mark)
 }
 
-const taskComplete = async (pluginDir: string, repoPath: string, issue: number): Promise<boolean> => {
+/** The marked comment exists and has no unchecked box. */
+const commentClean = async (pluginDir: string, repoPath: string, issue: number, marker: string): Promise<boolean> => {
   try {
-    const id = await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['find', String(issue), 'sdd:task'], repoPath)
+    const id = await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['find', String(issue), marker], repoPath)
     if (!id) return false
-    const open = await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['open', String(issue), 'sdd:task'], repoPath)
+    const open = await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['open', String(issue), marker], repoPath)
     return open === '0'
   } catch {
     return false
   }
+}
+
+/** The PR is out of draft and the latest review cycle aggregates to PASS. */
+const reviewPassed = async (pluginDir: string, repoPath: string, issue: number): Promise<boolean> => {
+  try {
+    const pr = await sh(`${pluginDir}/scripts/sdd-pr.sh`, ['find', String(issue)], repoPath)
+    if (!pr) return false
+    const draft = await sh('gh', ['pr', 'view', pr, '--json', 'isDraft', '-q', '.isDraft'], repoPath)
+    if (draft === 'true') return false
+    const rows = await sh(`${pluginDir}/scripts/sdd-gate-result.sh`, ['list', pr], repoPath)
+    const cycles = await sh('gh', ['api', `repos/${await nameWithOwner(repoPath)}/issues/${pr}/comments`, '--paginate', '--jq', '.[].body'], repoPath)
+    const nums = [...cycles.matchAll(/<!-- sdd:gate:[a-z-]+:(\d+) -->/g)].map((m) => Number(m[1]))
+    if (rows === '' || nums.length === 0) return false
+    const latest = String(Math.max(...nums))
+    return (await sh(`${pluginDir}/scripts/sdd-gate-result.sh`, ['aggregate', pr, latest], repoPath)) === 'PASS'
+  } catch {
+    return false
+  }
+}
+
+const nameWithOwner = (repoPath: string): Promise<string> => sh('gh', ['repo', 'view', '--json', 'nameWithOwner', '-q', '.nameWithOwner'], repoPath)
+
+export const setState = async (pluginDir: string, repoPath: string, issue: number, state: string): Promise<void> => {
+  await sh(`${pluginDir}/scripts/sdd-state.sh`, ['set', String(issue), state], repoPath)
+}
+
+export const mergePr = async (pluginDir: string, repoPath: string, issue: number): Promise<string> => {
+  const pr = await sh(`${pluginDir}/scripts/sdd-pr.sh`, ['find', String(issue)], repoPath)
+  if (!pr) throw new Error(`no PR linked to #${issue}`)
+  await sh('gh', ['pr', 'merge', pr, '--squash', '--delete-branch'], repoPath)
+  return pr
 }
 
 export const isClosed = async (repo: string, issue: number): Promise<boolean> =>

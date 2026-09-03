@@ -79,6 +79,7 @@ pnpm coverage      # 4  runs the tests; CI order is fixed
 
 - **Review Gates:** Spec Compliance · Design & Architecture · Test Strategy · Security · Regression · Code Quality
 - **max_rework_cycles:** 3
+- **Auto-approved gates:** none — any of Intake, Spec, Design, Task, Final. The worker approves a listed gate on its own when the phase ends clean (no open question, no BLOCKER; Final also requires every Review Gate PASS and merges the PR). Unlisted gates wait for a human.
 - **Test exemplars:** <domain test> · <zero-mock use-case test> · <tenant-isolation test>
 
 ## Agents

@@ -12,20 +12,28 @@ export interface IssueSnapshot {
   updatedAt: string
   /** a human commented after the triage comment was last updated */
   newCommentSinceTriage: boolean
+  /** the triage comment exists and has no open question */
+  triageClean: boolean
   /** a Task comment exists and every step is ticked */
   taskComplete: boolean
+  /** the latest review cycle aggregated to PASS and the PR is ready */
+  reviewPassed: boolean
   /** minutes since the issue was last updated */
   idleMinutes: number
 }
 
-export interface Decision {
-  phases: Phase[]
-  reason: string
-}
+export type Gate = 'Intake' | 'Spec' | 'Design' | 'Task' | 'Final'
+
+export type Decision =
+  | { phases: Phase[]; approve?: undefined; merge?: undefined; reason: string }
+  | { phases?: undefined; approve: SddState; merge?: undefined; reason: string }
+  | { phases?: undefined; approve?: undefined; merge: true; reason: string }
 
 export interface RuleOptions {
   autoSpec: boolean
   staleImplementingMinutes: number
+  /** Human approval gates this project lets the worker approve on its own (constitution → Verification). */
+  autoApprove: ReadonlySet<Gate>
 }
 
 /**
@@ -40,7 +48,9 @@ export const decide = (issue: IssueSnapshot, o: RuleOptions): Decision | null =>
     case null:
       return { phases: ['triage'], reason: 'new issue without SDD state' }
     case 'triage':
-      return issue.newCommentSinceTriage ? { phases: ['triage'], reason: 'author answered' } : null
+      if (issue.newCommentSinceTriage) return { phases: ['triage'], reason: 'author answered' }
+      if (issue.triageClean && o.autoApprove.has('Intake')) return { approve: 'ready', reason: 'Intake auto-approved: no open questions' }
+      return null
     case 'ready':
       if (t === 'Feature' || t === 'Change') {
         return o.autoSpec ? { phases: ['spec'], reason: 'ready, autoSpec on' } : null
@@ -63,11 +73,26 @@ export const decide = (issue: IssueSnapshot, o: RuleOptions): Decision | null =>
     case 'in-review':
       return { phases: ['review'], reason: 'implementation finished, review pending' }
     case 'spec':
+      return o.autoApprove.has('Spec') ? { approve: 'spec-approved', reason: 'Spec auto-approved' } : null
     case 'design':
+      return o.autoApprove.has('Design') ? { approve: 'design-approved', reason: 'Design auto-approved' } : null
     case 'task':
+      return o.autoApprove.has('Task') ? { approve: 'task-approved', reason: 'Task auto-approved' } : null
     case 'final-review':
-      return null
+      return o.autoApprove.has('Final') && issue.reviewPassed ? { merge: true, reason: 'Final auto-approved: every gate PASS' } : null
   }
+}
+
+/** Parses `- **Auto-approved gates:** Intake, Task` from the constitution's Verification section. */
+export const autoApproveFromConstitution = (constitution: string): Set<Gate> => {
+  const m = /Auto-approved gates:\*\*\s*([^\n]*)/i.exec(constitution)
+  const out = new Set<Gate>()
+  if (!m || !m[1]) return out
+  for (const raw of m[1].split(/[,·;]/)) {
+    const g = raw.trim().replace(/[`*]/g, '').split(/\s/)[0] as Gate | ''
+    if (g === 'Intake' || g === 'Spec' || g === 'Design' || g === 'Task' || g === 'Final') out.add(g)
+  }
+  return out
 }
 
 export const skillFor = (phase: Phase): string => `sdd-factory:sdd-${phase}`

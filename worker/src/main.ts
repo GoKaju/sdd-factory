@@ -1,7 +1,8 @@
 import { join } from 'node:path'
 import { loadConfig, type RepoConfig, type WorkerConfig } from './config.ts'
-import { comment, isClosed, openIssues, prBranch, type OpenIssue } from './github.ts'
-import { decide, type Phase } from './rules.ts'
+import { readFileSync } from 'node:fs'
+import { comment, isClosed, mergePr, openIssues, prBranch, setState, type OpenIssue } from './github.ts'
+import { autoApproveFromConstitution, decide, type Gate, type Phase } from './rules.ts'
 import { runPhase } from './runner.ts'
 import { JobStore } from './state.ts'
 import { ensureWorktree, removeWorktree, worktreeNote } from './worktree.ts'
@@ -25,10 +26,21 @@ const tick = async (cfg: WorkerConfig, store: JobStore): Promise<void> => {
     let issues: OpenIssue[]
     try { issues = await openIssues(repo.nameWithOwner, cfg.pluginDir, repo.path) }
     catch (e) { log(`! ${repo.nameWithOwner}: cannot list issues: ${String(e)}`); continue }
+    const autoApprove = readAutoApprove(repo.path)
     for (const issue of issues) {
-      const d = decide(issue, { autoSpec: repo.autoSpec, staleImplementingMinutes: cfg.staleImplementingMinutes })
+      const d = decide(issue, { autoSpec: repo.autoSpec, staleImplementingMinutes: cfg.staleImplementingMinutes, autoApprove })
       if (!d) continue
       if (store.running(repo.nameWithOwner, issue.number)) continue
+      if (d.approve || d.merge) {
+        log(`plan ${repo.nameWithOwner}#${issue.number} [${issue.state}] → ${d.merge ? 'merge' : `approve ${d.approve}`} (${d.reason})`)
+        if (dryRun) continue
+        try {
+          if (d.merge) { const pr = await mergePr(cfg.pluginDir, repo.path, issue.number); log(`  merged PR #${pr}`); await removeWorktree(repo.path, issue.number) }
+          else await setState(cfg.pluginDir, repo.path, issue.number, d.approve)
+          await comment(repo.nameWithOwner, issue.number, `**Worker sdd-factory:** ${d.merge ? 'PR mergeado' : `estado \`sdd:${d.approve}\``} por aprobación automática configurada en la constitución (${d.reason}).`)
+        } catch (e) { log(`! ${repo.nameWithOwner}#${issue.number}: ${String(e)}`) }
+        continue
+      }
       if (store.alreadyTried(repo.nameWithOwner, issue.number, issue.state ?? 'none', issue.updatedAt)) continue
       jobs.push({ repo, issue, phases: d.phases, reason: d.reason })
     }
@@ -42,6 +54,11 @@ const tick = async (cfg: WorkerConfig, store: JobStore): Promise<void> => {
     running.push(runJob(cfg, store, j))
   }
   await Promise.all(running)
+}
+
+const readAutoApprove = (repoPath: string): Set<Gate> => {
+  try { return autoApproveFromConstitution(readFileSync(join(repoPath, 'docs', 'constitution.md'), 'utf8')) }
+  catch { return new Set() }
 }
 
 const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void> => {
