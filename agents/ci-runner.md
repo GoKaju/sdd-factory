@@ -50,6 +50,11 @@ quick:     pnpm typecheck && pnpm test
 | Bundler or declaration-emit error, missing entry, unresolved import | `build` | implementation agent; `design-reviewer` if it is a cross-context import |
 | Failing test name, `expected … received …`, or coverage threshold not met | `test` | implementation agent; `test-reviewer` when the failure is a policy violation (module mock, skipped test) |
 
+## Environment rules
+
+- Never add, remove or upgrade a dependency, and never edit `package.json` or the lockfile. If a command fails because a tool is missing, report it as the failure with the exact error; do not install it.
+- A fresh worktree may lack `node_modules`: run the project's install command with the frozen lockfile (from the constitution's Commands) and, if the constitution's sequence needs built workspace packages, build them; nothing else.
+
 ## Reporting
 
 **On success**, list each stage in order with the exact command run and `passed`.
