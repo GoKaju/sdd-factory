@@ -1,0 +1,10 @@
+{
+  "intervalSeconds": 60,
+  "maxParallel": 1,
+  "pluginDir": "/Users/gokaju/dev/projects/sdd-factory",
+  "quotaPauseMinutes": 30,
+  "staleImplementingMinutes": 45,
+  "repos": [
+    { "nameWithOwner": "CreativeTics/sdd-pilot", "path": "/Users/gokaju/dev/projects/CreativeTics/sdd-pilot", "autoSpec": false }
+  ]
+}

@@ -81,7 +81,22 @@ evals/            plugin eval cases (early access)
 - Approved `spec.md` / `design.md` cannot be edited while their issue is in implementation or review.
 - No `git push` to `main`, no force-push, no rebase / amend / reset --hard.
 
+## Worker (Phase 2)
+
+`worker/` is a zero-dependency Node 24 service (besides the Agent SDK) that polls GitHub and runs the phases headless, one git worktree per issue, so several issues can advance without touching each other.
+
+```bash
+cp worker/config.example.json ~/.sdd/worker/config.json   # repos, plugin dir, interval, maxParallel
+cd worker && pnpm install
+pnpm dry-run      # one tick, prints what it would run
+pnpm once         # one tick, runs it
+pnpm start        # loop; or load launchd/com.gokaju.sdd-worker.plist
+```
+
+What it reacts to (see `src/rules.ts`): a new issue → triage; an author comment while in `triage` → triage again; `ready` → task for Bug/Task/Constitution (Feature/Change wait for a human unless `autoSpec`); `spec-approved` → design; `design-approved` → task, or straight to review when the Task is already complete (document-only amendment); `task-approved` and `rework` → implement then review; `in-review` → review; `implementing` idle for 45 min → resume. It never sets `ready` or `*-approved`.
+
+Guarantees: one job per issue at a time; a failed job is not retried until the issue changes (new comment, label, edit); a quota error pauses polling; a phase over its time budget is aborted; every run logs to `~/.sdd/worker/logs/` and records itself in `~/.sdd/worker/jobs.sqlite`; when a job fails the worker leaves the issue state untouched and comments the reason on the issue.
+
 ## Roadmap
 
-- **Phase 2**: local worker that polls GitHub and runs the phases headless (Agent SDK), one worktree per issue.
-- **Phase 3**: control plane scheduling many issues across many workers.
+- **Phase 3**: control plane scheduling many issues across many workers (the worker is already split into decide/run around a `Job`).
