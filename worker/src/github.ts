@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { designClean, specClean, type IssueSnapshot, type IssueType, type SddState, type Size } from './rules.ts'
@@ -217,4 +219,29 @@ export const prBranch = async (pluginDir: string, repoPath: string, issue: numbe
 
 export const comment = async (repo: string, issue: number, body: string): Promise<void> => {
   await sh('gh', ['issue', 'comment', String(issue), '--repo', repo, '--body', body])
+}
+
+const LEDGER_MARK = '<!-- sdd:ledger -->'
+
+/**
+ * Upserts the time/cost summary at the end of the issue's PR description. Idempotent: one marked block,
+ * rewritten after every phase, so the PR always shows the current totals and the final ones at merge.
+ */
+export const upsertPrLedger = async (repo: string, pluginDir: string, repoPath: string, issue: number, block: string): Promise<void> => {
+  const pr = await sh(`${pluginDir}/scripts/sdd-pr.sh`, ['find', String(issue)], repoPath)
+  if (!pr) return
+  const body = await sh('gh', ['pr', 'view', pr, '--json', 'body', '-q', '.body'], repoPath)
+  const i = body.indexOf(LEDGER_MARK)
+  const head = (i >= 0 ? body.slice(0, i) : body).replace(/\s+$/, '')
+  const next = `${head}\n\n${LEDGER_MARK}\n${block}`.trim()
+  if (next === body.trim()) return
+  await sh('gh', ['pr', 'edit', pr, '--body', next], repoPath)
+}
+
+/** The constitution's Language (Identity section); 'en' when unknown. */
+export const constitutionLanguage = (repoPath: string): 'es' | 'en' => {
+  try {
+    const t = readFileSync(join(repoPath, 'docs', 'constitution.md'), 'utf8')
+    return /\*\*Language:\*\*\s*es\b/i.test(t) || /^-?\s*Language:\s*es\b/im.test(t) ? 'es' : 'en'
+  } catch { return 'en' }
 }
