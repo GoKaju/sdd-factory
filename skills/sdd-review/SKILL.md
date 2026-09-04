@@ -1,5 +1,5 @@
 ---
-description: Run the six adversarial Review Gates on an issue's PR, publish gate results, aggregate, and drive bounded rework until PASS or NEEDS_HUMAN. Requires sdd:in-review or sdd:rework.
+description: Run the six adversarial Review Gates on an issue's PR (three paired reviewers over one shared review pack by default), publish gate results, aggregate, and drive bounded rework until PASS or NEEDS_HUMAN. Requires sdd:in-review or sdd:rework.
 argument-hint: "<issue-number>"
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
@@ -17,14 +17,16 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Result schema: `${CLAUDE_PLUGIN_ROOT}
 
 2. **Deterministic checks first.** Run the `ci-runner` agent. If red: publish one result with `gate: deterministic-checks`, `status: BLOCKED`, and stop with `sdd-state.sh set $1 rework`. Gates never run on a red build.
 
-3. **Gates, in parallel.** Launch the six reviewer agents with the same inputs (issue, PR, spec/design paths, commit sha, `rework_cycle: <cycle>`): `spec-reviewer`, `design-reviewer`, `test-reviewer`, `security-reviewer`, `regression-reviewer`, `quality-reviewer`. Each returns one YAML block. Save each to a temp file and `sdd-gate-result.sh post $pr <file>`.
+3. **Review pack.** `pack=$(sdd-review-pack.sh build $1 <cycle>)`. One file with everything the gates need (constitution, issue with triage and Task, spec/design approved vs PR, touched files, test stats, full diff), so no reviewer explores the repository from scratch. Rebuild it on every cycle.
 
-4. **Aggregate.** `sdd-gate-result.sh aggregate $pr <cycle>`.
+4. **Gates, in parallel.** Default (`Review mode: paired`, or no such line in the constitution): launch the three paired reviewer agents, each with the pack path, issue, PR, commit sha and `rework_cycle: <cycle>`: `spec-test-reviewer` (gates spec-compliance + test-strategy), `design-quality-reviewer` (design-architecture + code-quality), `security-regression-reviewer` (security + regression). Each returns **two** YAML blocks; split them and `sdd-gate-result.sh post $pr <file>` for each, so the six gate results exist exactly as before. If the constitution's Verification section says `Review mode: single`, launch the six single-gate agents instead (`spec-reviewer`, `design-reviewer`, `test-reviewer`, `security-reviewer`, `regression-reviewer`, `quality-reviewer`), also with the pack path.
+
+5. **Aggregate.** `sdd-gate-result.sh aggregate $pr <cycle>`.
    - `PASS` → `sdd-state.sh set $1 final-review`, `sdd-pr.sh ready $1`, `sdd-flag.sh clear lock-docs`. Post a short summary comment on the PR (gates, warnings to acknowledge). Done.
    - `NEEDS_HUMAN` or `BLOCKED` → `sdd-state.sh set $1 final-review`; comment on the issue what needs a human. Done.
-   - `FAIL` → step 5.
+   - `FAIL` → step 6.
 
-5. **Rework, bounded.** If `cycle + 1 >= max_rework_cycles`: `sdd-state.sh set $1 final-review`, comment on the issue "NEEDS_HUMAN: rework limit reached" with the remaining BLOCKERs, and stop. Otherwise `sdd-state.sh set $1 rework`, fix **only the BLOCKER findings** (tests and code; never spec, design or constitution), commit via `committer`, push, and go back to step 2 with `cycle + 1`.
+6. **Rework, bounded.** If `cycle + 1 >= max_rework_cycles`: `sdd-state.sh set $1 final-review`, comment on the issue "NEEDS_HUMAN: rework limit reached" with the remaining BLOCKERs, and stop. Otherwise `sdd-state.sh set $1 rework`, fix **only the BLOCKER findings** (tests and code; never spec, design or constitution), commit via `committer`, push, and go back to step 2 with `cycle + 1`.
 
 ## Rules
 
