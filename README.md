@@ -108,6 +108,8 @@ After every phase the worker rewrites one marked **SDD summary** comment on the 
 
 Jobs run in the background: the tick never waits for a phase, so approvals, triage and other issues keep moving while a long phase runs; `maxParallel` bounds the heavy jobs (triage is outside the budget). The config file is re-read after every tick, so interval, parallelism and models change without a restart.
 
+While the orchestrator owns an issue it is assigned to the account `gh` runs as; when the next move is a human's (triage answers, a non-delegated gate, Gate 4) the worker removes itself.
+
 Guarantees: the issue carries `sdd:working` while a phase runs (the state label changes only when the phase ends); one job per issue at a time; a failed job is not retried until the issue changes (new comment, label, edit); a quota error pauses polling (30 min; an org spend limit pauses 6 h, since it does not reset on its own); a phase over its time budget is aborted; every run logs to `~/.sdd/worker/logs/` and records itself in `~/.sdd/worker/jobs.sqlite`, with one `phases` row per executed phase (duration, cost in USD, turns, outcome) that `pnpm stats` aggregates; when a job fails the worker leaves the issue state untouched and comments the reason on the issue.
 
 ## Roadmap

@@ -213,6 +213,11 @@ const reviewPassed = async (pluginDir: string, repoPath: string, issue: number):
 
 const nameWithOwner = (repoPath: string): Promise<string> => sh('gh', ['repo', 'view', '--json', 'nameWithOwner', '-q', '.nameWithOwner'], repoPath)
 
+/** The worker assigns the issue to the account `gh` runs as while it owns it, and hands it back when a human must act. */
+export const setAssignee = async (repoPath: string, issue: number, on: boolean): Promise<void> => {
+  try { await sh('gh', ['issue', 'edit', String(issue), on ? '--add-assignee' : '--remove-assignee', '@me'], repoPath) } catch { /* visibility only */ }
+}
+
 export const setWorking = async (pluginDir: string, repoPath: string, issue: number, on: boolean): Promise<void> => {
   try { await sh(`${pluginDir}/scripts/sdd-state.sh`, ['working', String(issue), on ? 'on' : 'off'], repoPath) } catch { /* visibility only */ }
 }
