@@ -36,7 +36,7 @@ const tick = async (cfg: WorkerConfig, store: JobStore): Promise<void> => {
       if (producing) issue.artifactClean = issue.artifactClean && summaryClean(store.lastPhaseNote(repo.nameWithOwner, issue.number, producing))
       const d = decide(issue, { autoSpec: repo.autoSpec, staleImplementingMinutes: cfg.staleImplementingMinutes, autoApprove })
       if (!d) {
-        await explainWithheldApproval(repo, issue, autoApprove)
+        await explainWithheldApproval(store, repo, issue, autoApprove)
         continue
       }
       if (store.running(repo.nameWithOwner, issue.number)) continue
@@ -69,15 +69,16 @@ const producingPhase = (state: SddState | null): Phase | null =>
   state === 'spec' ? 'spec' : state === 'design' ? 'design' : state === 'task' ? 'task' : null
 
 const gateOf: Partial<Record<SddState, Gate>> = { spec: 'Spec', design: 'Design', task: 'Task' }
-const explained = new Set<string>()
 
-/** A delegated gate that was NOT auto-approved gets one comment saying why, so the human knows the ball is theirs. */
-const explainWithheldApproval = async (repo: RepoConfig, issue: OpenIssue, autoApprove: ReadonlySet<Gate>): Promise<void> => {
+/**
+ * A delegated gate that was NOT auto-approved gets exactly one comment per (issue, state) saying why,
+ * persisted in the job store: the comment itself bumps the issue's updated_at, so the key must not
+ * depend on it (that produced a comment loop in 0.3.7).
+ */
+const explainWithheldApproval = async (store: JobStore, repo: RepoConfig, issue: OpenIssue, autoApprove: ReadonlySet<Gate>): Promise<void> => {
   const gate = issue.state ? gateOf[issue.state] : undefined
-  if (!gate || !autoApprove.has(gate) || issue.artifactClean) return
-  const key = `${repo.nameWithOwner}#${issue.number}@${issue.state}@${issue.updatedAt}`
-  if (explained.has(key) || dryRun) return
-  explained.add(key)
+  if (!gate || !autoApprove.has(gate) || issue.artifactClean || dryRun) return
+  if (!store.markHold(repo.nameWithOwner, issue.number, issue.state ?? 'none')) return
   log(`hold ${repo.nameWithOwner}#${issue.number} [${issue.state}]: ${gate} delegated but the artifact is not clean; waiting for a human`)
   await comment(repo.nameWithOwner, issue.number,
     `**Worker sdd-factory:** el gate ${gate} está delegado en la constitución, pero no se aprueba automáticamente porque el artefacto no está limpio: quedan preguntas abiertas, marcas pendientes de confirmación humana, o la fase reportó BLOCKER/FAIL/NEEDS_HUMAN. Revisa y pon \`sdd:${issue.state}-approved\` a mano, o corrige y relanza la fase.`)

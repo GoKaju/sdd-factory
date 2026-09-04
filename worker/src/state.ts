@@ -54,6 +54,10 @@ export class JobStore {
         turns INTEGER
       );
       CREATE INDEX IF NOT EXISTS phases_issue ON phases (repo, issue, phase);
+      CREATE TABLE IF NOT EXISTS holds (
+        repo TEXT NOT NULL, issue INTEGER NOT NULL, state TEXT NOT NULL, created_at TEXT NOT NULL,
+        PRIMARY KEY (repo, issue, state)
+      );
     `)
     // A worker that died mid-job leaves 'running' rows behind; they are stale by definition on start.
     this.db.prepare(`UPDATE jobs SET status = 'failed', finished_at = ?, note = 'worker restarted' WHERE status = 'running'`)
@@ -113,6 +117,13 @@ export class JobStore {
        WHERE p.repo = ? AND p.issue = ? AND p.phase = ? ORDER BY p.id DESC LIMIT 1`,
     ).get(repo, issue, phase) as { note: string | null } | undefined
     return r?.note ?? null
+  }
+
+  /** Records that the worker already explained why it withholds approval for (issue, state). True if new. */
+  markHold(repo: string, issue: number, state: string): boolean {
+    const r = this.db.prepare(`INSERT OR IGNORE INTO holds (repo, issue, state, created_at) VALUES (?, ?, ?, ?)`)
+      .run(repo, issue, state, new Date().toISOString())
+    return r.changes > 0
   }
 
   running(repo: string, issue: number): boolean {
