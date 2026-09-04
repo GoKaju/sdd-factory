@@ -51,7 +51,9 @@ export class JobStore {
         finished_at TEXT NOT NULL,
         duration_ms INTEGER NOT NULL,
         cost_usd REAL,
-        turns INTEGER
+        turns INTEGER,
+        tier TEXT,
+        tier_reason TEXT
       );
       CREATE INDEX IF NOT EXISTS phases_issue ON phases (repo, issue, phase);
       CREATE TABLE IF NOT EXISTS holds (
@@ -59,6 +61,9 @@ export class JobStore {
         PRIMARY KEY (repo, issue, state)
       );
     `)
+    for (const col of ['tier', 'tier_reason']) {
+      try { this.db.exec(`ALTER TABLE phases ADD COLUMN ${col} TEXT`) } catch { /* already there */ }
+    }
     // A worker that died mid-job leaves 'running' rows behind; they are stale by definition on start.
     this.db.prepare(`UPDATE jobs SET status = 'failed', finished_at = ?, note = 'worker restarted' WHERE status = 'running'`)
       .run(new Date().toISOString())
@@ -83,13 +88,21 @@ export class JobStore {
   }
 
   /** One row per executed phase: the factory's cost and time ledger. */
-  recordPhase(p: { jobId: number; repo: string; issue: number; phase: string; outcome: string; startedAt: string; costUsd: number | null; turns: number | null }): void {
+  recordPhase(p: { jobId: number; repo: string; issue: number; phase: string; outcome: string; startedAt: string; costUsd: number | null; turns: number | null; tier?: string; tierReason?: string }): void {
     const finished = new Date()
     this.db.prepare(
-      `INSERT INTO phases (job_id, repo, issue, phase, outcome, started_at, finished_at, duration_ms, cost_usd, turns)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO phases (job_id, repo, issue, phase, outcome, started_at, finished_at, duration_ms, cost_usd, turns, tier, tier_reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(p.jobId, p.repo, p.issue, p.phase, p.outcome, p.startedAt, finished.toISOString(),
-      finished.getTime() - Date.parse(p.startedAt), p.costUsd, p.turns)
+      finished.getTime() - Date.parse(p.startedAt), p.costUsd, p.turns, p.tier ?? null, p.tierReason ?? null)
+  }
+
+  /** True when the most recent run of this phase in the repo failed or timed out (quota pauses do not count). */
+  recentFailure(repo: string, phase: string): boolean {
+    const r = this.db.prepare(
+      `SELECT outcome FROM phases WHERE repo = ? AND phase = ? AND outcome <> 'quota' ORDER BY id DESC LIMIT 1`,
+    ).get(repo, phase) as { outcome: string } | undefined
+    return r !== undefined && r.outcome !== 'done'
   }
 
   /** Totals per issue: phases run, minutes, dollars, turns. */
@@ -137,12 +150,13 @@ export class JobStore {
   }
 
   /** Per-phase totals for one issue, in phase order, plus the grand total. */
-  ledger(repo: string, issue: number): { phase: string; runs: number; minutes: number; usd: number }[] {
+  ledger(repo: string, issue: number): { phase: string; runs: number; minutes: number; usd: number; tiers: string | null }[] {
     return this.db.prepare(
-      `SELECT phase, COUNT(*) AS runs, ROUND(SUM(duration_ms) / 60000.0, 1) AS minutes, ROUND(COALESCE(SUM(cost_usd), 0), 2) AS usd
+      `SELECT phase, COUNT(*) AS runs, ROUND(SUM(duration_ms) / 60000.0, 1) AS minutes, ROUND(COALESCE(SUM(cost_usd), 0), 2) AS usd,
+              GROUP_CONCAT(DISTINCT tier) AS tiers
        FROM phases WHERE repo = ? AND issue = ?
        GROUP BY phase ORDER BY MIN(id)`,
-    ).all(repo, issue) as unknown as { phase: string; runs: number; minutes: number; usd: number }[]
+    ).all(repo, issue) as unknown as { phase: string; runs: number; minutes: number; usd: number; tiers: string | null }[]
   }
 
   running(repo: string, issue: number): boolean {

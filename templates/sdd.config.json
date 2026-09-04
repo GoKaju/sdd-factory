@@ -9,7 +9,7 @@
     "mode": "paired",
     "maxReworkCycles": 3,
     "reviewers": {
-      "$comment": "Intelligence tier of the Review Gate agents by issue type (wins) or triage size; tiers: light | standard | strong.",
+      "$comment": "Intelligence FLOOR of the Review Gate agents by issue type (wins) or triage size. In mode auto the reviewers are raised one tier from the second review cycle on, and to strong on the last permitted cycle.",
       "S": "standard",
       "M": "standard",
       "L": "strong",
@@ -18,7 +18,8 @@
     }
   },
   "intelligence": {
-    "$comment": "Intelligence tier per phase: a tier (light | standard | strong) or a map by triage size {S, M, L, default}. Tiers describe the work, not a vendor model; the worker maps tiers to models in its own config. Errors in spec and design are the most expensive to detect, so they get the strongest tier.",
+    "$comment": "Intelligence FLOORS per phase (light | standard | strong | frontier; a phase may map by triage size {S, M, L, default}). With mode 'auto' the orchestrator may raise a phase above its floor (rework, last permitted review cycle, recent failures of that phase) and never below; 'fixed' uses the floors as-is. Spec and design have a strong floor: their errors are the most expensive to detect. 'frontier' is the best model available and is reached only through an explicit floor, never by automatic raises.",
+    "mode": "auto",
     "triage": "standard",
     "spec": "strong",
     "design": "strong",
