@@ -79,6 +79,7 @@ pnpm coverage      # 4  runs the tests; CI order is fixed
 
 - **Review Gates:** Spec Compliance · Design & Architecture · Test Strategy · Security · Regression · Code Quality
 - **max_rework_cycles:** 3
+- **Review model:** opus — e.g. `sonnet for S, M · opus for L, Constitution`: which model runs the Review Gate agents, by triage size (S/M/L) or issue type (type wins). Absent → opus.
 - **Review mode:** paired — `paired` (three reviewers, two gates each, over one shared review pack) or `single` (six independent reviewers). The six gate results are published either way.
 - **Auto-approved phase gates:** none — any of Intake, Spec, Design, Task, Final (the human approval gates of the lifecycle, never the six Review Gates). The worker approves a listed gate on its own when the phase ends clean (no open question, no BLOCKER; Final also requires every Review Gate PASS and merges the PR). Unlisted gates wait for a human. A Constitution amendment is never merged without a human, even with Final listed.
 - **Test exemplars:** <domain test> · <zero-mock use-case test> · <tenant-isolation test>
