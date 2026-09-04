@@ -104,7 +104,7 @@ What it reacts to (see `src/rules.ts`): a new issue → triage; an author commen
 
 Delegated approvals come from `.sdd/config.json` (`approvals.auto`) and are verified, not blind: Spec only when its Open questions section has no unchecked item, Design only when nothing is marked as pending human confirmation, Task only when the Task comment has steps, and in all three cases only when the producing phase reported no BLOCKER, FAIL or NEEDS_HUMAN; otherwise the worker comments once why it is holding and waits for a human.
 
-After every phase the worker rewrites a short **SDD summary** (minutes and USD per phase, total) at the end of the issue's PR description, in the constitution's language.
+After every phase the worker rewrites one marked **SDD summary** comment on the issue (minutes and USD per phase, total) and one marked one-line comment on the PR pointing to it, in the constitution's language. Mechanical; no agent involved.
 
 Guarantees: the issue carries `sdd:working` while a phase runs (the state label changes only when the phase ends); one job per issue at a time; a failed job is not retried until the issue changes (new comment, label, edit); a quota error pauses polling (30 min; an org spend limit pauses 6 h, since it does not reset on its own); a phase over its time budget is aborted; every run logs to `~/.sdd/worker/logs/` and records itself in `~/.sdd/worker/jobs.sqlite`, with one `phases` row per executed phase (duration, cost in USD, turns, outcome) that `pnpm stats` aggregates; when a job fails the worker leaves the issue state untouched and comments the reason on the issue.
 

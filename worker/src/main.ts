@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { loadConfig, type RepoConfig, type WorkerConfig } from './config.ts'
 import { readFileSync } from 'node:fs'
-import { comment, constitutionLanguage, isClosed, mergePr, openIssues, prBranch, setState, setWorking, upsertPrLedger, type OpenIssue } from './github.ts'
+import { comment, constitutionLanguage, isClosed, mergePr, openIssues, prBranch, setState, setWorking, upsertLedger, type OpenIssue } from './github.ts'
 import { autoApproveFromConstitution, decide, sddConfigFromJson, summaryClean, tierFor, type Gate, type Phase, type RepoSddConfig, type SddState, type Tier } from './rules.ts'
 import { runPhase } from './runner.ts'
 import { JobStore } from './state.ts'
@@ -114,6 +114,14 @@ export const ledgerMarkdown = (rows: { phase: string; runs: number; minutes: num
     `| **${t.total}** | | **${tot.minutes.toFixed(1)}** | **${tot.usd.toFixed(2)}** |`, '', `<sub>${t.by}</sub>`].join('\n')
 }
 
+/** One line for the PR: totals and a pointer to the issue's ledger comment. */
+export const ledgerLine = (rows: { minutes: number; usd: number }[], lang: 'es' | 'en', repo: string, issue: number): string => {
+  const m = rows.reduce((a, r) => a + r.minutes, 0).toFixed(0); const u = rows.reduce((a, r) => a + r.usd, 0).toFixed(2)
+  return lang === 'es'
+    ? `**SDD:** ${m} min · USD ${u} de agente hasta ahora · detalle por fase en el Issue #${issue} (https://github.com/${repo}/issues/${issue})`
+    : `**SDD:** ${m} min · USD ${u} of agent time so far · per-phase detail on issue #${issue} (https://github.com/${repo}/issues/${issue})`
+}
+
 const readAutoApprove = (repoPath: string): Set<Gate> => readSddConfig(repoPath).autoApprove
 const pluginVersion = (dir: string): string => { try { return (JSON.parse(readFileSync(join(dir, '.claude-plugin', 'plugin.json'), 'utf8')) as { version?: string }).version ?? '?' } catch { return '?' } }
 const defaultTier = (phase: Phase): Tier => (phase === 'implement' || phase === 'spec' || phase === 'design' ? 'strong' : 'standard')
@@ -137,8 +145,10 @@ const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void>
       status.running = status.running.filter((x) => !(x.jobId === id && x.phase === phase))
       store.recordPhase({ jobId: id, repo, issue: n, phase, outcome: r.outcome, startedAt, costUsd: r.costUsd, turns: r.turns })
       store.setNote(id, `${phase}: ${r.summary.slice(0, 1500)}`)
-      try { await upsertPrLedger(repo, cfg.pluginDir, j.repo.path, n, ledgerMarkdown(store.ledger(repo, n), constitutionLanguage(j.repo.path))) }
-      catch (e) { log(`! ledger ${repo}#${n}: ${String(e)}`) }
+      try {
+        const lang = constitutionLanguage(j.repo.path); const rows = store.ledger(repo, n)
+        await upsertLedger(repo, cfg.pluginDir, j.repo.path, n, ledgerMarkdown(rows, lang), ledgerLine(rows, lang, repo, n))
+      } catch (e) { log(`! ledger ${repo}#${n}: ${String(e)}`) }
       log(`  ${phase}: ${r.outcome}${r.costUsd !== null ? ` $${r.costUsd.toFixed(2)}` : ''}${r.turns !== null ? ` ${r.turns} turns` : ''} [${tier}→${cfg.models[tier]}]`)
       if (r.outcome !== 'done') {
         store.finish(id, r.outcome, `${phase}: ${r.summary.slice(0, 500)}`)

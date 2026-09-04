@@ -1,15 +1,27 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { execFile } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
 import { promisify } from 'node:util'
 import { designClean, specClean, type IssueSnapshot, type IssueType, type SddState, type Size } from './rules.ts'
 
 const run = promisify(execFile)
 
 /** Runs a command and returns trimmed stdout; throws with stderr on failure. */
-export const sh = async (cmd: string, args: string[], cwd?: string): Promise<string> => {
-  const { stdout } = await run(cmd, args, { cwd, maxBuffer: 16 * 1024 * 1024 })
-  return stdout.trim()
+export const sh = async (cmd: string, args: string[], cwd?: string, input?: string): Promise<string> => {
+  if (input === undefined) {
+    const { stdout } = await run(cmd, args, { cwd, maxBuffer: 16 * 1024 * 1024 })
+    return stdout.trim()
+  }
+  // with stdin: spawn, feed the input, collect stdout
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, { cwd, stdio: ['pipe', 'pipe', 'pipe'] })
+    let out = ''; let err = ''
+    child.stdout.on('data', (d: Buffer) => { out += d.toString() })
+    child.stderr.on('data', (d: Buffer) => { err += d.toString() })
+    child.on('error', reject)
+    child.on('close', (code) => (code === 0 ? resolve(out.trim()) : reject(new Error(`${cmd} ${args.join(' ')} exited ${code}: ${err.trim()}`))))
+    child.stdin.end(input)
+  })
 }
 
 interface RawIssue {
@@ -221,21 +233,14 @@ export const comment = async (repo: string, issue: number, body: string): Promis
   await sh('gh', ['issue', 'comment', String(issue), '--repo', repo, '--body', body])
 }
 
-const LEDGER_MARK = '<!-- sdd:ledger -->'
-
 /**
- * Upserts the time/cost summary at the end of the issue's PR description. Idempotent: one marked block,
- * rewritten after every phase, so the PR always shows the current totals and the final ones at merge.
+ * The ledger lives as ONE marked comment on the issue (the unit of work), rewritten after every phase,
+ * plus ONE marked one-line comment on the PR that points to it. Both are mechanical upserts.
  */
-export const upsertPrLedger = async (repo: string, pluginDir: string, repoPath: string, issue: number, block: string): Promise<void> => {
+export const upsertLedger = async (repo: string, pluginDir: string, repoPath: string, issue: number, block: string, line: string): Promise<void> => {
+  await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['upsert', String(issue), 'sdd:ledger', '-'], repoPath, block)
   const pr = await sh(`${pluginDir}/scripts/sdd-pr.sh`, ['find', String(issue)], repoPath)
-  if (!pr) return
-  const body = await sh('gh', ['pr', 'view', pr, '--json', 'body', '-q', '.body'], repoPath)
-  const i = body.indexOf(LEDGER_MARK)
-  const head = (i >= 0 ? body.slice(0, i) : body).replace(/\s+$/, '')
-  const next = `${head}\n\n${LEDGER_MARK}\n${block}`.trim()
-  if (next === body.trim()) return
-  await sh('gh', ['pr', 'edit', pr, '--body', next], repoPath)
+  if (pr) await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['upsert', pr, 'sdd:ledger-line', '-'], repoPath, line)
 }
 
 /** The constitution's Language (Identity section); 'en' when unknown. */
