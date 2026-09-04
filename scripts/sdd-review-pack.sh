@@ -29,10 +29,13 @@ fence() { printf '```%s\n' "${1:-}"; cat; printf '\n```\n'; }
   section "Constitution (docs/constitution.md)"; cat docs/constitution.md
   section "Issue #$issue with comments (triage and Task included)"; gh issue view "$issue" --comments
 
+  # Changed spec/design: the PR version in full, plus a unified diff against the approved version
+  # (instead of two full copies: the approved text is recoverable from the diff and halves the pack).
   for f in $(printf '%s\n' "$files" | grep -E '^docs/.+/(spec|design)\.md$' || true); do
-    section "$f — approved version on $base"
-    git show "origin/$base:$f" 2>/dev/null || printf '(new in this PR)\n'
     section "$f — version in the PR"; cat "$f"
+    section "$f — changes against the approved version on $base"
+    if git cat-file -e "origin/$base:$f" 2>/dev/null; then git diff "origin/$base...$head" -- "$f" | fence diff
+    else printf '(new in this PR)\n'; fi
   done
   # spec/design of modules touched by code but not edited in the PR
   for d in $(printf '%s\n' "$files" | grep -E '^contexts/[^/]+/' | cut -d/ -f2 | sort -u); do
@@ -49,6 +52,10 @@ fence() { printf '```%s\n' "${1:-}"; cat; printf '\n```\n'; }
   removed="$(git diff "origin/$base...$head" -- '*.test.*' '*.spec.*' 2>/dev/null | grep -cE '^-\s*(it|test|describe)\(' || true)"
   printf '\nTest declarations removed in the PR (`it`/`test`/`describe` lines deleted): %s\n' "${removed:-0}"
 
-  section "Full PR diff"; gh pr diff "$pr" | head -c 600000 | fence diff
+  # Code diff without lockfiles/generated files and without the docs already shown above.
+  section "PR diff (code and tests; docs shown above, lockfiles omitted)"
+  gh pr diff "$pr" | awk '
+    /^diff --git/ { skip = ($0 ~ /(pnpm-lock\.yaml|package-lock\.json|yarn\.lock|\.snap$|^diff --git a\/docs\/)/) }
+    !skip { print }' | head -c 600000 | fence diff
 } > "$out"
 printf '%s\n' "$out"
