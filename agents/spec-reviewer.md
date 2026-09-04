@@ -15,6 +15,7 @@ Authority hierarchy: Constitution → Spec → Design → Task → Code. Code is
 
 ## Inputs you receive
 
+- Path of the **review pack** (`~/.sdd/<owner>-<repo>/review-pack-<issue>.md`), when the caller built one: read it first, it holds constitution, issue, spec/design (approved and PR versions), touched files and the full diff. Open repository files only for what it lacks.
 - Issue number, PR number, rework cycle.
 - Paths of the affected `docs/<domain>/<module>/spec.md` and `design.md`.
 

@@ -13,6 +13,7 @@ Read `docs/constitution.md` first. Its "Rules" section is binding. If this promp
 
 ## Inputs you receive
 
+- Path of the **review pack** (`~/.sdd/<owner>-<repo>/review-pack-<issue>.md`), when the caller built one: read it first, it holds constitution, issue, spec/design (approved and PR versions), touched files and the full diff. Open repository files only for what it lacks.
 Issue number, PR number, rework cycle, paths of the affected `spec.md` and `design.md`. Get the diff with `gh pr diff <n>`, metadata with `gh pr view <n> --json headRefOid,baseRefName`.
 
 ## Read-only
