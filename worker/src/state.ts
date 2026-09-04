@@ -169,6 +169,12 @@ export class JobStore {
     return r.n
   }
 
+  /** Running jobs that count against the parallel budget (triage does not: it touches no worktree). */
+  runningHeavyCount(): number {
+    const r = this.db.prepare(`SELECT COUNT(*) AS n FROM jobs WHERE status = 'running' AND phases <> 'triage'`).get() as { n: number }
+    return r.n
+  }
+
   /**
    * True when the same phases already ran for this issue in this state and the issue has not
    * changed since: the previous run did not move the state (it failed or the phase decided to
