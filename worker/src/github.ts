@@ -127,6 +127,10 @@ const reviewPassed = async (pluginDir: string, repoPath: string, issue: number):
 
 const nameWithOwner = (repoPath: string): Promise<string> => sh('gh', ['repo', 'view', '--json', 'nameWithOwner', '-q', '.nameWithOwner'], repoPath)
 
+export const setWorking = async (pluginDir: string, repoPath: string, issue: number, on: boolean): Promise<void> => {
+  try { await sh(`${pluginDir}/scripts/sdd-state.sh`, ['working', String(issue), on ? 'on' : 'off'], repoPath) } catch { /* visibility only */ }
+}
+
 export const setState = async (pluginDir: string, repoPath: string, issue: number, state: string): Promise<void> => {
   await sh(`${pluginDir}/scripts/sdd-state.sh`, ['set', String(issue), state], repoPath)
 }

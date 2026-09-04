@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { loadConfig, type RepoConfig, type WorkerConfig } from './config.ts'
 import { readFileSync } from 'node:fs'
-import { comment, isClosed, mergePr, openIssues, prBranch, setState, type OpenIssue } from './github.ts'
+import { comment, isClosed, mergePr, openIssues, prBranch, setState, setWorking, type OpenIssue } from './github.ts'
 import { autoApproveFromConstitution, decide, type Gate, type Phase } from './rules.ts'
 import { runPhase } from './runner.ts'
 import { JobStore } from './state.ts'
@@ -72,6 +72,7 @@ const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void>
   const logPath = join(cfg.home, 'logs', repo.replace('/', '-'), `${n}-${j.phases.join('+')}-${stamp}.log`)
   const id = store.start({ repo, issue: n, phases: j.phases.join('+'), stateAtStart: j.issue.state ?? 'none', issueUpdatedAt: j.issue.updatedAt, logPath })
   log(`start job ${id}: ${repo}#${n} ${j.phases.join(' → ')}`)
+  await setWorking(cfg.pluginDir, j.repo.path, n, true)
   try {
     const branch = await prBranch(cfg.pluginDir, j.repo.path, n)
     const cwd = await ensureWorktree(j.repo.path, n, branch)
@@ -96,6 +97,8 @@ const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void>
   } catch (e) {
     store.finish(id, 'failed', String(e).slice(0, 500))
     log(`! job ${id} failed: ${String(e)}`)
+  } finally {
+    await setWorking(cfg.pluginDir, j.repo.path, n, false)
   }
 }
 
