@@ -99,6 +99,8 @@ cp worker/launchd/com.gokaju.sdd-worker.plist ~/Library/LaunchAgents/ && launchc
 
 What it reacts to (see `src/rules.ts`): a new issue → triage; an author comment or an edit of the issue title/body while in `triage` → triage again; `ready` → task for Bug/Task/Constitution (Feature/Change wait for a human unless `autoSpec`); `spec-approved` → design; `design-approved` → task, or straight to review when the Task is already complete (document-only amendment); `task-approved` and `rework` → implement then review; `in-review` → review; `implementing` idle for 45 min → resume. It never sets `ready` or `*-approved`.
 
+Delegated approvals are verified, not blind: Spec only when its Open questions section has no unchecked item, Design only when nothing is marked as pending human confirmation, Task only when the Task comment has steps, and in all three cases only when the producing phase reported no BLOCKER, FAIL or NEEDS_HUMAN; otherwise the worker comments once why it is holding and waits for a human.
+
 Guarantees: the issue carries `sdd:working` while a phase runs (the state label changes only when the phase ends); one job per issue at a time; a failed job is not retried until the issue changes (new comment, label, edit); a quota error pauses polling; a phase over its time budget is aborted; every run logs to `~/.sdd/worker/logs/` and records itself in `~/.sdd/worker/jobs.sqlite`, with one `phases` row per executed phase (duration, cost in USD, turns, outcome) that `pnpm stats` aggregates; when a job fails the worker leaves the issue state untouched and comments the reason on the issue.
 
 ## Roadmap

@@ -2,7 +2,7 @@ import { join } from 'node:path'
 import { loadConfig, type RepoConfig, type WorkerConfig } from './config.ts'
 import { readFileSync } from 'node:fs'
 import { comment, isClosed, mergePr, openIssues, prBranch, setState, setWorking, type OpenIssue } from './github.ts'
-import { autoApproveFromConstitution, decide, type Gate, type Phase } from './rules.ts'
+import { autoApproveFromConstitution, decide, summaryClean, type Gate, type Phase, type SddState } from './rules.ts'
 import { runPhase } from './runner.ts'
 import { JobStore } from './state.ts'
 import { collectWorktrees, ensureWorktree, removeWorktree, worktreeNote } from './worktree.ts'
@@ -32,8 +32,13 @@ const tick = async (cfg: WorkerConfig, store: JobStore): Promise<void> => {
       for (const n of gone) log(`gc ${repo.nameWithOwner}#${n}: worktree removed (issue closed)`)
     } catch (e) { log(`! ${repo.nameWithOwner}: worktree gc: ${String(e)}`) }
     for (const issue of issues) {
+      const producing = producingPhase(issue.state)
+      if (producing) issue.artifactClean = issue.artifactClean && summaryClean(store.lastPhaseNote(repo.nameWithOwner, issue.number, producing))
       const d = decide(issue, { autoSpec: repo.autoSpec, staleImplementingMinutes: cfg.staleImplementingMinutes, autoApprove })
-      if (!d) continue
+      if (!d) {
+        await explainWithheldApproval(repo, issue, autoApprove)
+        continue
+      }
       if (store.running(repo.nameWithOwner, issue.number)) continue
       if (d.approve || d.merge) {
         log(`plan ${repo.nameWithOwner}#${issue.number} [${issue.state}] → ${d.merge ? 'merge' : `approve ${d.approve}`} (${d.reason})`)
@@ -60,6 +65,24 @@ const tick = async (cfg: WorkerConfig, store: JobStore): Promise<void> => {
   await Promise.all(running)
 }
 
+const producingPhase = (state: SddState | null): Phase | null =>
+  state === 'spec' ? 'spec' : state === 'design' ? 'design' : state === 'task' ? 'task' : null
+
+const gateOf: Partial<Record<SddState, Gate>> = { spec: 'Spec', design: 'Design', task: 'Task' }
+const explained = new Set<string>()
+
+/** A delegated gate that was NOT auto-approved gets one comment saying why, so the human knows the ball is theirs. */
+const explainWithheldApproval = async (repo: RepoConfig, issue: OpenIssue, autoApprove: ReadonlySet<Gate>): Promise<void> => {
+  const gate = issue.state ? gateOf[issue.state] : undefined
+  if (!gate || !autoApprove.has(gate) || issue.artifactClean) return
+  const key = `${repo.nameWithOwner}#${issue.number}@${issue.state}@${issue.updatedAt}`
+  if (explained.has(key) || dryRun) return
+  explained.add(key)
+  log(`hold ${repo.nameWithOwner}#${issue.number} [${issue.state}]: ${gate} delegated but the artifact is not clean; waiting for a human`)
+  await comment(repo.nameWithOwner, issue.number,
+    `**Worker sdd-factory:** el gate ${gate} está delegado en la constitución, pero no se aprueba automáticamente porque el artefacto no está limpio: quedan preguntas abiertas, marcas pendientes de confirmación humana, o la fase reportó BLOCKER/FAIL/NEEDS_HUMAN. Revisa y pon \`sdd:${issue.state}-approved\` a mano, o corrige y relanza la fase.`)
+}
+
 const readAutoApprove = (repoPath: string): Set<Gate> => {
   try { return autoApproveFromConstitution(readFileSync(join(repoPath, 'docs', 'constitution.md'), 'utf8')) }
   catch { return new Set() }
@@ -80,6 +103,7 @@ const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void>
       const startedAt = new Date().toISOString()
       const r = await runPhase({ phase, issue: n, cwd, pluginDir: cfg.pluginDir, note: worktreeNote(n, branch, phase), logPath, runner })
       store.recordPhase({ jobId: id, repo, issue: n, phase, outcome: r.outcome, startedAt, costUsd: r.costUsd, turns: r.turns })
+      store.setNote(id, `${phase}: ${r.summary.slice(0, 1500)}`)
       log(`  ${phase}: ${r.outcome}${r.costUsd !== null ? ` $${r.costUsd.toFixed(2)}` : ''}${r.turns !== null ? ` ${r.turns} turns` : ''}`)
       if (r.outcome !== 'done') {
         store.finish(id, r.outcome, `${phase}: ${r.summary.slice(0, 500)}`)

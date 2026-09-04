@@ -20,6 +20,14 @@ export interface IssueSnapshot {
   reviewPassed: boolean
   /** minutes since the issue was last updated */
   idleMinutes: number
+  /**
+   * Verifiable cleanliness of the artifact waiting for approval in the current state:
+   * spec → its Open questions section has no unchecked item and no TBD/TODO;
+   * design → no "pending human confirmation" / NEEDS_HUMAN marker;
+   * task → the Task comment exists with at least one step;
+   * and, for all three, the last run of the producing phase reported no BLOCKER, FAIL or NEEDS_HUMAN.
+   */
+  artifactClean: boolean
 }
 
 export type Gate = 'Intake' | 'Spec' | 'Design' | 'Task' | 'Final'
@@ -73,11 +81,11 @@ export const decide = (issue: IssueSnapshot, o: RuleOptions): Decision | null =>
     case 'in-review':
       return { phases: ['review'], reason: 'implementation finished, review pending' }
     case 'spec':
-      return o.autoApprove.has('Spec') ? { approve: 'spec-approved', reason: 'Spec auto-approved' } : null
+      return o.autoApprove.has('Spec') && issue.artifactClean ? { approve: 'spec-approved', reason: 'Spec auto-approved: no open question, clean completeness run' } : null
     case 'design':
-      return o.autoApprove.has('Design') ? { approve: 'design-approved', reason: 'Design auto-approved' } : null
+      return o.autoApprove.has('Design') && issue.artifactClean ? { approve: 'design-approved', reason: 'Design auto-approved: nothing pending human confirmation, clean self-review' } : null
     case 'task':
-      return o.autoApprove.has('Task') ? { approve: 'task-approved', reason: 'Task auto-approved' } : null
+      return o.autoApprove.has('Task') && issue.artifactClean ? { approve: 'task-approved', reason: 'Task auto-approved: steps present, clean run' } : null
     case 'final-review':
       // A Constitution amendment is never merged without a human, whatever the constitution says:
       // otherwise one delegated Final would let the rules rewrite themselves with nobody watching.
@@ -115,3 +123,21 @@ export const allowedToolsFor = (phase: Phase): string[] =>
   phase === 'triage'
     ? ['Bash', 'Read', 'Glob', 'Grep']
     : ['Bash', 'Read', 'Write', 'Edit', 'MultiEdit', 'Glob', 'Grep', 'Agent']
+
+/** True when a phase summary reports nothing a human should look at first. */
+export const summaryClean = (summary: string | null | undefined): boolean =>
+  !summary || !/NEEDS_HUMAN|BLOCKER|\bFAIL\b|pregunta(s)? abierta|open question|sin resolver|unresolved/i.test(summary)
+
+/** The spec's "Open questions" section has no unchecked item and no placeholder. */
+export const specClean = (spec: string): boolean => {
+  const start = spec.search(/^## Open questions[^\n]*\n/m)
+  if (start < 0) return true
+  const rest = spec.slice(start).replace(/^[^\n]*\n/, '')
+  const end = rest.search(/^## /m)
+  const section = end < 0 ? rest : rest.slice(0, end)
+  return !/^- \[ \]/m.test(section) && !/\b(TBD|TODO|por definir)\b|\?\?\?/i.test(section)
+}
+
+/** The design carries no decision still waiting for a human. */
+export const designClean = (design: string): boolean =>
+  !/NEEDS_HUMAN|pendiente de confirmaci[oó]n|pending human|\b(TBD|TODO)\b/i.test(design)
