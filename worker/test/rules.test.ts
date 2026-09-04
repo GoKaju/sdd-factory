@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { autoApproveFromConstitution, decide, type IssueSnapshot } from '../src/rules.ts'
+import { autoApproveFromConstitution, decide, designClean, specClean, summaryClean, type IssueSnapshot } from '../src/rules.ts'
 
 const base: IssueSnapshot = {
   number: 1, type: 'Feature', state: null, updatedAt: '2026-09-03T00:00:00Z',
-  newCommentSinceTriage: false, triageClean: false, taskComplete: false, reviewPassed: false, idleMinutes: 0,
+  newCommentSinceTriage: false, triageClean: false, taskComplete: false, reviewPassed: false, idleMinutes: 0, artifactClean: true,
 }
 const o = { autoSpec: false, staleImplementingMinutes: 45, autoApprove: new Set<never>() }
 
@@ -66,4 +66,22 @@ test('a Constitution amendment is never auto-merged', () => {
   const all = { ...o, autoApprove: new Set(['Final'] as const) }
   assert.equal(decide({ ...base, type: 'Constitution', state: 'final-review', reviewPassed: true }, all), null)
   assert.equal(decide({ ...base, type: 'Task', state: 'final-review', reviewPassed: true }, all)?.merge, true)
+})
+
+test('delegated Spec/Design/Task approve only when the artifact is verifiably clean', () => {
+  const all = { ...o, autoApprove: new Set(['Spec', 'Design', 'Task'] as const) }
+  assert.equal(decide({ ...base, state: 'spec', artifactClean: false }, all), null)
+  assert.equal(decide({ ...base, state: 'design', artifactClean: false }, all), null)
+  assert.equal(decide({ ...base, state: 'task', artifactClean: false }, all), null)
+  assert.equal(decide({ ...base, state: 'spec', artifactClean: true }, all)?.approve, 'spec-approved')
+})
+test('cleanliness predicates', () => {
+  assert.equal(summaryClean('Spec entregada. Completeness PASS.'), true)
+  assert.equal(summaryClean('Completeness FAIL: 2 BLOCKER'), false)
+  assert.equal(summaryClean('Quedan dos preguntas abiertas'), false)
+  assert.equal(specClean('# S\n## Open questions\n\nNinguna bloqueante.\n- [x] decidido\n'), true)
+  assert.equal(specClean('# S\n## Open questions\n- [ ] ¿qué pasa si…?\n'), false)
+  assert.equal(specClean('# S\n## Open questions\n- TBD\n'), false)
+  assert.equal(designClean('## Decisions\n| a | b | confirmada por el humano |'), true)
+  assert.equal(designClean('| completedAt | pendiente de confirmación humana en el Gate 2 |'), false)
 })

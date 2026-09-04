@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import type { IssueSnapshot, IssueType, SddState } from './rules.ts'
+import { designClean, specClean, type IssueSnapshot, type IssueType, type SddState } from './rules.ts'
 
 const run = promisify(execFile)
 
@@ -60,6 +60,7 @@ export const openIssues = async (repo: string, pluginDir: string, repoPath: stri
       triageClean: state === 'triage' ? await commentClean(pluginDir, repoPath, i.number, 'sdd:triage') : false,
       taskComplete: state === 'design-approved' ? await commentClean(pluginDir, repoPath, i.number, 'sdd:task') : false,
       reviewPassed: state === 'final-review' ? await reviewPassed(pluginDir, repoPath, i.number) : false,
+      artifactClean: await artifactClean(repo, pluginDir, repoPath, i.number, state),
     })
   }
   return out
@@ -102,6 +103,33 @@ const commentClean = async (pluginDir: string, repoPath: string, issue: number, 
     if (!id) return false
     const open = await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['open', String(issue), marker], repoPath)
     return open === '0'
+  } catch {
+    return false
+  }
+}
+
+/** Cleanliness of the artifact that waits for approval in this state (see IssueSnapshot.artifactClean). */
+const artifactClean = async (repo: string, pluginDir: string, repoPath: string, issue: number, state: SddState | null): Promise<boolean> => {
+  try {
+    if (state === 'task') {
+      const id = await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['find', String(issue), 'sdd:task'], repoPath)
+      if (!id) return false
+      const body = await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['get', String(issue), 'sdd:task'], repoPath)
+      return /^- \[[ x]\] \*\*T1\*\*/m.test(body)
+    }
+    if (state !== 'spec' && state !== 'design') return false
+    const pr = await sh(`${pluginDir}/scripts/sdd-pr.sh`, ['find', String(issue)], repoPath)
+    if (!pr) return false
+    const branch = await sh(`${pluginDir}/scripts/sdd-pr.sh`, ['branch', String(issue)], repoPath)
+    const files = (await sh('gh', ['pr', 'diff', pr, '--name-only'], repoPath)).split('\n')
+    const want = state === 'spec' ? /^docs\/.+\/spec\.md$/ : /^docs\/.+\/design\.md$/
+    const docs = files.filter((f) => want.test(f))
+    if (docs.length === 0) return false
+    for (const path of docs) {
+      const text = await sh('gh', ['api', `repos/${repo}/contents/${path}?ref=${branch}`, '-H', 'Accept: application/vnd.github.raw'])
+      if (!(state === 'spec' ? specClean(text) : designClean(text))) return false
+    }
+    return true
   } catch {
     return false
   }

@@ -68,6 +68,10 @@ export class JobStore {
     return Number(r.lastInsertRowid)
   }
 
+  setNote(id: number, note: string): void {
+    this.db.prepare(`UPDATE jobs SET note = ? WHERE id = ?`).run(note, id)
+  }
+
   finish(id: number, status: JobStatus, note?: string): void {
     this.db.prepare(`UPDATE jobs SET status = ?, finished_at = ?, note = ? WHERE id = ?`)
       .run(status, new Date().toISOString(), note ?? null, id)
@@ -100,6 +104,15 @@ export class JobStore {
               SUM(CASE WHEN outcome <> 'done' THEN 1 ELSE 0 END) AS failed
        FROM phases ${repo ? 'WHERE repo = ?' : ''} GROUP BY phase ORDER BY phase`,
     ).all(...(repo ? [repo] : [])) as unknown as { phase: string; runs: number; avgMinutes: number; avgUsd: number; avgTurns: number; failed: number }[]
+  }
+
+  /** Note (summary) of the most recent finished phase of a kind for an issue, if any. */
+  lastPhaseNote(repo: string, issue: number, phase: string): string | null {
+    const r = this.db.prepare(
+      `SELECT j.note AS note FROM phases p JOIN jobs j ON j.id = p.job_id
+       WHERE p.repo = ? AND p.issue = ? AND p.phase = ? ORDER BY p.id DESC LIMIT 1`,
+    ).get(repo, issue, phase) as { note: string | null } | undefined
+    return r?.note ?? null
   }
 
   running(repo: string, issue: number): boolean {
