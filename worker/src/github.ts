@@ -58,7 +58,7 @@ export const openIssues = async (repo: string, pluginDir: string, repoPath: stri
       idleMinutes,
       newCommentSinceTriage: state === 'triage' ? await newCommentSinceTriage(repo, i.number) : false,
       triageClean: state === 'triage' ? await commentClean(pluginDir, repoPath, i.number, 'sdd:triage') : false,
-      taskComplete: state === 'design-approved' ? await commentClean(pluginDir, repoPath, i.number, 'sdd:task') : false,
+      taskComplete: state === 'design-approved' ? await taskStillValid(repo, pluginDir, repoPath, i.number) : false,
       reviewPassed: state === 'final-review' ? await reviewPassed(pluginDir, repoPath, i.number) : false,
       artifactClean: await artifactClean(repo, pluginDir, repoPath, i.number, state),
     })
@@ -103,6 +103,26 @@ const commentClean = async (pluginDir: string, repoPath: string, issue: number, 
     if (!id) return false
     const open = await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['open', String(issue), marker], repoPath)
     return open === '0'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * The Task is complete AND still valid: every step ticked, and the Task comment is newer than the last
+ * change to docs/ on the PR branch. A Task written for a previous spec/design is stale even if fully
+ * ticked (sdd-pilot#12: the shortcut to review skipped the re-implementation of a rewritten spec).
+ */
+const taskStillValid = async (repo: string, pluginDir: string, repoPath: string, issue: number): Promise<boolean> => {
+  try {
+    if (!(await commentClean(pluginDir, repoPath, issue, 'sdd:task'))) return false
+    const comments = JSON.parse(await sh('gh', ['api', `repos/${repo}/issues/${issue}/comments?per_page=100`, '--paginate'])) as RawComment[]
+    const task = comments.find((c) => c.body.startsWith('<!-- sdd:task -->'))
+    if (!task) return false
+    const branch = await sh(`${pluginDir}/scripts/sdd-pr.sh`, ['branch', String(issue)], repoPath)
+    if (!branch) return true
+    const lastDocs = await sh('gh', ['api', `repos/${repo}/commits?sha=${encodeURIComponent(branch)}&path=docs&per_page=1`, '--jq', '.[0].commit.committer.date'])
+    return !lastDocs || Date.parse(task.updated_at) > Date.parse(lastDocs)
   } catch {
     return false
   }
