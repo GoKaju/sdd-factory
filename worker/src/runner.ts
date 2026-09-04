@@ -20,6 +20,8 @@ export interface RunInput {
   note: string
   logPath: string
   runner: 'sdk' | 'cli'
+  /** model for this phase, resolved by the worker from the repository's intelligence tier */
+  model: string
 }
 
 const QUOTA = /spend limit|usage limit|rate limit|credit balance|quota/i
@@ -58,6 +60,7 @@ const runWithSdk = async (i: RunInput, write: (s: string) => void): Promise<RunR
       options: {
         cwd: i.cwd,
         plugins: [{ type: 'local', path: i.pluginDir }],
+        model: i.model,
         settingSources: ['project'],
         permissionMode: 'acceptEdits',
         allowedTools: allowedToolsFor(i.phase),
@@ -101,7 +104,7 @@ const runWithSdk = async (i: RunInput, write: (s: string) => void): Promise<RunR
 const runWithCli = (i: RunInput, write: (s: string) => void): Promise<RunResult> =>
   new Promise((resolve) => {
     const child = spawn('claude', [
-      '--plugin-dir', i.pluginDir, '-p', prompt(i), '--max-turns', '200',
+      '--plugin-dir', i.pluginDir, '-p', prompt(i), '--model', i.model, '--max-turns', '200',
       '--permission-mode', 'acceptEdits', '--allowedTools', allowedToolsFor(i.phase).join(','),
       '--output-format', 'text',
     ], { cwd: i.cwd, stdio: ['ignore', 'pipe', 'pipe'] })

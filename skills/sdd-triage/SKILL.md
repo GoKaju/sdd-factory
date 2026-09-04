@@ -2,8 +2,6 @@
 description: Triage an issue before it enters the pipeline - completeness, correct Issue Type, duplicates, affected specs, path and size. Read-only on the repository; writes one marked comment on the issue.
 argument-hint: "<issue-number>"
 disable-model-invocation: true
-model: sonnet
-effort: medium
 allowed-tools: Read, Glob, Grep, Bash
 ---
 

@@ -2,8 +2,6 @@
 description: Write or update design.md for an issue from its approved spec - full DDD variant or light variant. Requires state sdd:spec-approved.
 argument-hint: "<issue-number>"
 disable-model-invocation: true
-model: sonnet
-effort: medium
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 ---
 

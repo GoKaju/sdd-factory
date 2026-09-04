@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { autoApproveFromConstitution, decide, designClean, specClean, summaryClean, type IssueSnapshot } from '../src/rules.ts'
+import { autoApproveFromConstitution, decide, designClean, sddConfigFromJson, specClean, summaryClean, type IssueSnapshot } from '../src/rules.ts'
 
 const base: IssueSnapshot = {
   number: 1, type: 'Feature', state: null, updatedAt: '2026-09-03T00:00:00Z',
@@ -91,4 +91,11 @@ test('Spanish "todo" is not a TODO placeholder', () => {
   assert.equal(designClean('| pendiente | TODO: decidir |'), false)
   assert.equal(specClean('## Open questions\nTodo resuelto.\n'), true)
   assert.equal(specClean('## Open questions\n- TODO\n'), false)
+})
+
+test('.sdd/config.json: delegated approvals and tiers, unknown values ignored', () => {
+  const c = sddConfigFromJson(JSON.stringify({ approvals: { auto: ['Spec', 'Design', 'Task', 'Bogus'] }, intelligence: { implement: 'strong', review: 'standard', task: 'huge' } }))
+  assert.deepEqual([...c.autoApprove], ['Spec', 'Design', 'Task'])
+  assert.deepEqual(c.intelligence, { implement: 'strong', review: 'standard' })
+  assert.deepEqual([...sddConfigFromJson('{}').autoApprove], [])
 })

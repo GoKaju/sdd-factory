@@ -10,5 +10,10 @@
       "path": "/Users/gokaju/dev/projects/CreativeTics/sdd-pilot",
       "autoSpec": false
     }
-  ]
+  ],
+  "models": {
+    "light": "haiku",
+    "standard": "sonnet",
+    "strong": "opus"
+  }
 }

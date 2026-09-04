@@ -2,8 +2,6 @@
 description: Write or update the module spec for an issue - branch, Draft PR, spec.md with stable requirement IDs, completeness check. Requires state sdd:ready and type Feature or Change.
 argument-hint: "<issue-number>"
 disable-model-invocation: true
-model: sonnet
-effort: medium
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 ---
 

@@ -17,6 +17,8 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Templates: `${CLAUDE_PLUGIN_ROOT}/tem
 
 2. **Constitution.** If `docs/constitution.md` does not exist, copy `templates/constitution.template.md` to `docs/constitution.md` and fill in what you can detect from the repository: project name (`$1` or the repo name), the package manager and CI commands (read `package.json` scripts and `.github/workflows/*.yml`), the runtime and persistence if obvious from dependencies. Leave every unknown as its `<placeholder>` and list the placeholders at the end so the human fills them. Never rewrite the **Rules** section: it is the framework's minimal rule set; a project changes it only through a Constitution-type issue later.
 
+2b. **Runtime configuration.** `sdd-config.sh init` writes `.sdd/config.json` from `templates/sdd.config.json` if missing: which approval gates the orchestrator may grant, review mode and rework budget, and the intelligence tier per phase and per reviewer. It is policy for the orchestrator, kept out of the constitution; edit it through a Task-type issue or directly as a human.
+
 3. **Pointer files.** Write `CLAUDE.md` with exactly:
    ```
    @docs/constitution.md
