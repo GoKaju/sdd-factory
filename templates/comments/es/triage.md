@@ -7,6 +7,7 @@
 
 **Tipo:** <Feature | Change | Bug | Task> <!-- "(cambiado desde Bug: la petición describe comportamiento nuevo)" cuando se retipa -->
 **Tamaño:** <S | M | L> — <una frase que lo justifique>
+**Esfuerzo:** <Low | Medium | High> sugerido en el campo `Effort` del Issue (pendiente de aceptación humana) · o «la organización no tiene campo Effort»
 **Camino:** <Spec → Design → Task → Implementación → Revisión | Task → Implementación → Revisión>
 
 ### Completitud
