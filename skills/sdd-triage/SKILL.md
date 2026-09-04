@@ -29,6 +29,8 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
 
 7. **Path and size.** From the type: Feature/Change → Spec → Design → Task → Implement → Review; Bug/Task/Constitution → Task → Implement → Review. Size S/M/L with one clause of justification.
 
+7b. **Effort field (when the organization has one).** `sdd-field.sh list`; if a single-select field named `Effort` exists, **suggest** it from the size — S → `Low`, M → `Medium`, L → `High` — with `sdd-field.sh set $1 Effort <option> --rationale "<the size justification>"`. Suggestions are stored for a human to accept in the tracker; never pass `--apply`. Leave `Priority` and any other field to humans.
+
 8. **Comment.** Fill `templates/comments/<lang>/triage.md` in the constitution's language and publish it with `sdd-comment.sh upsert $1 sdd:triage -` fed by a Bash heredoc (no file write needed). Re-running edits the same comment; never post a second one. Previously answered questions are removed or ticked, new ones added.
 
 9. **State.** Re-read the state: if a human set `ready` while you were working, leave it untouched (never downgrade a human approval); otherwise `sdd-state.sh set $1 triage`. Then tell the human: the open questions (if any), or that the issue is ready for them to set `sdd:ready`. You never set `ready` yourself.
