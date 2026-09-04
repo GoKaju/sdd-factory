@@ -10,14 +10,25 @@
     "maxReworkCycles": 3,
     "reviewers": {
       "$comment": "Intelligence tier of the Review Gate agents by issue type (wins) or triage size; tiers: light | standard | strong.",
-      "S": "standard", "M": "standard", "L": "strong",
+      "S": "standard",
+      "M": "standard",
+      "L": "strong",
       "Constitution": "strong",
       "default": "strong"
     }
   },
   "intelligence": {
-    "$comment": "Intelligence tier per phase. Tiers describe the work, not a vendor model; the worker maps tiers to models in its own config.",
-    "triage": "standard", "spec": "standard", "design": "standard", "task": "standard",
-    "implement": "strong", "review": "standard"
+    "$comment": "Intelligence tier per phase: a tier (light | standard | strong) or a map by triage size {S, M, L, default}. Tiers describe the work, not a vendor model; the worker maps tiers to models in its own config. Errors in spec and design are the most expensive to detect, so they get the strongest tier.",
+    "triage": "standard",
+    "spec": "strong",
+    "design": "strong",
+    "task": "standard",
+    "implement": {
+      "S": "standard",
+      "M": "standard",
+      "L": "strong",
+      "default": "strong"
+    },
+    "review": "standard"
   }
 }

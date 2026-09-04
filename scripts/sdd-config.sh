@@ -3,7 +3,7 @@
 #
 #   sdd-config.sh get <jq-path>              → value (e.g. get .review.mode, get .review.maxReworkCycles)
 #   sdd-config.sh auto-approvals             → space-separated gates the orchestrator may approve
-#   sdd-config.sh phase-tier <phase>         → light | standard | strong
+#   sdd-config.sh phase-tier <phase> [issue] → light | standard | strong (a phase may map tiers by the issue's triage size)
 #   sdd-config.sh reviewer-tier <issue>      → tier for the Review Gate agents (type wins over triage size, then default)
 #   sdd-config.sh tier-model <tier>          → model name for this machine (~/.sdd/models.json, else haiku/sonnet/opus)
 #   sdd-config.sh init                       → writes .sdd/config.json from the template if missing
@@ -19,7 +19,9 @@ case "$cmd" in
   get) [ -n "${1:-}" ] || die "jq path required"; merged | jq -r "$1" ;;
   auto-approvals) merged | jq -r '.approvals.auto // [] | .[]' | tr '\n' ' ' | sed 's/ $//'; echo ;;
   phase-tier)
-    [ -n "${1:-}" ] || die "phase required"; t="$(merged | jq -r --arg p "$1" '.intelligence[$p] // "standard"')"
+    [ -n "${1:-}" ] || die "phase required"; size=""
+    if [ -n "${2:-}" ]; then need_issue "$2"; size="$( { "$S/sdd-comment.sh" get "$2" sdd:triage 2>/dev/null || true; } | { grep -oE '\*\*(Tamaño|Size):\*\*[[:space:]]*[SML]\b' || true; } | { grep -oE '[SML]$' || true; } | head -1)"; fi
+    t="$(merged | jq -r --arg p "$1" --arg sz "$size" '.intelligence[$p] // "standard" | if type == "object" then (.[$sz] // .default // "strong") else . end')"
     tier_ok "$t" || die "unknown tier '$t' for phase $1 in $FILE"; printf '%s\n' "$t" ;;
   reviewer-tier)
     need_issue "${1:-}"; issue="$1"

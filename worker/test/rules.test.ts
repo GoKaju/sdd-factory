@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { autoApproveFromConstitution, decide, designClean, sddConfigFromJson, specClean, summaryClean, type IssueSnapshot } from '../src/rules.ts'
+import { autoApproveFromConstitution, decide, designClean, sddConfigFromJson, specClean, summaryClean, tierFor, type IssueSnapshot } from '../src/rules.ts'
 
 const base: IssueSnapshot = {
   number: 1, type: 'Feature', state: null, updatedAt: '2026-09-03T00:00:00Z',
-  newCommentSinceTriage: false, triageClean: false, taskComplete: false, reviewPassed: false, idleMinutes: 0, artifactClean: true,
+  newCommentSinceTriage: false, triageClean: false, taskComplete: false, reviewPassed: false, idleMinutes: 0, artifactClean: true, size: null,
 }
 const o = { autoSpec: false, staleImplementingMinutes: 45, autoApprove: new Set<never>() }
 
@@ -97,5 +97,11 @@ test('.sdd/config.json: delegated approvals and tiers, unknown values ignored', 
   const c = sddConfigFromJson(JSON.stringify({ approvals: { auto: ['Spec', 'Design', 'Task', 'Bogus'] }, intelligence: { implement: 'strong', review: 'standard', task: 'huge' } }))
   assert.deepEqual([...c.autoApprove], ['Spec', 'Design', 'Task'])
   assert.deepEqual(c.intelligence, { implement: 'strong', review: 'standard' })
+  const bySize = sddConfigFromJson(JSON.stringify({ intelligence: { implement: { S: 'standard', M: 'standard', L: 'strong', default: 'strong' }, spec: 'strong' } }))
+  assert.equal(tierFor(bySize.intelligence.implement, 'M', 'strong'), 'standard')
+  assert.equal(tierFor(bySize.intelligence.implement, 'L', 'strong'), 'strong')
+  assert.equal(tierFor(bySize.intelligence.implement, null, 'light'), 'strong')
+  assert.equal(tierFor(bySize.intelligence.spec, 'S', 'standard'), 'strong')
+  assert.equal(tierFor(undefined, 'S', 'standard'), 'standard')
   assert.deepEqual([...sddConfigFromJson('{}').autoApprove], [])
 })
