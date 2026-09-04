@@ -57,3 +57,13 @@ test('the constitution line is parsed leniently', () => {
   assert.deepEqual([...autoApproveFromConstitution('- **Auto-approved gates:** Intake · Spec · Design · Task · Final')], ['Intake', 'Spec', 'Design', 'Task', 'Final'])
   assert.deepEqual([...autoApproveFromConstitution('no such line')], [])
 })
+
+test('Review Gate names are never mistaken for phase gates', () => {
+  assert.deepEqual([...autoApproveFromConstitution('- **Auto-approved phase gates:** Spec Compliance, Design & Architecture, Task')], ['Task'])
+  assert.deepEqual([...autoApproveFromConstitution('- **Auto-approved phase gates:** Spec, Design')], ['Spec', 'Design'])
+})
+test('a Constitution amendment is never auto-merged', () => {
+  const all = { ...o, autoApprove: new Set(['Final'] as const) }
+  assert.equal(decide({ ...base, type: 'Constitution', state: 'final-review', reviewPassed: true }, all), null)
+  assert.equal(decide({ ...base, type: 'Task', state: 'final-review', reviewPassed: true }, all)?.merge, true)
+})
