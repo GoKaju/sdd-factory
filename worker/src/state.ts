@@ -136,6 +136,15 @@ export class JobStore {
     return { phases: r.phases, usd: Math.round(r.usd * 100) / 100, minutes: Math.round(r.minutes) }
   }
 
+  /** Per-phase totals for one issue, in phase order, plus the grand total. */
+  ledger(repo: string, issue: number): { phase: string; runs: number; minutes: number; usd: number }[] {
+    return this.db.prepare(
+      `SELECT phase, COUNT(*) AS runs, ROUND(SUM(duration_ms) / 60000.0, 1) AS minutes, ROUND(COALESCE(SUM(cost_usd), 0), 2) AS usd
+       FROM phases WHERE repo = ? AND issue = ?
+       GROUP BY phase ORDER BY MIN(id)`,
+    ).all(repo, issue) as unknown as { phase: string; runs: number; minutes: number; usd: number }[]
+  }
+
   running(repo: string, issue: number): boolean {
     const r = this.db.prepare(`SELECT 1 FROM jobs WHERE repo = ? AND issue = ? AND status = 'running' LIMIT 1`).get(repo, issue)
     return r !== undefined
