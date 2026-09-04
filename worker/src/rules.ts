@@ -135,9 +135,10 @@ export const specClean = (spec: string): boolean => {
   const rest = spec.slice(start).replace(/^[^\n]*\n/, '')
   const end = rest.search(/^## /m)
   const section = end < 0 ? rest : rest.slice(0, end)
-  return !/^- \[ \]/m.test(section) && !/\b(TBD|TODO|por definir)\b|\?\?\?/i.test(section)
+  // TBD/TODO are placeholders only in upper case: "todo" is an ordinary Spanish word.
+  return !/^- \[ \]/m.test(section) && !/\b(TBD|TODO)\b|\?\?\?/.test(section) && !/\bpor definir\b/i.test(section)
 }
 
 /** The design carries no decision still waiting for a human. */
 export const designClean = (design: string): boolean =>
-  !/NEEDS_HUMAN|pendiente de confirmaci[oó]n|pending human|\b(TBD|TODO)\b/i.test(design)
+  !/NEEDS_HUMAN|pendiente de confirmaci[oó]n|pending human/i.test(design) && !/\b(TBD|TODO)\b/.test(design)

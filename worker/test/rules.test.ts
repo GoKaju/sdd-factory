@@ -85,3 +85,10 @@ test('cleanliness predicates', () => {
   assert.equal(designClean('## Decisions\n| a | b | confirmada por el humano |'), true)
   assert.equal(designClean('| completedAt | pendiente de confirmación humana en el Gate 2 |'), false)
 })
+
+test('Spanish "todo" is not a TODO placeholder', () => {
+  assert.equal(designClean('TSK-014 exige todo o nada; la ocurrencia se crea en el mismo saveAll.'), true)
+  assert.equal(designClean('| pendiente | TODO: decidir |'), false)
+  assert.equal(specClean('## Open questions\nTodo resuelto.\n'), true)
+  assert.equal(specClean('## Open questions\n- TODO\n'), false)
+})
