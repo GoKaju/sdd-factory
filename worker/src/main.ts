@@ -20,7 +20,7 @@ let pausedUntil = 0
 
 /** One tick: read GitHub, decide, run what fits in the parallel budget. */
 const tick = async (cfg: WorkerConfig, store: JobStore): Promise<void> => {
-  if (Date.now() < pausedUntil) { log(`paused until ${new Date(pausedUntil).toISOString()} (quota)`); return }
+  if (Date.now() < pausedUntil) return // the pause was logged once when it started
   const jobs: Job[] = []
   for (const repo of cfg.repos) {
     let issues: OpenIssue[]
@@ -109,8 +109,11 @@ const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void>
       if (r.outcome !== 'done') {
         store.finish(id, r.outcome, `${phase}: ${r.summary.slice(0, 500)}`)
         if (r.outcome === 'quota') {
-          pausedUntil = Date.now() + cfg.quotaPauseMinutes * 60_000
-          log(`quota hit; pausing ${cfg.quotaPauseMinutes} min`)
+          // A monthly/org spend limit does not reset on its own: back off for hours, not minutes.
+          const spendLimit = /spend limit/i.test(r.summary)
+          const minutes = spendLimit ? Math.max(cfg.quotaPauseMinutes, 360) : cfg.quotaPauseMinutes
+          pausedUntil = Date.now() + minutes * 60_000
+          log(`${spendLimit ? 'org spend limit' : 'quota'} hit; pausing ${minutes} min (until ${new Date(pausedUntil).toISOString()})`)
         } else {
           await comment(repo, n, `**Worker sdd-factory:** la fase \`${phase}\` terminó con \`${r.outcome}\`. El estado del Issue no cambió; revisa el log \`${logPath}\` y corrige o relanza a mano.\n\n\`\`\`\n${r.summary.slice(-1200)}\n\`\`\``)
         }
