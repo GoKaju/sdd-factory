@@ -255,9 +255,10 @@ export const comment = async (repo: string, issue: number, body: string): Promis
  * plus ONE marked one-line comment on the PR that points to it. Both are mechanical upserts.
  */
 export const upsertLedger = async (repo: string, pluginDir: string, repoPath: string, issue: number, block: string, line: string): Promise<void> => {
-  await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['upsert', String(issue), 'sdd:ledger', '-'], repoPath, block)
+  // sdd-comment.sh requires the body to start with the marker it is filed under
+  await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['upsert', String(issue), 'sdd:ledger', '-'], repoPath, `<!-- sdd:ledger -->\n${block}\n`)
   const pr = await sh(`${pluginDir}/scripts/sdd-pr.sh`, ['find', String(issue)], repoPath)
-  if (pr) await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['upsert', pr, 'sdd:ledger-line', '-'], repoPath, line)
+  if (pr) await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['upsert', pr, 'sdd:ledger-line', '-'], repoPath, `<!-- sdd:ledger-line -->\n${line}\n`)
 }
 
 /** The constitution's Language (Identity section); 'en' when unknown. */
