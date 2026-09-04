@@ -16,6 +16,8 @@ export interface IssueSnapshot {
   triageClean: boolean
   /** a Task comment exists and every step is ticked */
   taskComplete: boolean
+  /** triage size (S/M/L) from the triage comment, when known */
+  size: Size | null
   /** the latest review cycle aggregated to PASS and the PR is ready */
   reviewPassed: boolean
   /** minutes since the issue was last updated */
@@ -95,9 +97,23 @@ export const decide = (issue: IssueSnapshot, o: RuleOptions): Decision | null =>
 }
 
 /** Runtime configuration of a repository (.sdd/config.json), the parts the worker needs. */
+export type Tier = 'light' | 'standard' | 'strong'
+export type Size = 'S' | 'M' | 'L'
+/** A phase's intelligence: one tier, or a tier per triage size with a default. */
+export type TierRule = Tier | Partial<Record<Size | 'default', Tier>>
+
 export interface RepoSddConfig {
   autoApprove: Set<Gate>
-  intelligence: Partial<Record<Phase, 'light' | 'standard' | 'strong'>>
+  intelligence: Partial<Record<Phase, TierRule>>
+}
+
+const isTier = (v: unknown): v is Tier => v === 'light' || v === 'standard' || v === 'strong'
+
+/** Resolves a phase's tier for an issue of the given triage size (unknown size → default). */
+export const tierFor = (rule: TierRule | undefined, size: Size | null, fallback: Tier): Tier => {
+  if (rule === undefined) return fallback
+  if (typeof rule === 'string') return rule
+  return (size ? rule[size] : undefined) ?? rule.default ?? fallback
 }
 
 const GATES: readonly Gate[] = ['Intake', 'Spec', 'Design', 'Task', 'Final']
@@ -109,7 +125,13 @@ export const sddConfigFromJson = (json: string): RepoSddConfig => {
   const autoApprove = new Set<Gate>(auto.filter((g): g is Gate => typeof g === 'string' && (GATES as readonly string[]).includes(g)))
   const intelligence: RepoSddConfig['intelligence'] = {}
   for (const [k, v] of Object.entries(raw.intelligence ?? {})) {
-    if (v === 'light' || v === 'standard' || v === 'strong') intelligence[k as Phase] = v
+    if (k.startsWith('$')) continue
+    if (isTier(v)) intelligence[k as Phase] = v
+    else if (typeof v === 'object' && v !== null) {
+      const rule: Partial<Record<Size | 'default', Tier>> = {}
+      for (const key of ['S', 'M', 'L', 'default'] as const) { const t = (v as Record<string, unknown>)[key]; if (isTier(t)) rule[key] = t }
+      intelligence[k as Phase] = rule
+    }
   }
   return { autoApprove, intelligence }
 }

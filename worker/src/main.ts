@@ -2,7 +2,7 @@ import { join } from 'node:path'
 import { loadConfig, type RepoConfig, type WorkerConfig } from './config.ts'
 import { readFileSync } from 'node:fs'
 import { comment, isClosed, mergePr, openIssues, prBranch, setState, setWorking, type OpenIssue } from './github.ts'
-import { autoApproveFromConstitution, decide, sddConfigFromJson, summaryClean, type Gate, type Phase, type RepoSddConfig, type SddState } from './rules.ts'
+import { autoApproveFromConstitution, decide, sddConfigFromJson, summaryClean, tierFor, type Gate, type Phase, type RepoSddConfig, type SddState, type Tier } from './rules.ts'
 import { runPhase } from './runner.ts'
 import { JobStore } from './state.ts'
 import { collectWorktrees, ensureWorktree, removeWorktree, worktreeNote } from './worktree.ts'
@@ -91,7 +91,7 @@ const readSddConfig = (repoPath: string): RepoSddConfig => {
   catch { return { autoApprove: new Set(), intelligence: {} } }
 }
 const readAutoApprove = (repoPath: string): Set<Gate> => readSddConfig(repoPath).autoApprove
-const defaultTier = (phase: Phase): 'light' | 'standard' | 'strong' => (phase === 'implement' ? 'strong' : 'standard')
+const defaultTier = (phase: Phase): Tier => (phase === 'implement' || phase === 'spec' || phase === 'design' ? 'strong' : 'standard')
 
 const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void> => {
   const repo = j.repo.nameWithOwner
@@ -106,7 +106,7 @@ const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void>
     const cwd = await ensureWorktree(j.repo.path, n, branch)
     for (const phase of j.phases) {
       const startedAt = new Date().toISOString()
-      const tier = readSddConfig(j.repo.path).intelligence[phase] ?? defaultTier(phase)
+      const tier = tierFor(readSddConfig(j.repo.path).intelligence[phase], j.issue.size, defaultTier(phase))
       const r = await runPhase({ phase, issue: n, cwd, pluginDir: cfg.pluginDir, note: worktreeNote(n, branch, phase), logPath, runner, model: cfg.models[tier] })
       store.recordPhase({ jobId: id, repo, issue: n, phase, outcome: r.outcome, startedAt, costUsd: r.costUsd, turns: r.turns })
       store.setNote(id, `${phase}: ${r.summary.slice(0, 1500)}`)

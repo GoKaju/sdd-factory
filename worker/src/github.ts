@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { designClean, specClean, type IssueSnapshot, type IssueType, type SddState } from './rules.ts'
+import { designClean, specClean, type IssueSnapshot, type IssueType, type SddState, type Size } from './rules.ts'
 
 const run = promisify(execFile)
 
@@ -61,6 +61,7 @@ export const openIssues = async (repo: string, pluginDir: string, repoPath: stri
       taskComplete: state === 'design-approved' ? await taskStillValid(repo, pluginDir, repoPath, i.number) : false,
       reviewPassed: state === 'final-review' ? await reviewPassed(pluginDir, repoPath, i.number) : false,
       artifactClean: await artifactClean(repo, pluginDir, repoPath, i.number, state),
+      size: await triageSize(pluginDir, repoPath, i.number),
     })
   }
   return out
@@ -125,6 +126,17 @@ const taskStillValid = async (repo: string, pluginDir: string, repoPath: string,
     return !lastDocs || Date.parse(task.updated_at) > Date.parse(lastDocs)
   } catch {
     return false
+  }
+}
+
+/** S/M/L from the triage comment (`**Tamaño:** M` / `**Size:** M`), null when there is no triage yet. */
+const triageSize = async (pluginDir: string, repoPath: string, issue: number): Promise<Size | null> => {
+  try {
+    const body = await sh(`${pluginDir}/scripts/sdd-comment.sh`, ['get', String(issue), 'sdd:triage'], repoPath)
+    const m = /\*\*(?:Tamaño|Size):\*\*\s*([SML])\b/.exec(body)
+    return m ? (m[1] as Size) : null
+  } catch {
+    return null
   }
 }
 
