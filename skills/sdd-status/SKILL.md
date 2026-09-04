@@ -16,6 +16,7 @@ For each issue print one row: number · title · `sdd-type.sh get` · `sdd-state
 | State | Next |
 | --- | --- |
 | none | `/sdd-triage <n>` |
+| (+ `sdd:working`) | the worker is running a phase on it right now; wait |
 | triage | author answers, then human sets `sdd:ready` (or `/sdd-triage <n>` again) |
 | ready | Feature/Change: `/sdd-spec <n>` · Bug/Task/Constitution: `/sdd-task <n>` |
 | spec | human reviews the PR diff, sets `sdd:spec-approved` |
