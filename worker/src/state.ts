@@ -77,8 +77,9 @@ export class JobStore {
   }
 
   finish(id: number, status: JobStatus, note?: string): void {
-    this.db.prepare(`UPDATE jobs SET status = ?, finished_at = ?, note = ? WHERE id = ?`)
-      .run(status, new Date().toISOString(), note ?? null, id)
+    // Keep the last phase summary when the caller has nothing more specific to say (lastPhaseNote depends on it).
+    if (note === undefined) this.db.prepare(`UPDATE jobs SET status = ?, finished_at = ? WHERE id = ?`).run(status, new Date().toISOString(), id)
+    else this.db.prepare(`UPDATE jobs SET status = ?, finished_at = ?, note = ? WHERE id = ?`).run(status, new Date().toISOString(), note, id)
   }
 
   /** One row per executed phase: the factory's cost and time ledger. */
