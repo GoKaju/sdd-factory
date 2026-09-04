@@ -25,6 +25,25 @@ export const ensureWorktree = async (repoPath: string, issue: number, branch: st
   return path
 }
 
+import { readdirSync } from 'node:fs'
+
+/** Removes the worktrees of issues that are no longer open (merged or closed since the job ran). */
+export const collectWorktrees = async (repoPath: string, openIssues: ReadonlySet<number>): Promise<number[]> => {
+  const root = `${repoPath}.worktrees`
+  if (!existsSync(root)) return []
+  const removed: number[] = []
+  for (const name of readdirSync(root)) {
+    const m = /^issue-(\d+)$/.exec(name)
+    if (!m) continue
+    const n = Number(m[1])
+    if (openIssues.has(n)) continue
+    await removeWorktree(repoPath, n)
+    removed.push(n)
+  }
+  await sh('git', ['worktree', 'prune'], repoPath)
+  return removed
+}
+
 export const removeWorktree = async (repoPath: string, issue: number): Promise<void> => {
   const path = worktreePath(repoPath, issue)
   if (!existsSync(path)) return

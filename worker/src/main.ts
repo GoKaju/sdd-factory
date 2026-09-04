@@ -5,7 +5,7 @@ import { comment, isClosed, mergePr, openIssues, prBranch, setState, type OpenIs
 import { autoApproveFromConstitution, decide, type Gate, type Phase } from './rules.ts'
 import { runPhase } from './runner.ts'
 import { JobStore } from './state.ts'
-import { ensureWorktree, removeWorktree, worktreeNote } from './worktree.ts'
+import { collectWorktrees, ensureWorktree, removeWorktree, worktreeNote } from './worktree.ts'
 
 interface Job { repo: RepoConfig; issue: OpenIssue; phases: Phase[]; reason: string }
 
@@ -27,6 +27,10 @@ const tick = async (cfg: WorkerConfig, store: JobStore): Promise<void> => {
     try { issues = await openIssues(repo.nameWithOwner, cfg.pluginDir, repo.path) }
     catch (e) { log(`! ${repo.nameWithOwner}: cannot list issues: ${String(e)}`); continue }
     const autoApprove = readAutoApprove(repo.path)
+    try {
+      const gone = await collectWorktrees(repo.path, new Set(issues.map((i) => i.number)))
+      for (const n of gone) log(`gc ${repo.nameWithOwner}#${n}: worktree removed (issue closed)`)
+    } catch (e) { log(`! ${repo.nameWithOwner}: worktree gc: ${String(e)}`) }
     for (const issue of issues) {
       const d = decide(issue, { autoSpec: repo.autoSpec, staleImplementingMinutes: cfg.staleImplementingMinutes, autoApprove })
       if (!d) continue
