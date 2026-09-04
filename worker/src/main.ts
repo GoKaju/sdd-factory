@@ -70,13 +70,18 @@ const tick = async (cfg: WorkerConfig, store: JobStore): Promise<void> => {
   if (jobs.length === 0) { log('nothing to do'); return }
   for (const j of jobs) log(`plan ${j.repo.nameWithOwner}#${j.issue.number} [${j.issue.state ?? 'none'}] → ${j.phases.join(' → ')} (${j.reason})`)
   if (dryRun) return
-  const running: Promise<void>[] = []
+  // Jobs run in the background: the tick never waits for them, so approvals, triage and other
+  // issues keep moving while a long phase runs. Triage is outside the parallel budget.
+  let started = 0
   for (const j of jobs) {
-    if (store.runningCount() + running.length >= cfg.maxParallel) break
-    running.push(runJob(cfg, store, j))
+    const isTriage = j.phases.length === 1 && j.phases[0] === 'triage'
+    if (!isTriage && store.runningHeavyCount() + started >= cfg.maxParallel) { log(`  defer ${j.repo.nameWithOwner}#${j.issue.number}: parallel budget ${cfg.maxParallel} in use`); continue }
+    if (!isTriage) started++
+    const p = runJob(cfg, store, j).catch((e) => log(`! job ${j.repo.nameWithOwner}#${j.issue.number}: ${String(e)}`)).finally(() => inflight.delete(p))
+    inflight.add(p)
   }
-  await Promise.all(running)
 }
+const inflight = new Set<Promise<void>>()
 
 const producingPhase = (state: SddState | null): Phase | null =>
   state === 'spec' ? 'spec' : state === 'design' ? 'design' : state === 'task' ? 'task' : null
@@ -199,10 +204,15 @@ const main = async (): Promise<void> => {
   log(`sdd worker: ${cfg.repos.map((r) => r.nameWithOwner).join(', ')} every ${cfg.intervalSeconds}s, maxParallel ${cfg.maxParallel}, runner ${runner}${dryRun ? ', dry-run' : ''}`)
   Object.assign(status, { version: pluginVersion(cfg.pluginDir), intervalSeconds: cfg.intervalSeconds, maxParallel: cfg.maxParallel, repos: cfg.repos.map((r) => r.nameWithOwner) })
   if (!once && cfg.statusPort > 0) startStatusServer(cfg.statusPort, status, store, log)
-  if (once) { await tick(cfg, store); return }
+  if (once) { await tick(cfg, store); await Promise.all(inflight); return }
   for (;;) {
     await tick(cfg, store)
     await new Promise((r) => setTimeout(r, cfg.intervalSeconds * 1000))
+    // hot reload: interval, maxParallel, models, repos… change without a restart (and without killing jobs)
+    try {
+      const fresh = loadConfig()
+      if (JSON.stringify(fresh) !== JSON.stringify(cfg)) { Object.assign(cfg, fresh); Object.assign(status, { intervalSeconds: cfg.intervalSeconds, maxParallel: cfg.maxParallel, repos: cfg.repos.map((r) => r.nameWithOwner) }); log(`config reloaded: every ${cfg.intervalSeconds}s, maxParallel ${cfg.maxParallel}`) }
+    } catch (e) { log(`! config reload: ${String(e)}`) }
   }
 }
 
