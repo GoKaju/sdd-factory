@@ -19,6 +19,8 @@ export interface IssueSnapshot {
   taskComplete: boolean
   /** triage size (S/M/L) from the triage comment, when known */
   size: Size | null
+  /** review cycles already published on the PR (0 without PR) */
+  reviewCycles: number
   /** the latest review cycle aggregated to PASS and the PR is ready */
   reviewPassed: boolean
   /** minutes since the issue was last updated */
@@ -98,17 +100,46 @@ export const decide = (issue: IssueSnapshot, o: RuleOptions): Decision | null =>
 }
 
 /** Runtime configuration of a repository (.sdd/config.json), the parts the worker needs. */
-export type Tier = 'light' | 'standard' | 'strong'
+export type Tier = 'light' | 'standard' | 'strong' | 'frontier'
 export type Size = 'S' | 'M' | 'L'
 /** A phase's intelligence: one tier, or a tier per triage size with a default. */
 export type TierRule = Tier | Partial<Record<Size | 'default', Tier>>
 
 export interface RepoSddConfig {
   autoApprove: Set<Gate>
+  /** floors per phase (mode auto) or exact tiers (mode fixed) */
   intelligence: Partial<Record<Phase, TierRule>>
+  intelligenceMode: 'auto' | 'fixed'
+  maxReworkCycles: number
 }
 
-const isTier = (v: unknown): v is Tier => v === 'light' || v === 'standard' || v === 'strong'
+const TIERS: readonly Tier[] = ['light', 'standard', 'strong', 'frontier']
+/** Automatic raises stop at `strong`; `frontier` is reached only by an explicit floor (cost). */
+export const raise = (t: Tier, steps = 1): Tier => (t === 'frontier' ? t : TIERS[Math.min(TIERS.indexOf(t) + steps, TIERS.indexOf('strong'))] as Tier)
+
+export interface TierSignals {
+  /** the issue is in `rework`, or the phase runs after a failed review cycle */
+  rework: boolean
+  /** review cycles already published on the PR */
+  reviewCycles: number
+  /** the last run of this phase in this repo failed or timed out (quota excluded) */
+  recentFailure: boolean
+}
+
+/**
+ * Chooses the tier for a phase: the floor from the config, raised by what the orchestrator knows.
+ * Never below the floor. Returns the tier and the rules that fired, for the ledger and the log.
+ */
+export const chooseTier = (floor: Tier, mode: 'auto' | 'fixed', phase: Phase, sig: TierSignals, maxReworkCycles: number): { tier: Tier; reasons: string[] } => {
+  if (mode === 'fixed') return { tier: floor, reasons: ['fixed'] }
+  let tier = floor; const reasons: string[] = [`floor ${floor}`]
+  if (sig.rework && (phase === 'implement' || phase === 'review')) { tier = raise(tier); reasons.push('+1 rework') }
+  if (phase === 'review' && sig.reviewCycles + 1 >= maxReworkCycles && tier !== 'frontier') { tier = 'strong'; reasons.push('last permitted cycle → strong') }
+  if (sig.recentFailure) { tier = raise(tier); reasons.push('+1 recent failure of this phase') }
+  return { tier, reasons }
+}
+
+const isTier = (v: unknown): v is Tier => v === 'light' || v === 'standard' || v === 'strong' || v === 'frontier'
 
 /** Resolves a phase's tier for an issue of the given triage size (unknown size → default). */
 export const tierFor = (rule: TierRule | undefined, size: Size | null, fallback: Tier): Tier => {
@@ -121,12 +152,12 @@ const GATES: readonly Gate[] = ['Intake', 'Spec', 'Design', 'Task', 'Final']
 
 /** Parses .sdd/config.json; unknown gates and tiers are ignored (the config script validates them for humans). */
 export const sddConfigFromJson = (json: string): RepoSddConfig => {
-  const raw = JSON.parse(json) as { approvals?: { auto?: unknown }; intelligence?: Record<string, unknown> }
+  const raw = JSON.parse(json) as { approvals?: { auto?: unknown }; intelligence?: Record<string, unknown>; review?: { maxReworkCycles?: unknown } }
   const auto = Array.isArray(raw.approvals?.auto) ? raw.approvals.auto : []
   const autoApprove = new Set<Gate>(auto.filter((g): g is Gate => typeof g === 'string' && (GATES as readonly string[]).includes(g)))
   const intelligence: RepoSddConfig['intelligence'] = {}
   for (const [k, v] of Object.entries(raw.intelligence ?? {})) {
-    if (k.startsWith('$')) continue
+    if (k.startsWith('$') || k === 'mode') continue
     if (isTier(v)) intelligence[k as Phase] = v
     else if (typeof v === 'object' && v !== null) {
       const rule: Partial<Record<Size | 'default', Tier>> = {}
@@ -134,7 +165,9 @@ export const sddConfigFromJson = (json: string): RepoSddConfig => {
       intelligence[k as Phase] = rule
     }
   }
-  return { autoApprove, intelligence }
+  const intelligenceMode = raw.intelligence?.mode === 'fixed' ? 'fixed' : 'auto'
+  const mrc = raw.review?.maxReworkCycles
+  return { autoApprove, intelligence, intelligenceMode, maxReworkCycles: typeof mrc === 'number' ? mrc : 3 }
 }
 
 /**

@@ -76,6 +76,7 @@ export const openIssues = async (repo: string, pluginDir: string, repoPath: stri
       reviewPassed: state === 'final-review' ? await reviewPassed(pluginDir, repoPath, i.number) : false,
       artifactClean: await artifactClean(repo, pluginDir, repoPath, i.number, state),
       size: await triageSize(pluginDir, repoPath, i.number),
+      reviewCycles: ['rework', 'in-review', 'final-review', 'implementing', 'task-approved'].includes(state ?? '') ? await reviewCycles(pluginDir, repoPath, i.number) : 0,
     })
   }
   return out
@@ -141,6 +142,17 @@ const taskStillValid = async (repo: string, pluginDir: string, repoPath: string,
   } catch {
     return false
   }
+}
+
+/** Number of review cycles with published gate results on the issue's PR. */
+const reviewCycles = async (pluginDir: string, repoPath: string, issue: number): Promise<number> => {
+  try {
+    const pr = await sh(`${pluginDir}/scripts/sdd-pr.sh`, ['find', String(issue)], repoPath)
+    if (!pr) return 0
+    let c = 0
+    while (c < 10 && (await sh(`${pluginDir}/scripts/sdd-gate-result.sh`, ['list', pr, String(c)], repoPath)) !== '') c++
+    return c
+  } catch { return 0 }
 }
 
 /** S/M/L from the triage comment (`**Tamaño:** M` / `**Size:** M`), null when there is no triage yet. */

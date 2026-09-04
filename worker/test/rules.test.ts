@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { autoApproveFromConstitution, decide, designClean, sddConfigFromJson, specClean, summaryClean, tierFor, type IssueSnapshot } from '../src/rules.ts'
+import { autoApproveFromConstitution, chooseTier, decide, designClean, raise, sddConfigFromJson, specClean, summaryClean, tierFor, type IssueSnapshot } from '../src/rules.ts'
 
 const base: IssueSnapshot = {
   number: 1, type: 'Feature', state: null, updatedAt: '2026-09-03T00:00:00Z',
-  newCommentSinceTriage: false, triageClean: false, taskComplete: false, reviewPassed: false, idleMinutes: 0, artifactClean: true, size: null, title: "t",
+  newCommentSinceTriage: false, triageClean: false, taskComplete: false, reviewPassed: false, idleMinutes: 0, artifactClean: true, size: null, title: "t", reviewCycles: 0,
 }
 const o = { autoSpec: false, staleImplementingMinutes: 45, autoApprove: new Set<never>() }
 
@@ -104,4 +104,19 @@ test('.sdd/config.json: delegated approvals and tiers, unknown values ignored', 
   assert.equal(tierFor(bySize.intelligence.spec, 'S', 'standard'), 'strong')
   assert.equal(tierFor(undefined, 'S', 'standard'), 'standard')
   assert.deepEqual([...sddConfigFromJson('{}').autoApprove], [])
+})
+
+test('auto tier: floors are never lowered, raises stop at strong, frontier only by floor', () => {
+  const none = { rework: false, reviewCycles: 0, recentFailure: false }
+  assert.equal(chooseTier('standard', 'auto', 'implement', none, 3).tier, 'standard')
+  assert.equal(chooseTier('standard', 'auto', 'implement', { ...none, rework: true }, 3).tier, 'strong')
+  assert.equal(chooseTier('strong', 'auto', 'implement', { ...none, rework: true, recentFailure: true }, 3).tier, 'strong')
+  assert.equal(chooseTier('standard', 'auto', 'review', { ...none, reviewCycles: 2 }, 3).tier, 'strong')
+  assert.equal(chooseTier('standard', 'auto', 'spec', { ...none, rework: true }, 3).tier, 'standard')
+  assert.equal(chooseTier('standard', 'auto', 'triage', { ...none, recentFailure: true }, 3).tier, 'strong')
+  assert.equal(chooseTier('standard', 'fixed', 'implement', { ...none, rework: true, recentFailure: true }, 3).tier, 'standard')
+  assert.equal(chooseTier('frontier', 'auto', 'spec', none, 3).tier, 'frontier')
+  assert.equal(raise('strong'), 'strong'); assert.equal(raise('frontier'), 'frontier')
+  const c = sddConfigFromJson(JSON.stringify({ intelligence: { mode: 'fixed', spec: 'frontier' }, review: { maxReworkCycles: 2 } }))
+  assert.equal(c.intelligenceMode, 'fixed'); assert.equal(c.maxReworkCycles, 2); assert.equal(c.intelligence.spec, 'frontier')
 })

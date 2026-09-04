@@ -62,7 +62,7 @@ Issue type decides the path: **Feature** and **Change** take every step; **Bug**
 | Draft PR | `spec.md`, `design.md`, code, gate results as comments |
 | `docs/` on `main` | approved, merged truth |
 | `docs/constitution.md` | the only rule file; `CLAUDE.md` and `AGENTS.md` just point to it |
-| `.sdd/config.json` | orchestrator policy: delegated approvals, review mode and budget, intelligence tier per phase and reviewer (vendor-neutral; the worker maps tiers to models) |
+| `.sdd/config.json` | orchestrator policy: delegated approvals, review mode and budget, intelligence **floors** per phase and reviewer in vendor-neutral tiers `light` · `standard` · `strong` · `frontier`; in `mode: auto` the orchestrator raises a phase above its floor on rework, on the last permitted review cycle or after a recent failure of that phase, never below, and records tier and reason in the ledger; the worker maps tiers to models |
 
 ## Layout
 

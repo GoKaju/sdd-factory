@@ -14,7 +14,8 @@
   "models": {
     "light": "haiku",
     "standard": "sonnet",
-    "strong": "opus"
+    "strong": "opus",
+    "frontier": "fable"
   },
   "statusPort": 4777
 }
