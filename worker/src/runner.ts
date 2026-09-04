@@ -51,6 +51,7 @@ const runWithSdk = async (i: RunInput, write: (s: string) => void): Promise<RunR
   let costUsd: number | null = null
   let turns: number | null = null
   let outcome: RunOutcome = 'failed'
+  let sawResult = false
   try {
     for await (const m of query({
       prompt: prompt(i),
@@ -71,6 +72,7 @@ const runWithSdk = async (i: RunInput, write: (s: string) => void): Promise<RunR
         }
       }
       if (m.type === 'result') {
+        sawResult = true
         costUsd = 'total_cost_usd' in m && typeof m.total_cost_usd === 'number' ? m.total_cost_usd : null
         turns = 'num_turns' in m && typeof m.num_turns === 'number' ? m.num_turns : null
         if (m.subtype === 'success') {
@@ -88,6 +90,10 @@ const runWithSdk = async (i: RunInput, write: (s: string) => void): Promise<RunR
     throw e
   } finally {
     clearTimeout(timer)
+  }
+  if (!sawResult) {
+    // The stream ended without a `result` message (SDK/CLI died mid-phase): never report success.
+    return { outcome: 'failed', summary: 'the run ended without a result message (agent stream closed early)', costUsd, turns }
   }
   return { outcome, summary, costUsd, turns }
 }
