@@ -15,5 +15,6 @@
     "light": "haiku",
     "standard": "sonnet",
     "strong": "opus"
-  }
+  },
+  "statusPort": 4777
 }

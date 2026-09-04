@@ -6,6 +6,7 @@ export type SddState =
 export type Phase = 'triage' | 'spec' | 'design' | 'task' | 'implement' | 'review'
 
 export interface IssueSnapshot {
+  title: string
   number: number
   type: IssueType | null
   state: SddState | null

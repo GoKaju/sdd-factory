@@ -4,7 +4,7 @@ import { autoApproveFromConstitution, decide, designClean, sddConfigFromJson, sp
 
 const base: IssueSnapshot = {
   number: 1, type: 'Feature', state: null, updatedAt: '2026-09-03T00:00:00Z',
-  newCommentSinceTriage: false, triageClean: false, taskComplete: false, reviewPassed: false, idleMinutes: 0, artifactClean: true, size: null,
+  newCommentSinceTriage: false, triageClean: false, taskComplete: false, reviewPassed: false, idleMinutes: 0, artifactClean: true, size: null, title: "t",
 }
 const o = { autoSpec: false, staleImplementingMinutes: 45, autoApprove: new Set<never>() }
 

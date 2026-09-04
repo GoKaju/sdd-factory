@@ -127,6 +127,15 @@ export class JobStore {
     return r.changes > 0
   }
 
+  /** Phases run since local midnight: count, dollars, minutes. */
+  today(): { phases: number; usd: number; minutes: number } {
+    const start = new Date(); start.setHours(0, 0, 0, 0)
+    const r = this.db.prepare(
+      `SELECT COUNT(*) AS phases, COALESCE(SUM(cost_usd), 0) AS usd, COALESCE(SUM(duration_ms), 0) / 60000 AS minutes FROM phases WHERE started_at >= ?`,
+    ).get(start.toISOString()) as { phases: number; usd: number; minutes: number }
+    return { phases: r.phases, usd: Math.round(r.usd * 100) / 100, minutes: Math.round(r.minutes) }
+  }
+
   running(repo: string, issue: number): boolean {
     const r = this.db.prepare(`SELECT 1 FROM jobs WHERE repo = ? AND issue = ? AND status = 'running' LIMIT 1`).get(repo, issue)
     return r !== undefined
