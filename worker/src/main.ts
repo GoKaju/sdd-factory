@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { loadConfig, type RepoConfig, type WorkerConfig } from './config.ts'
 import { readFileSync } from 'node:fs'
-import { comment, constitutionLanguage, isClosed, mergePr, openIssues, prBranch, setState, setWorking, upsertLedger, type OpenIssue } from './github.ts'
+import { comment, constitutionLanguage, isClosed, mergePr, openIssues, prBranch, setAssignee, setState, setWorking, sh, upsertLedger, type OpenIssue } from './github.ts'
 import { autoApproveFromConstitution, chooseTier, decide, sddConfigFromJson, summaryClean, tierFor, type Gate, type Phase, type RepoSddConfig, type SddState, type Tier } from './rules.ts'
 import { runPhase } from './runner.ts'
 import { JobStore } from './state.ts'
@@ -142,6 +142,7 @@ const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void>
   const id = store.start({ repo, issue: n, phases: j.phases.join('+'), stateAtStart: j.issue.state ?? 'none', issueUpdatedAt: j.issue.updatedAt, logPath })
   log(`start job ${id}: ${repo}#${n} ${j.phases.join(' → ')}`)
   await setWorking(cfg.pluginDir, j.repo.path, n, true)
+  await setAssignee(j.repo.path, n, true)
   try {
     const branch = await prBranch(cfg.pluginDir, j.repo.path, n)
     const cwd = await ensureWorktree(j.repo.path, n, branch)
@@ -187,6 +188,13 @@ const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void>
     log(`! job ${id} failed: ${String(e)}`)
   } finally {
     await setWorking(cfg.pluginDir, j.repo.path, n, false)
+    // Hand the issue back when the next move is a human's; keep it while the orchestrator continues.
+    try {
+      const state = (await sh(`${cfg.pluginDir}/scripts/sdd-state.sh`, ['get', String(n)], j.repo.path)) as SddState | ''
+      const auto = readSddConfig(j.repo.path).autoApprove
+      const humanNext = state === 'triage' || state === 'final-review' || (state === 'spec' && !auto.has('Spec')) || (state === 'design' && !auto.has('Design')) || (state === 'task' && !auto.has('Task'))
+      if (humanNext) await setAssignee(j.repo.path, n, false)
+    } catch { /* visibility only */ }
   }
 }
 
