@@ -13,6 +13,8 @@ export type Tier = 'light' | 'standard' | 'strong'
 export interface WorkerConfig {
   /** Intelligence tier → model for this machine/provider. The repository only ever names tiers. */
   models: Record<Tier, string>
+  /** local port of the read-only status page/JSON; 0 disables it */
+  statusPort: number
   intervalSeconds: number
   maxParallel: number
   pluginDir: string
@@ -37,6 +39,7 @@ export const loadConfig = (file = join(workerHome(), 'config.json')): WorkerConf
   const models = { light: 'haiku', standard: 'sonnet', strong: 'opus', ...(c.models ?? {}) } as Record<Tier, string>
   return {
     models,
+    statusPort: c.statusPort ?? 4777,
     intervalSeconds: c.intervalSeconds ?? 60,
     maxParallel: c.maxParallel ?? 1,
     pluginDir: c.pluginDir,
