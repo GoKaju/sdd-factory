@@ -8,7 +8,11 @@ export interface RepoConfig {
   autoSpec: boolean
 }
 
+export type Tier = 'light' | 'standard' | 'strong'
+
 export interface WorkerConfig {
+  /** Intelligence tier → model for this machine/provider. The repository only ever names tiers. */
+  models: Record<Tier, string>
   intervalSeconds: number
   maxParallel: number
   pluginDir: string
@@ -30,7 +34,9 @@ export const loadConfig = (file = join(workerHome(), 'config.json')): WorkerConf
   })
   if (repos.length === 0) throw new Error('config.repos is empty')
   if (!c.pluginDir) throw new Error('config.pluginDir is required')
+  const models = { light: 'haiku', standard: 'sonnet', strong: 'opus', ...(c.models ?? {}) } as Record<Tier, string>
   return {
+    models,
     intervalSeconds: c.intervalSeconds ?? 60,
     maxParallel: c.maxParallel ?? 1,
     pluginDir: c.pluginDir,

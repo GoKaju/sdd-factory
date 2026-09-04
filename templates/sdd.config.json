@@ -1,0 +1,23 @@
+{
+  "$comment": "SDD factory runtime configuration for this repository. Policy for the orchestrator, not rules for the code: rules live in docs/constitution.md. Later replaced by the control plane.",
+  "version": 1,
+  "approvals": {
+    "$comment": "Human approval gates the orchestrator may grant on its own when the artifact is verifiably clean: Intake, Spec, Design, Task, Final. A Constitution issue is never merged without a human.",
+    "auto": []
+  },
+  "review": {
+    "mode": "paired",
+    "maxReworkCycles": 3,
+    "reviewers": {
+      "$comment": "Intelligence tier of the Review Gate agents by issue type (wins) or triage size; tiers: light | standard | strong.",
+      "S": "standard", "M": "standard", "L": "strong",
+      "Constitution": "strong",
+      "default": "strong"
+    }
+  },
+  "intelligence": {
+    "$comment": "Intelligence tier per phase. Tiers describe the work, not a vendor model; the worker maps tiers to models in its own config.",
+    "triage": "standard", "spec": "standard", "design": "standard", "task": "standard",
+    "implement": "strong", "review": "standard"
+  }
+}

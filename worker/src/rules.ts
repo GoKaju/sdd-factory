@@ -94,6 +94,26 @@ export const decide = (issue: IssueSnapshot, o: RuleOptions): Decision | null =>
   }
 }
 
+/** Runtime configuration of a repository (.sdd/config.json), the parts the worker needs. */
+export interface RepoSddConfig {
+  autoApprove: Set<Gate>
+  intelligence: Partial<Record<Phase, 'light' | 'standard' | 'strong'>>
+}
+
+const GATES: readonly Gate[] = ['Intake', 'Spec', 'Design', 'Task', 'Final']
+
+/** Parses .sdd/config.json; unknown gates and tiers are ignored (the config script validates them for humans). */
+export const sddConfigFromJson = (json: string): RepoSddConfig => {
+  const raw = JSON.parse(json) as { approvals?: { auto?: unknown }; intelligence?: Record<string, unknown> }
+  const auto = Array.isArray(raw.approvals?.auto) ? raw.approvals.auto : []
+  const autoApprove = new Set<Gate>(auto.filter((g): g is Gate => typeof g === 'string' && (GATES as readonly string[]).includes(g)))
+  const intelligence: RepoSddConfig['intelligence'] = {}
+  for (const [k, v] of Object.entries(raw.intelligence ?? {})) {
+    if (v === 'light' || v === 'standard' || v === 'strong') intelligence[k as Phase] = v
+  }
+  return { autoApprove, intelligence }
+}
+
 /**
  * Parses `- **Auto-approved phase gates:** Intake, Task` (or the older `Auto-approved gates`) from the
  * constitution's Verification section. Only the five phase-gate names are recognised; the six Review

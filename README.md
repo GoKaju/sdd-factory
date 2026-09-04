@@ -62,6 +62,7 @@ Issue type decides the path: **Feature** and **Change** take every step; **Bug**
 | Draft PR | `spec.md`, `design.md`, code, gate results as comments |
 | `docs/` on `main` | approved, merged truth |
 | `docs/constitution.md` | the only rule file; `CLAUDE.md` and `AGENTS.md` just point to it |
+| `.sdd/config.json` | orchestrator policy: delegated approvals, review mode and budget, intelligence tier per phase and reviewer (vendor-neutral; the worker maps tiers to models) |
 
 ## Layout
 
@@ -70,7 +71,7 @@ Issue type decides the path: **Feature** and **Change** take every step; **Bug**
 skills/           sdd-init, sdd-triage, sdd-spec, sdd-design, sdd-task, sdd-implement, sdd-review, sdd-status, pr-review, create-release
 agents/           completeness-checker, ci-runner, committer; paired reviewers spec-test, design-quality, security-regression (default); single-gate spec, design, test, security, regression, quality (Review mode: single)
 hooks/            PreToolUse: protect docs/constitution.md and approved spec/design; deny push to main, force-push, history rewrites
-scripts/          sdd-state, sdd-type, sdd-org-types, sdd-comment, sdd-gate-result, sdd-pr, sdd-flag, sdd-field, sdd-review-pack, sdd-review-model  (bash over gh)
+scripts/          sdd-state, sdd-type, sdd-org-types, sdd-comment, sdd-gate-result, sdd-pr, sdd-flag, sdd-field, sdd-review-pack, sdd-config  (bash over gh)
 templates/        constitution, issue forms, spec, design, task, triage, gate-result
 evals/            plugin eval cases (early access)
 ```
@@ -86,7 +87,7 @@ evals/            plugin eval cases (early access)
 `worker/` is a zero-dependency Node 24 service (besides the Agent SDK) that polls GitHub and runs the phases headless, one git worktree per issue, so several issues can advance without touching each other.
 
 ```bash
-cp worker/config.example.json ~/.sdd/worker/config.json   # repos, plugin dir, interval (15 s), maxParallel
+cp worker/config.example.json ~/.sdd/worker/config.json   # repos, plugin dir, interval (15 s), maxParallel, models (tier → model for this machine)
 cd worker && pnpm install
 pnpm dry-run      # one tick, prints what it would run
 pnpm once         # one tick, runs it
@@ -99,7 +100,7 @@ cp worker/launchd/com.gokaju.sdd-worker.plist ~/Library/LaunchAgents/ && launchc
 
 What it reacts to (see `src/rules.ts`): a new issue → triage; an author comment or an edit of the issue title/body while in `triage` → triage again; `ready` → task for Bug/Task/Constitution (Feature/Change wait for a human unless `autoSpec`); `spec-approved` → design; `design-approved` → task, or straight to review when the Task is already complete and newer than the last docs change on the branch (document-only amendment; a Task written for an earlier spec/design is stale and gets rewritten); `task-approved` and `rework` → implement then review; `in-review` → review; `implementing` idle for 45 min → resume. It never sets `ready` or `*-approved`.
 
-Delegated approvals are verified, not blind: Spec only when its Open questions section has no unchecked item, Design only when nothing is marked as pending human confirmation, Task only when the Task comment has steps, and in all three cases only when the producing phase reported no BLOCKER, FAIL or NEEDS_HUMAN; otherwise the worker comments once why it is holding and waits for a human.
+Delegated approvals come from `.sdd/config.json` (`approvals.auto`) and are verified, not blind: Spec only when its Open questions section has no unchecked item, Design only when nothing is marked as pending human confirmation, Task only when the Task comment has steps, and in all three cases only when the producing phase reported no BLOCKER, FAIL or NEEDS_HUMAN; otherwise the worker comments once why it is holding and waits for a human.
 
 Guarantees: the issue carries `sdd:working` while a phase runs (the state label changes only when the phase ends); one job per issue at a time; a failed job is not retried until the issue changes (new comment, label, edit); a quota error pauses polling (30 min; an org spend limit pauses 6 h, since it does not reset on its own); a phase over its time budget is aborted; every run logs to `~/.sdd/worker/logs/` and records itself in `~/.sdd/worker/jobs.sqlite`, with one `phases` row per executed phase (duration, cost in USD, turns, outcome) that `pnpm stats` aggregates; when a job fails the worker leaves the issue state untouched and comments the reason on the issue.
 

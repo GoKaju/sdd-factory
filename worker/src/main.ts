@@ -2,7 +2,7 @@ import { join } from 'node:path'
 import { loadConfig, type RepoConfig, type WorkerConfig } from './config.ts'
 import { readFileSync } from 'node:fs'
 import { comment, isClosed, mergePr, openIssues, prBranch, setState, setWorking, type OpenIssue } from './github.ts'
-import { autoApproveFromConstitution, decide, summaryClean, type Gate, type Phase, type SddState } from './rules.ts'
+import { autoApproveFromConstitution, decide, sddConfigFromJson, summaryClean, type Gate, type Phase, type RepoSddConfig, type SddState } from './rules.ts'
 import { runPhase } from './runner.ts'
 import { JobStore } from './state.ts'
 import { collectWorktrees, ensureWorktree, removeWorktree, worktreeNote } from './worktree.ts'
@@ -84,10 +84,14 @@ const explainWithheldApproval = async (store: JobStore, repo: RepoConfig, issue:
     `**Worker sdd-factory:** el gate ${gate} está delegado en la constitución, pero no se aprueba automáticamente porque el artefacto no está limpio: quedan preguntas abiertas, marcas pendientes de confirmación humana, o la fase reportó BLOCKER/FAIL/NEEDS_HUMAN. Revisa y pon \`sdd:${issue.state}-approved\` a mano, o corrige y relanza la fase.`)
 }
 
-const readAutoApprove = (repoPath: string): Set<Gate> => {
-  try { return autoApproveFromConstitution(readFileSync(join(repoPath, 'docs', 'constitution.md'), 'utf8')) }
-  catch { return new Set() }
+/** .sdd/config.json first; the old constitution line only as a fallback for repositories not yet migrated. */
+const readSddConfig = (repoPath: string): RepoSddConfig => {
+  try { return sddConfigFromJson(readFileSync(join(repoPath, '.sdd', 'config.json'), 'utf8')) } catch { /* no config file */ }
+  try { return { autoApprove: autoApproveFromConstitution(readFileSync(join(repoPath, 'docs', 'constitution.md'), 'utf8')), intelligence: {} } }
+  catch { return { autoApprove: new Set(), intelligence: {} } }
 }
+const readAutoApprove = (repoPath: string): Set<Gate> => readSddConfig(repoPath).autoApprove
+const defaultTier = (phase: Phase): 'light' | 'standard' | 'strong' => (phase === 'implement' ? 'strong' : 'standard')
 
 const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void> => {
   const repo = j.repo.nameWithOwner
@@ -102,10 +106,11 @@ const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void>
     const cwd = await ensureWorktree(j.repo.path, n, branch)
     for (const phase of j.phases) {
       const startedAt = new Date().toISOString()
-      const r = await runPhase({ phase, issue: n, cwd, pluginDir: cfg.pluginDir, note: worktreeNote(n, branch, phase), logPath, runner })
+      const tier = readSddConfig(j.repo.path).intelligence[phase] ?? defaultTier(phase)
+      const r = await runPhase({ phase, issue: n, cwd, pluginDir: cfg.pluginDir, note: worktreeNote(n, branch, phase), logPath, runner, model: cfg.models[tier] })
       store.recordPhase({ jobId: id, repo, issue: n, phase, outcome: r.outcome, startedAt, costUsd: r.costUsd, turns: r.turns })
       store.setNote(id, `${phase}: ${r.summary.slice(0, 1500)}`)
-      log(`  ${phase}: ${r.outcome}${r.costUsd !== null ? ` $${r.costUsd.toFixed(2)}` : ''}${r.turns !== null ? ` ${r.turns} turns` : ''}`)
+      log(`  ${phase}: ${r.outcome}${r.costUsd !== null ? ` $${r.costUsd.toFixed(2)}` : ''}${r.turns !== null ? ` ${r.turns} turns` : ''} [${tier}→${cfg.models[tier]}]`)
       if (r.outcome !== 'done') {
         store.finish(id, r.outcome, `${phase}: ${r.summary.slice(0, 500)}`)
         if (r.outcome === 'quota') {
