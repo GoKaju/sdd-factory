@@ -79,17 +79,25 @@ export const decide = (issue: IssueSnapshot, o: RuleOptions): Decision | null =>
     case 'task':
       return o.autoApprove.has('Task') ? { approve: 'task-approved', reason: 'Task auto-approved' } : null
     case 'final-review':
+      // A Constitution amendment is never merged without a human, whatever the constitution says:
+      // otherwise one delegated Final would let the rules rewrite themselves with nobody watching.
+      if (t === 'Constitution') return null
       return o.autoApprove.has('Final') && issue.reviewPassed ? { merge: true, reason: 'Final auto-approved: every gate PASS' } : null
   }
 }
 
-/** Parses `- **Auto-approved gates:** Intake, Task` from the constitution's Verification section. */
+/**
+ * Parses `- **Auto-approved phase gates:** Intake, Task` (or the older `Auto-approved gates`) from the
+ * constitution's Verification section. Only the five phase-gate names are recognised; the six Review
+ * Gates (Spec Compliance, Design & Architecture, …) can never be delegated and are ignored here.
+ */
 export const autoApproveFromConstitution = (constitution: string): Set<Gate> => {
-  const m = /Auto-approved gates:\*\*\s*([^\n]*)/i.exec(constitution)
+  const m = /Auto-approved (?:phase )?gates:\*\*\s*([^\n]*)/i.exec(constitution)
   const out = new Set<Gate>()
   if (!m || !m[1]) return out
   for (const raw of m[1].split(/[,·;]/)) {
-    const g = raw.trim().replace(/[`*]/g, '').split(/\s/)[0] as Gate | ''
+    const g = raw.trim().replace(/[`*]/g, '').replace(/\s*[—(-].*$/, '')
+    // Exact match only: "Spec Compliance" or "Design & Architecture" are Review Gates, not phase gates.
     if (g === 'Intake' || g === 'Spec' || g === 'Design' || g === 'Task' || g === 'Final') out.add(g)
   }
   return out

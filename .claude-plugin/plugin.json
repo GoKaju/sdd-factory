@@ -1,6 +1,6 @@
 {
   "name": "sdd-factory",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Spec-Driven Development factory: typed issues, triage, spec/design/task with human approval gates, adversarial review gates and bounded rework. Constitution is the single rule file.",
   "author": { "name": "GoKaju" },
   "repository": "https://github.com/GoKaju/sdd-factory",
