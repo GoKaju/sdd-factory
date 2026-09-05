@@ -60,7 +60,7 @@ Issue type decides the path: **Feature** and **Change** take every step; **Bug**
 | --- | --- |
 | Issue | intent, triage comment, task comment with checklist, `sdd:<state>` label |
 | Draft PR | `spec.md`, `design.md`, code, gate results as comments |
-| `docs/` on `main` | approved, merged truth: `docs/<domain>/<module>/{spec,design}.md` (current truth, never history) and `docs/adrs/NNNN-*.md` (one immutable file per real decision; reversals supersede) |
+| `docs/` on `main` | approved, merged truth: `docs/<domain>/<module>/{spec,design}.md` (the current state of the module, never its history: git is the history) and `docs/adrs/NNNN-*.md` (one immutable file per real decision; reversals supersede) |
 | `docs/constitution.md` | the only rule file; `CLAUDE.md` and `AGENTS.md` just point to it |
 | `.sdd/config.json` | orchestrator policy: delegated approvals, review mode and budget, intelligence **floors** per phase and reviewer in vendor-neutral tiers `light` · `standard` · `strong` · `frontier`; in `mode: auto` the orchestrator raises a phase above its floor on rework, on the last permitted review cycle or after a recent failure of that phase, never below, and records tier and reason in the ledger; the worker maps tiers to models |
 
