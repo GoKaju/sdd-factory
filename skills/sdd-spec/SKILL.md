@@ -24,14 +24,15 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/temp
    - **Out of scope** lists business capabilities deliberately excluded (e.g. "renaming lists", "reminders"). Never deferred technical decisions (pagination, concurrency control, HTTP, storage engine).
    - **Domain concepts** are business nouns only. No projections, DTOs, views, records or ports.
    - **Rejections, not errors.** Every business reason to refuse a request is one row of the "Rejections" table: stable English name (`TaskAlreadyCompleted`), condition in business terms, message to the user, requirement ID. Plus the checking order when several apply. The spec never says "error", "DomainError", "class" or "exception"; the design maps each rejection to one domain error.
-   - Cover edge cases and acceptance criteria per requirement. List open questions explicitly.
+   - Cover edge cases and acceptance criteria per requirement.
+   - **The spec is the current truth, not its history.** `## Open questions` holds only questions still open at the moment of writing (normally none; anything there blocks Gate 1). Never keep answered questions, the decisions you took while writing, their rationale, corrections from earlier cycles, or notes for the Design phase in the spec: the Issue, its triage and the PR already hold that history, and git keeps every version. Put "decisions taken while writing" and "what Design must revisit" in the **PR description** (`gh pr edit --body`), where the human reads them at Gate 1 and the Design phase reads them next. Once the human approves, those notes have served their purpose; the spec stays clean.
    - Set `status: draft`.
 
 4. **Completeness check, one pass.** Run the `completeness-checker` agent once. If it returns `FAIL`, fix the BLOCKERs once and deliver without rerunning; report in your summary what you fixed and any finding you left, so the human sees it at Gate 1. Never loop.
 
 5. **Commit.** Delegate to the `committer` agent: `docs(<module>): spec for #$1`. Push the branch (never `main`).
 
-6. **State.** `sdd-state.sh set $1 spec`. Report the PR URL, the requirement IDs added or changed, and the open questions. The human reviews the diff in the PR and sets `sdd:spec-approved`; you never set it.
+6. **State.** `sdd-state.sh set $1 spec`. Report the PR URL, the requirement IDs added or changed, and the open questions (the ones in the spec, if any) — the decisions you took are in the PR description, not in the spec. The human reviews the diff in the PR and sets `sdd:spec-approved`; you never set it.
 
 ## Rules
 

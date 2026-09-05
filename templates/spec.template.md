@@ -70,4 +70,4 @@ When one request breaks several rules at once, state which rejection wins (a fix
 
 ## Open questions
 
-- <anything unresolved blocks Approval Gate 1>
+- <only questions still open right now; anything here blocks Approval Gate 1. Answered questions, decisions and their rationale go to the PR description, never here: the spec is the current truth, not its history>

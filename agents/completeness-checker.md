@@ -62,6 +62,9 @@ For each requirement ask: empty or absent input, boundary values (zero, negative
 - The open-questions / assumptions section is empty or absent.
 - No `TBD`, `TODO`, `???`, `to be defined`, `pending` anywhere in the Spec. Grep for them.
 
+### 7b. History in the spec — WARNING
+- `## Open questions` (or any section) carrying answered questions, decisions taken while writing, rationale, corrections from earlier cycles or notes for the Design phase. The spec is the current truth; that history belongs to the Issue and the PR description. `required_action`: move the notes to the PR description and leave only genuinely open questions.
+
 ### 8. Scope — WARNING
 - Purpose, scope and out-of-scope sections exist and do not contradict each other.
 - The Spec covers the Issue's requested outcome; anything requested in the Issue but absent from the Spec is a WARNING quoting the Issue.
