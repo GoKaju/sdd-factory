@@ -50,7 +50,7 @@ export const removeWorktree = async (repoPath: string, issue: number): Promise<v
   await sh('git', ['worktree', 'remove', '--force', path], repoPath)
 }
 
-import type { Phase } from './rules.ts'
+import type { Phase } from '@sdd-factory/core'
 
 /** Phases that may create the issue branch; every other phase must not write to git at all. */
 const createsBranch = (phase: Phase): boolean => phase === 'spec' || phase === 'task' || phase === 'implement'

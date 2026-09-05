@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFile, spawn } from 'node:child_process'
 import { promisify } from 'node:util'
-import { designClean, specClean, type IssueSnapshot, type IssueType, type SddState, type Size } from './rules.ts'
+import { constitutionLanguage as languageOf, designClean, specClean, type IssueSnapshot, type IssueType, type SddState, type Size } from '@sdd-factory/core'
 
 const run = promisify(execFile)
 
@@ -263,8 +263,5 @@ export const upsertLedger = async (repo: string, pluginDir: string, repoPath: st
 
 /** The constitution's Language (Identity section); 'en' when unknown. */
 export const constitutionLanguage = (repoPath: string): 'es' | 'en' => {
-  try {
-    const t = readFileSync(join(repoPath, 'docs', 'constitution.md'), 'utf8')
-    return /\*\*Language:\*\*\s*es\b/i.test(t) || /^-?\s*Language:\s*es\b/im.test(t) ? 'es' : 'en'
-  } catch { return 'en' }
+  try { return languageOf(readFileSync(join(repoPath, 'docs', 'constitution.md'), 'utf8')) } catch { return 'en' }
 }

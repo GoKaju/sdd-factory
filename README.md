@@ -86,9 +86,12 @@ evals/            plugin eval cases (early access)
 
 `worker/` is a zero-dependency Node 24 service (besides the Agent SDK) that polls GitHub and runs the phases headless, one git worktree per issue, so several issues can advance without touching each other.
 
+The rules it decides with live in `packages/core` (`@sdd-factory/core`): the issue state machine, intelligence tiers, artifact checks, the worker ↔ control-plane protocol and job scheduling. Pure functions, no I/O, one test suite; the Phase 3 control plane consumes the same package so the two orchestrators can never disagree. The repository is a pnpm workspace: `pnpm install` at the root links core into the worker.
+
 ```bash
 cp worker/config.example.json ~/.sdd/worker/config.json   # repos, plugin dir, interval (15 s), maxParallel, models (tier → model for this machine)
-cd worker && pnpm install
+pnpm install      # at the repository root (workspace: packages/core + worker)
+cd worker
 pnpm dry-run      # one tick, prints what it would run
 pnpm once         # one tick, runs it
 pnpm stats        # cost, minutes and turns per issue and per phase (from ~/.sdd/worker/jobs.sqlite)
@@ -114,4 +117,4 @@ Guarantees: the issue carries `sdd:working` while a phase runs (the state label 
 
 ## Roadmap
 
-- **Phase 3**: control plane scheduling many issues across many workers (the worker is already split into decide/run around a `Job`).
+- **Phase 3**: control plane scheduling many issues across many workers, built on `@sdd-factory/core` (rules, protocol, scheduling). Lives in its own private repository; the plugin, skills and worker stay here.

@@ -1,0 +1,19 @@
+{
+  "name": "@sdd-factory/core",
+  "version": "0.1.0",
+  "description": "Pure rules of the SDD factory: the issue state machine, intelligence tiers, artifact checks, the worker/control-plane protocol and job scheduling. No I/O.",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/GoKaju/sdd-factory", "directory": "packages/core" },
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "exports": { ".": "./src/index.ts" },
+  "files": ["src"],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "typescript": "^5.9.3"
+  }
+}
