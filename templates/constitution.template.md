@@ -15,6 +15,7 @@ This file is the only rule file in the repository. `CLAUDE.md` and `AGENTS.md` p
 - **A1** Packages are `apps/`, `contexts/`, `libs/`; dependencies flow `apps → contexts → libs`, never sideways or upward.
 - **A2** A context never imports another context; contexts communicate only through domain events.
 - **A3** Only `apps/` and `infrastructure/` know the runtime; domain and application never import cloud, OS, HTTP or framework APIs.
+- **A4** Inside a context, `domain/<aggregate>/` holds the aggregate and, in subfolders once there is more than one of a kind, `value-objects/`, `events/`, `errors/`, `ports/`; `infrastructure/<technology>/` groups each adapter family with its `mappers/`; `use-cases/<use-case>/` one folder per use case. No flat folders past five files.
 
 ### Domain and application
 - **D1** Every building block extends the shared base: `AggregateRoot`, `Entity`, `ValueObject`, `DomainEvent`, `DomainError`.
@@ -47,7 +48,7 @@ This file is the only rule file in the repository. `CLAUDE.md` and `AGENTS.md` p
 - **C1** Strict typing, no escape hatches, no unused symbols, named exports only (config files excepted).
 - **C2** kebab-case files without type suffixes; infrastructure files are `{technology}-{port}`.
 - **C3** No comments, except one line explaining a non-obvious *why*.
-- **C4** Domain identifiers in English; prose in the team's language.
+- **C4** Everything inside code is English — identifiers, comments, test names, log and developer-facing error text; only end-user messages and prose documents use the constitution's `Language`.
 
 ### Workflow
 - **W1** Branch from `main`, Draft PR immediately with `Closes #N`; never push to `main`.

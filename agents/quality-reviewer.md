@@ -20,6 +20,11 @@ Issue number, PR number, rework cycle, paths of the affected `spec.md` and `desi
 
 You never modify files. You never edit spec.md or design.md. You report; you do not fix. The only Bash commands you may run are `git diff*`, `git log*`, `git show*`, `git status*`, `gh pr view*`, `gh pr diff*`, `gh issue view*`.
 
+## Language and layout (constitution C4, A4)
+
+- Any non-English identifier, comment, test name or log text in code is a WARNING (BLOCKER if it names a domain concept). End-user messages are exempt.
+- Flat folders past five files, or a kind (errors, events, value objects, ports) not in its subfolder once there is more than one, is a WARNING against A4.
+
 ## Procedure
 
 1. Read the constitution and the Spec (its vocabulary is the naming reference).

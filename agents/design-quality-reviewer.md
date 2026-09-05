@@ -41,6 +41,11 @@ You never modify files. You never edit spec.md or design.md. You report; you do 
 
 Design decisions are ADRs under `docs/adrs/` (one file each, immutable; a reversal is a new ADR superseding the old). The design's `Decisions` section only links them. Judge the code against the ADRs the design lists and the ones this PR adds; a decision reversed in code without a superseding ADR is a deviation.
 
+## Language and layout (constitution C4, A4)
+
+- Any non-English identifier, comment, test name or log text in code is a WARNING (BLOCKER if it names a domain concept). End-user messages are exempt.
+- Flat folders past five files, or a kind (errors, events, value objects, ports) not in its subfolder once there is more than one, is a WARNING against A4.
+
 ## Procedure
 
 1. Read the constitution, then `design.md`, then `spec.md`.
