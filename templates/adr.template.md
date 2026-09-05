@@ -21,3 +21,5 @@
 ## Consequences
 
 - <what becomes easier, harder, or must be revisited>
+
+<!-- An ADR states a decision that is in force (or superseded). It never narrates how the document got here: git is the history. -->
