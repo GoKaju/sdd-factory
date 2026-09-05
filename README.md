@@ -47,7 +47,7 @@ issue opened (typed)
 /sdd-design <n>     →  design.md                          human sets  sdd:design-approved(Gate 2)   Feature, Change
 /sdd-task <n>       →  comment <!-- sdd:task -->          human sets  sdd:task-approved  (Gate 3)
 /sdd-implement <n>  →  code + tests, checklist ticked, CI green
-/sdd-review <n>     →  review pack → 6 gates (3 paired reviewers) → PR comments → PASS: PR ready   human approves + merges (Gate 4)
+/sdd-review <n>     →  review pack → 6 gates (3 paired reviewers; docs-only PR: 1 docs reviewer + 4 gates skipped) → PR comments → PASS: PR ready   human approves + merges (Gate 4)
                                             → FAIL: rework, at most max_rework_cycles
 /sdd-status [n]        where is everything, who acts next
 ```
@@ -69,7 +69,7 @@ Issue type decides the path: **Feature** and **Change** take every step; **Bug**
 ```
 .claude-plugin/   plugin.json, marketplace.json
 skills/           sdd-init, sdd-triage, sdd-spec, sdd-design, sdd-task, sdd-implement, sdd-review, sdd-status, pr-review, create-release
-agents/           completeness-checker, ci-runner, committer; paired reviewers spec-test, design-quality, security-regression (default); single-gate spec, design, test, security, regression, quality (Review mode: single)
+agents/           completeness-checker, ci-runner, committer; paired reviewers spec-test, design-quality, security-regression (default); single-gate spec, design, test, security, regression, quality (Review mode: single); docs-reviewer for documentation-only PRs
 hooks/            PreToolUse: protect docs/constitution.md and approved spec/design; deny push to main, force-push, history rewrites
 scripts/          sdd-state, sdd-type, sdd-org-types, sdd-comment, sdd-gate-result, sdd-pr, sdd-flag, sdd-field, sdd-review-pack, sdd-config  (bash over gh)
 templates/        constitution, issue forms, spec, design, task, triage, gate-result
