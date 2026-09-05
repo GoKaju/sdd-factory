@@ -75,16 +75,9 @@ One per row of the spec's "Rejections" table, same name. Messages in **English**
 ### Layout
 The placement decisions specific to this module, and **every file-level name the naming rules do not determine** (e.g. "domain grouped by aggregate: `domain/task/`, `domain/task-list/`, `domain/shared/`"; "one mapper per direction: `task-record-mapper.ts`, `task-view-mapper.ts`"; "contract test suite `src/testing/task-view-repository-contract.ts`, excluded from coverage, applied by every adapter test"). No exhaustive inventory of files whose names follow from the rules.
 
-### Not in this change
-What the spec allows but this change deliberately does not build, and why (e.g. "no real clock adapter: no runtime yet"; "no SQLite adapter: deferred to the persistence Feature"). The Task and the reviewers treat anything on this list as out of scope.
-
-### Changes to existing code
-- **Modified:** <existing elements that change, or "none">
-- **Removed:** <…, or "none">
-
 ### Decisions
-| Decision | Alternatives considered | Rationale |
-| --- | --- | --- |
+<!-- one line per ADR this design relies on; the decision itself lives in docs/adrs/ -->
+- [ADR-<NNNN>](../../adrs/<NNNN>-<slug>.md) — <decision in one line>
 
 ---
 
@@ -103,5 +96,5 @@ Use for reporting, integrations, tooling, or changes with no domain-model impact
 <API, events, schemas, files — or "none">
 
 ### Decisions
-| Decision | Alternatives considered | Rationale |
-| --- | --- | --- |
+<!-- one line per ADR this design relies on; the decision itself lives in docs/adrs/ -->
+- [ADR-<NNNN>](../../adrs/<NNNN>-<slug>.md) — <decision in one line>

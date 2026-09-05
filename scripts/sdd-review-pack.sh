@@ -37,6 +37,9 @@ fence() { printf '```%s\n' "${1:-}"; cat; printf '\n```\n'; }
     if git cat-file -e "origin/$base:$f" 2>/dev/null; then git diff "origin/$base...$head" -- "$f" | fence diff
     else printf '(new in this PR)\n'; fi
   done
+  for f in $(printf '%s\n' "$files" | grep -E '^docs/adrs/.+\.md$' || true); do
+    section "$f — ADR in this PR"; cat "$f"
+  done
   # spec/design of modules touched by code but not edited in the PR
   for d in $(printf '%s\n' "$files" | grep -E '^contexts/[^/]+/' | cut -d/ -f2 | sort -u); do
     for f in docs/*/"$d"/spec.md docs/*/"$d"/design.md docs/"$d"/*/spec.md docs/"$d"/*/design.md; do
