@@ -5,6 +5,7 @@
 #   sdd-pr.sh open   <issue> <branch> <title>    → pushes the branch and opens the Draft PR with "Closes #N"
 #   sdd-pr.sh ready  <issue>                     → marks the linked PR ready for review
 #   sdd-pr.sh branch <issue>                     → prints the linked PR's head branch
+#   sdd-pr.sh scope  <issue>                     → docs | code: docs when every changed file is documentation (docs/**, *.md)
 . "$(dirname "$0")/lib.sh"
 
 cmd="${1:-}"; need_issue "${2:-}"; issue="$2"; r="$(repo)"
@@ -23,6 +24,11 @@ case "$cmd" in
     gh pr create --repo "$r" --draft --head "$branch" --title "$title" --body "$body" >/dev/null
     find_pr
     ;;
+  scope)
+    n="$(find_pr)"; [ -n "$n" ] || die "no PR linked to #$issue"
+    files="$(gh pr diff "$n" --repo "$r" --name-only)"; [ -n "$files" ] || { echo code; exit 0; }
+    if printf '%s\n' "$files" | grep -Evq '^(docs/.*|[^/]*\.md|\.github/ISSUE_TEMPLATE/.*\.(yml|md))$'; then echo code; else echo docs; fi
+    ;;
   ready) n="$(find_pr)"; [ -n "$n" ] || die "no PR linked to #$issue"; gh pr ready "$n" --repo "$r" && printf '%s\n' "$n" ;;
-  *) sed -n '2,7p' "$0"; exit 1 ;;
+  *) sed -n '2,8p' "$0"; exit 1 ;;
 esac
