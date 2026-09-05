@@ -39,6 +39,16 @@ Question: **do the changed documents say one consistent thing, and does it match
 - Every decision the design links exists as an ADR under `docs/adrs/`; an edited ADR (instead of a superseding one) is BLOCKER.
 - A design element without a requirement, or a requirement without a design element, in the changed parts is BLOCKER.
 
+### Security of the rules — BLOCKER unless noted
+The rules are the only place where a security property is guaranteed before any code exists, so judge the text as a security reviewer would judge a design. When the changed documents introduce or describe any of the following, the matching guarantee must be stated as a rule; a gap is BLOCKER, a rule that states it vaguely ("should", "when possible") is WARNING:
+- An identity or a boundary (tenant, organization, installation, worker, user): how the boundary key is derived from a **verified principal**, never from request input; what a caller must present to cross it, and that nothing crosses it silently.
+- An enrollment or registration (a worker, a repository, an integration): who authorizes it, with what, and that anonymous enrollment does not exist.
+- An inbound event from outside (webhook, callback, message): that its origin is verified before anything is read from it, and what happens to an unverified one.
+- A credential or token (installation token, worker token, API key): scope, lifetime, that it is never persisted or logged, and who may hold it.
+- A channel or subscription (push, pub/sub, WebSocket): who may subscribe to which channel and who may publish, enforced by the platform's authorizer, not by convention.
+- A privileged automatic action (merge, approval, deletion): that the actor is verified as a human with the required permission and that an app or bot never counts.
+Two rules that grant and forbid the same crossing (one allows lending, another forbids any read across the boundary) are a contradiction and BLOCKER; the fix is to state the exception inside the forbidding rule.
+
 ### Cross-document consistency — BLOCKER
 - A changed rule that contradicts an approved spec or design elsewhere in the repository is NEEDS_HUMAN with the conflicting locations named; the reviewer never decides which document yields.
 
