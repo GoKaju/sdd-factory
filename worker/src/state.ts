@@ -140,6 +140,23 @@ export class JobStore {
     return r.changes > 0
   }
 
+  /** Every phase run of one issue, in order: the per-issue detail for the status page. */
+  phasesOf(repo: string, issue: number): { phase: string; outcome: string; tier: string | null; tierReason: string | null; startedAt: string; minutes: number; usd: number | null; turns: number | null }[] {
+    return this.db.prepare(
+      `SELECT phase, outcome, tier, tier_reason AS tierReason, started_at AS startedAt, ROUND(duration_ms / 60000.0, 1) AS minutes, cost_usd AS usd, turns
+       FROM phases WHERE repo = ? AND issue = ? ORDER BY id`,
+    ).all(repo, issue) as unknown as { phase: string; outcome: string; tier: string | null; tierReason: string | null; startedAt: string; minutes: number; usd: number | null; turns: number | null }[]
+  }
+
+  /** Issues with any phase in the last N days (open or closed), most recent first. */
+  recentIssues(days: number): { repo: string; issue: number; phases: number; minutes: number; usd: number; last: string }[] {
+    const since = new Date(Date.now() - days * 86_400_000).toISOString()
+    return this.db.prepare(
+      `SELECT repo, issue, COUNT(*) AS phases, ROUND(SUM(duration_ms) / 60000.0, 1) AS minutes, ROUND(COALESCE(SUM(cost_usd), 0), 2) AS usd, MAX(finished_at) AS last
+       FROM phases WHERE started_at >= ? GROUP BY repo, issue ORDER BY last DESC`,
+    ).all(since) as unknown as { repo: string; issue: number; phases: number; minutes: number; usd: number; last: string }[]
+  }
+
   /** Phases run since local midnight: count, dollars, minutes. */
   today(): { phases: number; usd: number; minutes: number } {
     const start = new Date(); start.setHours(0, 0, 0, 0)
