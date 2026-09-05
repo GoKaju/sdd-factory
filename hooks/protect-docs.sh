@@ -18,8 +18,8 @@ case "$rel" in
   docs/constitution.md)
     has_flag allow-constitution || block "docs/constitution.md changes only through a Constitution-type issue (/sdd-implement sets the flag). Rule W4."
     ;;
-  docs/*/*/spec.md|docs/*/*/design.md)
-    has_flag lock-docs && block "$rel is approved and the issue is in implementation/review. Stop and reclassify the issue as Change instead of editing the spec in passing. Rule W4."
+  docs/*/*/spec.md|docs/*/*/design.md|docs/adrs/*.md)
+    has_flag lock-docs && block "$rel is approved and the issue is in implementation/review. Stop and reclassify the issue as Change instead of editing spec, design or ADRs in passing. Rule W4."
     ;;
 esac
 exit 0

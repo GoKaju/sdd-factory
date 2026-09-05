@@ -36,7 +36,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`.
 - The PR body's "Resumen" states what was built and which requirement IDs it covers.
 - No edit to `spec.md`, `design.md` or `docs/constitution.md`; if one was needed, the issue was escalated instead.
 - No test removed, skipped or weakened; no new dependency; no coverage threshold lowered.
-- Nothing built beyond the design's Layout and its "Not in this change" list.
+- Nothing built beyond the design's Layout and the scope notes of the PR description (what this change touches, what it leaves out).
 - State is `in-review`; `/sdd-review` is next.
 
 ## Rules

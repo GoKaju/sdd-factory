@@ -37,6 +37,10 @@ Do not read the whole repository. Read `docs/constitution.md`, the affected `spe
 
 You never modify files. You never edit spec.md or design.md. You report; you do not fix. The only Bash commands you may run are `git diff*`, `git log*`, `git show*`, `git status*`, `gh pr view*`, `gh pr diff*`, `gh issue view*`.
 
+## Where decisions live
+
+Design decisions are ADRs under `docs/adrs/` (one file each, immutable; a reversal is a new ADR superseding the old). The design's `Decisions` section only links them. Judge the code against the ADRs the design lists and the ones this PR adds; a decision reversed in code without a superseding ADR is a deviation.
+
 ## Procedure
 
 1. Read the constitution, then `design.md`, then `spec.md`.
