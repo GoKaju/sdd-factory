@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { autoApproveFromConstitution, chooseTier, decide, designClean, raise, sddConfigFromJson, specClean, summaryClean, tierFor, type IssueSnapshot } from '../src/rules.ts'
+import { autoApproveFromConstitution, chooseTier, decide, designClean, raise, sddConfigFromJson, specClean, summaryClean, tierFor, type IssueSnapshot } from '../src/index.ts'
 
 const base: IssueSnapshot = {
   number: 1, type: 'Feature', state: null, updatedAt: '2026-09-03T00:00:00Z',

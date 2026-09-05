@@ -1,6 +1,5 @@
 import { createServer } from 'node:http'
-import { timeoutMinutes, type Phase, type SddState } from './rules.ts'
-import type { OpenIssue } from './github.ts'
+import { timeoutMinutes, type Phase, type SddState } from '@sdd-factory/core'
 import type { JobStore } from './state.ts'
 
 /** What a human would want to know at a glance; a view over the store, the tick snapshot and the log. */
@@ -29,18 +28,6 @@ export interface StatusState {
   pauseReason: string | null
   running: RunningPhase[]
   issues: StatusIssue[]
-}
-
-/** Which human decision an issue in this state waits for (null when the orchestrator or nobody acts). */
-export const waitingFor = (i: OpenIssue, autoApprove: ReadonlySet<string>): string | null => {
-  switch (i.state) {
-    case 'triage': return i.triageClean ? (autoApprove.has('Intake') ? null : 'set sdd:ready (Gate 0)') : 'answer the triage questions'
-    case 'spec': return autoApprove.has('Spec') && i.artifactClean ? null : 'approve the spec (Gate 1)'
-    case 'design': return autoApprove.has('Design') && i.artifactClean ? null : 'approve the design (Gate 2)'
-    case 'task': return autoApprove.has('Task') && i.artifactClean ? null : 'approve the Task (Gate 3)'
-    case 'final-review': return autoApprove.has('Final') && i.reviewPassed ? null : 'review and merge the PR (Gate 4)'
-    default: return null
-  }
 }
 
 const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c)

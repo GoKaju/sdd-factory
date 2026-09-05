@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
 import { createWriteStream, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { allowedToolsFor, skillFor, timeoutMinutes, type Phase } from './rules.ts'
+import { allowedToolsFor, skillFor, timeoutMinutes, type Phase } from '@sdd-factory/core'
 
 export type RunOutcome = 'done' | 'failed' | 'timeout' | 'quota'
 
