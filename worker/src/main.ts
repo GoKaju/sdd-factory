@@ -135,8 +135,8 @@ const runJob = async (cfg: WorkerConfig, store: JobStore, j: Job): Promise<void>
         reviewCycles: reviewCyclesOf(j),
         recentFailure: store.recentFailure(repo, phase),
       }, sdd.maxReworkCycles)
-      status.running.push({ jobId: id, repo, issue: n, phase, startedAt })
-      const r = await runPhase({ phase, issue: n, cwd, pluginDir: cfg.pluginDir, note: worktreeNote(n, branch, phase), logPath, runner, model: cfg.models[tier] })
+      status.running.push({ jobId: id, repo, issue: n, phase, startedAt, tier })
+      const r = await runPhase({ phase, issue: n, cwd, pluginDir: cfg.pluginDir, note: worktreeNote(n, branch, phase), logPath, runner, model: cfg.models[tier], tier })
       status.running = status.running.filter((x) => !(x.jobId === id && x.phase === phase))
       store.recordPhase({ jobId: id, repo, issue: n, phase, outcome: r.outcome, startedAt, costUsd: r.costUsd, turns: r.turns, tier, tierReason: reasons.join(', ') })
       store.setNote(id, `${phase}: ${r.summary.slice(0, 1500)}`)
