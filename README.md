@@ -98,7 +98,7 @@ cp worker/launchd/com.gokaju.sdd-worker.plist ~/Library/LaunchAgents/ && launchc
 # logs: ~/.sdd/worker/worker.log · stop: launchctl bootout gui/$(id -u)/com.gokaju.sdd-worker
 ```
 
-Status, read-only, on this machine only: `http://127.0.0.1:4777/` (page) and `/status` (JSON: running phases with time budget, issues waiting for a human decision, open issues, pause state, today's cost). `worker/swiftbar/sdd-worker.10s.sh` puts the same in the macOS menu bar via SwiftBar or xbar. The JSON is what a control plane will read from each worker later.
+Status, read-only, on this machine only: `http://127.0.0.1:4777/` (page) and `/status` (JSON: running phases with time budget, issues waiting for a human decision, open issues, pause state, today's cost, and the per-phase ledger of every issue worked on: outcome, tier and why, minutes, USD, turns). `worker/swiftbar/sdd-worker.10s.sh` puts the same in the macOS menu bar via SwiftBar or xbar. The JSON is what a control plane will read from each worker later.
 
 What it reacts to (see `src/rules.ts`): a new issue → triage; an author comment or an edit of the issue title/body while in `triage` → triage again; `ready` → task for Bug/Task/Constitution (Feature/Change wait for a human unless `autoSpec`); `spec-approved` → design; `design-approved` → task, or straight to review when the Task is already complete and newer than the last docs change on the branch (document-only amendment; a Task written for an earlier spec/design is stale and gets rewritten); `task-approved` and `rework` → implement then review; `in-review` → review; `implementing` idle for 45 min → resume. It never sets `ready` or `*-approved`.
 
