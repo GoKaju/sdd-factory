@@ -74,6 +74,7 @@ export const openIssues = async (repo: string, pluginDir: string, repoPath: stri
       triageClean: state === 'triage' ? await commentClean(pluginDir, repoPath, i.number, 'sdd:triage') : false,
       taskComplete: state === 'design-approved' ? await taskStillValid(repo, pluginDir, repoPath, i.number) : false,
       reviewPassed: state === 'final-review' ? await reviewPassed(pluginDir, repoPath, i.number) : false,
+      reworkRequested: state === 'final-review' ? await reworkRequested(pluginDir, repoPath, i.number) : false,
       artifactClean: await artifactClean(repo, pluginDir, repoPath, i.number, state),
       size: await triageSize(pluginDir, repoPath, i.number),
       reviewCycles: ['rework', 'in-review', 'final-review', 'implementing', 'task-approved'].includes(state ?? '') ? await reviewCycles(pluginDir, repoPath, i.number) : 0,
@@ -214,6 +215,15 @@ const reviewPassed = async (pluginDir: string, repoPath: string, issue: number):
 const nameWithOwner = (repoPath: string): Promise<string> => sh('gh', ['repo', 'view', '--json', 'nameWithOwner', '-q', '.nameWithOwner'], repoPath)
 
 /** The worker assigns the issue to the account `gh` runs as while it owns it, and hands it back when a human must act. */
+/** A human left a `/rework` comment on the PR or the issue that the orchestrator has not applied yet. */
+const reworkRequested = async (pluginDir: string, repoPath: string, issue: number): Promise<boolean> => {
+  try { return (await sh(`${pluginDir}/scripts/sdd-rework.sh`, ['pending', String(issue)], repoPath)).trim().length > 0 } catch { return false }
+}
+
+/** Turns the pending `/rework` comments into Task steps and sets `rework`; mechanical, no agent. */
+export const applyRework = async (pluginDir: string, repoPath: string, issue: number): Promise<string> =>
+  (await sh(`${pluginDir}/scripts/sdd-rework.sh`, ['apply', String(issue)], repoPath)).trim()
+
 export const setAssignee = async (repoPath: string, issue: number, on: boolean): Promise<void> => {
   try { await sh('gh', ['issue', 'edit', String(issue), on ? '--add-assignee' : '--remove-assignee', '@me'], repoPath) } catch { /* visibility only */ }
 }
