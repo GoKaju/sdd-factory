@@ -1,9 +1,11 @@
 import type { Gate, IssueSnapshot, Phase, SddState } from './types.ts'
 
 export type Decision =
-  | { phases: Phase[]; approve?: undefined; merge?: undefined; reason: string }
-  | { phases?: undefined; approve: SddState; merge?: undefined; reason: string }
-  | { phases?: undefined; approve?: undefined; merge: true; reason: string }
+  | { phases: Phase[]; approve?: undefined; merge?: undefined; applyRework?: undefined; reason: string }
+  | { phases?: undefined; approve: SddState; merge?: undefined; applyRework?: undefined; reason: string }
+  | { phases?: undefined; approve?: undefined; merge: true; applyRework?: undefined; reason: string }
+  /** a human asked for changes at Gate 4 with `/rework`: extend the Task with their bullets and set `rework` */
+  | { phases?: undefined; approve?: undefined; merge?: undefined; applyRework: true; reason: string }
 
 export interface RuleOptions {
   autoSpec: boolean
@@ -55,6 +57,7 @@ export const decide = (issue: IssueSnapshot, o: RuleOptions): Decision | null =>
     case 'task':
       return o.autoApprove.has('Task') && issue.artifactClean ? { approve: 'task-approved', reason: 'Task auto-approved: steps present, clean run' } : null
     case 'final-review':
+      if (issue.reworkRequested) return { applyRework: true, reason: 'human asked for changes at Gate 4 (/rework)' }
       // A Constitution amendment is never merged without a human, whatever the constitution says:
       // otherwise one delegated Final would let the rules rewrite themselves with nobody watching.
       if (t === 'Constitution') return null

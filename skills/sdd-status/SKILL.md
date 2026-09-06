@@ -27,6 +27,6 @@ For each issue print one row: number · title · `sdd-type.sh get` · `sdd-state
 | task-approved, rework | `/sdd-implement <n>` |
 | implementing | implementation in progress |
 | in-review | `/sdd-review <n>` |
-| final-review | human: Approval Gate 4 on the PR, then merge |
+| final-review | human: Approval Gate 4 on the PR — merge, or a `/rework` comment listing what must change (each bullet becomes a Task step; the orchestrator sets `rework`) |
 
 Read-only. Change nothing.
