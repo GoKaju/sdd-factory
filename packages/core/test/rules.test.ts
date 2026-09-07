@@ -4,7 +4,7 @@ import { autoApproveFromConstitution, chooseTier, decide, designClean, raise, sd
 
 const base: IssueSnapshot = {
   number: 1, type: 'Feature', state: null, updatedAt: '2026-09-03T00:00:00Z',
-  newCommentSinceTriage: false, triageClean: false, taskComplete: false, reviewPassed: false, idleMinutes: 0, artifactClean: true, size: null, title: "t", reviewCycles: 0,
+  newCommentSinceTriage: false, triageClean: false, taskComplete: false, reviewPassed: false, idleMinutes: 0, artifactClean: true, size: null, title: "t", reviewCycles: 0, reworkRequested: false,
 }
 const o = { autoSpec: false, staleImplementingMinutes: 45, autoApprove: new Set<never>() }
 
@@ -119,4 +119,12 @@ test('auto tier: floors are never lowered, raises stop at strong, frontier only 
   assert.equal(raise('strong'), 'strong'); assert.equal(raise('frontier'), 'frontier')
   const c = sddConfigFromJson(JSON.stringify({ intelligence: { mode: 'fixed', spec: 'frontier' }, review: { maxReworkCycles: 2 } }))
   assert.equal(c.intelligenceMode, 'fixed'); assert.equal(c.maxReworkCycles, 2); assert.equal(c.intelligence.spec, 'frontier')
+})
+
+test('a /rework comment at Gate 4 extends the Task and sends the issue to rework, whatever the approvals', () => {
+  const all = { ...o, autoApprove: new Set(['Final'] as const) }
+  assert.equal(decide({ ...base, state: 'final-review', reworkRequested: true }, o)?.applyRework, true)
+  assert.equal(decide({ ...base, state: 'final-review', reworkRequested: true, reviewPassed: true }, all)?.applyRework, true)
+  assert.equal(decide({ ...base, type: 'Constitution', state: 'final-review', reworkRequested: true }, o)?.applyRework, true)
+  assert.equal(decide({ ...base, state: 'final-review' }, o), null)
 })
