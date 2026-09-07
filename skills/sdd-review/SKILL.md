@@ -26,6 +26,7 @@ Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Result schema: `${CLAUDE_PLUGIN_ROOT}
 5. **Aggregate.** `sdd-gate-result.sh aggregate $pr <cycle>`.
    - `PASS` → `sdd-state.sh set $1 final-review`, `sdd-pr.sh ready $1`, `sdd-flag.sh clear lock-docs`. Post a short summary comment on the PR (gates, warnings to acknowledge). Done.
    - `NEEDS_HUMAN` or `BLOCKED` → `sdd-state.sh set $1 final-review`; comment on the issue what needs a human. Done.
+   - In `final-review` the human either merges or writes a `/rework` comment on the PR (or the issue) with one bullet per change they require — typically WARNINGs they refuse to accept. `sdd-rework.sh apply $1` (the worker runs it on its own) appends each bullet as a new Task step and sets `rework`; `/sdd-implement` then does exactly those steps and this skill runs again.
    - `FAIL` → step 6.
 
 6. **Rework, bounded.** If `cycle + 1 >= $max`: `sdd-state.sh set $1 final-review`, comment on the issue "NEEDS_HUMAN: rework limit reached" with the remaining BLOCKERs, and stop. Otherwise `sdd-state.sh set $1 rework`, fix **only the BLOCKER findings**, commit via `committer`, push, and go back to step 2 with `cycle + 1`. In `scope` `code` the fixes touch tests and code, never spec, design or constitution. In `scope` `docs` the documents **are** the change under review, so the fixes touch exactly the files the PR already changes and nothing else; for `docs/constitution.md` set `sdd-flag.sh set allow-constitution` for the fix and clear it right after.

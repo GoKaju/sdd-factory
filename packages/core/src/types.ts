@@ -45,4 +45,6 @@ export interface IssueSnapshot {
    * and, for all three, the last run of the producing phase reported no BLOCKER, FAIL or NEEDS_HUMAN.
    */
   artifactClean: boolean
+  /** a human left an unapplied `/rework` comment on the PR or the issue at Approval Gate 4 */
+  reworkRequested: boolean
 }

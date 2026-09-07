@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { loadConfig, type RepoConfig, type WorkerConfig } from './config.ts'
 import { readFileSync } from 'node:fs'
-import { comment, constitutionLanguage, isClosed, mergePr, openIssues, prBranch, setAssignee, setState, setWorking, sh, upsertLedger, type OpenIssue } from './github.ts'
+import { applyRework, comment, constitutionLanguage, isClosed, mergePr, openIssues, prBranch, setAssignee, setState, setWorking, sh, upsertLedger, type OpenIssue } from './github.ts'
 import { autoApproveFromConstitution, chooseTier, decide, defaultRepoSddConfig, defaultTier, ledgerLine, ledgerMarkdown, sddConfigFromJson, summaryClean, tierFor, waitingFor, type Gate, type Phase, type RepoSddConfig, type SddState } from '@sdd-factory/core'
 import { runPhase } from './runner.ts'
 import { JobStore } from './state.ts'
@@ -51,6 +51,12 @@ const tick = async (cfg: WorkerConfig, store: JobStore): Promise<void> => {
         continue
       }
       if (store.running(repo.nameWithOwner, issue.number)) continue
+      if (d.applyRework) {
+        log(`plan ${repo.nameWithOwner}#${issue.number} [${issue.state}] → rework (${d.reason})`)
+        if (dryRun) continue
+        try { log(`  ${await applyRework(cfg.pluginDir, repo.path, issue.number)}`) } catch (e) { log(`! ${repo.nameWithOwner}#${issue.number}: ${String(e)}`) }
+        continue
+      }
       if (d.approve || d.merge) {
         log(`plan ${repo.nameWithOwner}#${issue.number} [${issue.state}] → ${d.merge ? 'merge' : `approve ${d.approve}`} (${d.reason})`)
         if (dryRun) continue
