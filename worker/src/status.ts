@@ -1,5 +1,5 @@
 import { createServer } from 'node:http'
-import { timeoutMinutes, type Phase, type SddState } from '@sdd-factory/core'
+import { budgetMinutes, type Phase, type SddState, type Tier } from '@sdd-factory/core'
 import type { JobStore } from './state.ts'
 
 /** What a human would want to know at a glance; a view over the store, the tick snapshot and the log. */
@@ -15,7 +15,7 @@ export interface StatusIssue {
   waitingFor: string | null
 }
 
-export interface RunningPhase { jobId: number; repo: string; issue: number; phase: Phase; startedAt: string }
+export interface RunningPhase { jobId: number; repo: string; issue: number; phase: Phase; startedAt: string; tier?: Tier }
 
 export interface StatusState {
   version: string
@@ -58,7 +58,7 @@ export const startStatusServer = (port: number, state: StatusState, store: JobSt
     if (req.url === '/status') {
       const body = {
         ...state,
-        running: state.running.map((r) => ({ ...r, budgetMinutes: timeoutMinutes[r.phase] })),
+        running: state.running.map((r) => ({ ...r, budgetMinutes: budgetMinutes(r.phase, r.tier) })),
         waiting: state.issues.filter((i) => i.waitingFor),
         today: store.today(),
         // per-issue ledger: open issues first, then anything worked on in the last 7 days

@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
 import { createWriteStream, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { allowedToolsFor, skillFor, timeoutMinutes, type Phase } from '@sdd-factory/core'
+import { allowedToolsFor, budgetMinutes, skillFor, type Phase, type Tier } from '@sdd-factory/core'
 
 export type RunOutcome = 'done' | 'failed' | 'timeout' | 'quota'
 
@@ -22,6 +22,8 @@ export interface RunInput {
   runner: 'sdk' | 'cli'
   /** model for this phase, resolved by the worker from the repository's intelligence tier */
   model: string
+  /** the tier the model was chosen for; frontier gets a longer wall-clock budget */
+  tier: Tier
 }
 
 const QUOTA = /spend limit|usage limit|rate limit|credit balance|quota/i
@@ -48,7 +50,7 @@ export const runPhase = async (i: RunInput): Promise<RunResult> => {
 const runWithSdk = async (i: RunInput, write: (s: string) => void): Promise<RunResult> => {
   const { query } = await import('@anthropic-ai/claude-agent-sdk')
   const abort = new AbortController()
-  const timer = setTimeout(() => abort.abort(), timeoutMinutes[i.phase] * 60_000)
+  const timer = setTimeout(() => abort.abort(), budgetMinutes(i.phase, i.tier) * 60_000)
   let summary = ''
   let costUsd: number | null = null
   let turns: number | null = null
@@ -89,7 +91,7 @@ const runWithSdk = async (i: RunInput, write: (s: string) => void): Promise<RunR
       }
     }
   } catch (e: unknown) {
-    if (abort.signal.aborted) return { outcome: 'timeout', summary: `timed out after ${timeoutMinutes[i.phase]} min`, costUsd, turns }
+    if (abort.signal.aborted) return { outcome: 'timeout', summary: `timed out after ${budgetMinutes(i.phase, i.tier)} min`, costUsd, turns }
     throw e
   } finally {
     clearTimeout(timer)
@@ -109,7 +111,7 @@ const runWithCli = (i: RunInput, write: (s: string) => void): Promise<RunResult>
       '--output-format', 'text',
     ], { cwd: i.cwd, stdio: ['ignore', 'pipe', 'pipe'] })
     let out = ''
-    const timer = setTimeout(() => child.kill('SIGTERM'), timeoutMinutes[i.phase] * 60_000)
+    const timer = setTimeout(() => child.kill('SIGTERM'), budgetMinutes(i.phase, i.tier) * 60_000)
     child.stdout.on('data', (d: Buffer) => { const s = d.toString(); out += s; write(s) })
     child.stderr.on('data', (d: Buffer) => { const s = d.toString(); out += s; write(`! ${s}`) })
     child.on('close', (code, signal) => {
