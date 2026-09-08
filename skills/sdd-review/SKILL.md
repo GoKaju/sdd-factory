@@ -1,38 +1,38 @@
 ---
-description: Run the six adversarial Review Gates on an issue's PR (three paired reviewers over one shared review pack by default; one documentation reviewer when the PR changes only documents), publish gate results, aggregate, and drive bounded rework until PASS or NEEDS_HUMAN. Requires sdd:in-review or sdd:rework.
+name: sdd-review
+description: Run the six adversarial Review Gates on an issue's PR over one shared review pack (two documentation gates when the PR changes only documents), publish gate results, aggregate, and drive bounded rework until PASS or NEEDS_HUMAN. Requires sdd:in-review or sdd:rework.
 argument-hint: "<issue-number>"
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 ---
 
-# /sdd-review $1
+# /sdd-review N
 
-Verify the implementation of issue **#$1** and take it to Approval Gate 4 or back to rework.
+Verify the implementation of issue **#N** and take it to Approval Gate 4 or back to rework.
 
-Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Result schema: `${CLAUDE_PLUGIN_ROOT}/templates/gate-result.template.yaml`.
+Conventions: **N** is the issue number given as argument. `sdd` is the plugin's `bin/sdd` (in Claude Code `${CLAUDE_PLUGIN_ROOT}/bin/sdd`; elsewhere the `bin/sdd` of the plugin checkout, ideally on the PATH; `sdd help` lists its commands). Templates live in the plugin's `templates/`, gate checklists in `gates/`. Result schema: `templates/gate-result.template.yaml`; common gate rules: `gates/README.md`.
 
 ## Steps
 
-1. **Preconditions.** `sdd-state.sh require $1 in-review rework design-approved`. In `design-approved` you are being invoked after a document-only amendment (Task unchanged, code unchanged): record the design approval (`status: approved` in `design.md`, commit) and continue as `in-review`. `pr=$(sdd-pr.sh find $1)`; check out its branch. Read `docs/constitution.md` (Rules, Commands), `max=$(sdd-config.sh get .review.maxReworkCycles)` and `mode=$(sdd-config.sh get .review.mode)` from `.sdd/config.json`, the Task comment, and the affected `spec.md`/`design.md`. `cycle` = number of previous aggregate results on the PR (`sdd-gate-result.sh list $pr | ...`), starting at 0. `scope=$(sdd-pr.sh scope $1)`: `docs` when every changed file is documentation (`docs/**`, `*.md`, issue forms), `code` otherwise.
+1. **Preconditions.** `sdd state require N in-review rework design-approved`. In `design-approved` you are invoked after a document-only amendment (Task and code unchanged): record the design approval (`status: approved` in `design.md`, commit) and continue as `in-review`. `pr=$(sdd pr find N)`; check out its branch. Read `docs/constitution.md`, `max=$(sdd rework-budget)`, the Task comment and the affected `spec.md`/`design.md`. `cycle` = number of previous review cycles on the PR (highest cycle in `sdd gate-result list $pr`, plus one; 0 if none). `scope=$(sdd pr scope N)`: `docs` when every changed file is documentation, `code` otherwise.
 
-2. **Deterministic checks first.** Skip this step when `scope` is `docs`: the build cannot change, and the repository's CI check still guards the merge. Otherwise run the `ci-runner` agent. If red: publish one result with `gate: deterministic-checks`, `status: BLOCKED`, and stop with `sdd-state.sh set $1 rework`. Gates never run on a red build.
+2. **Deterministic checks first.** Skip when `scope` is `docs`. Otherwise `sdd ci`. If red: publish one result with `gate: deterministic-checks`, `status: BLOCKED`, the failing command in a finding, then `sdd state set N rework` and stop. Gates never run on a red build.
 
-3. **Review pack.** `pack=$(sdd-review-pack.sh build $1 <cycle>)`. One file with everything the gates need (constitution, issue with triage and Task, spec/design approved vs PR, touched files, test stats, full diff), so no reviewer explores the repository from scratch. Rebuild it on every cycle.
+3. **Review pack.** `pack=$(sdd review-pack build N $cycle)`: one file with everything the gates need (constitution, issue with triage and Task, spec/design PR version and diff against the approved one, touched files, test stats, full diff). Rebuild it every cycle.
 
-4. **Gates, in parallel.** **`scope` `docs`** (documentation-only PR, typical of a Constitution issue or a document-only amendment): four gates have nothing to judge, so do not launch them. Launch only the `docs-reviewer` agent with the pack path, issue, PR, commit sha, `rework_cycle: <cycle>` and the model below; it returns **two** YAML blocks (`design-architecture` read as coherence of the documents, `code-quality` read as clarity and hygiene); split and `sdd-gate-result.sh post $pr <file>` each. Then `sdd-gate-result.sh skip $pr <gate> <cycle> "documentation-only change"` for `spec-compliance`, `test-strategy`, `security` and `regression`, so the six results exist and the aggregate rule is unchanged. Continue at step 5.
+4. **Gates.** Inputs for every gate run: `pack`, issue, PR, head sha, `rework_cycle: $cycle`, and the plugin's `gates/` directory.
+   - **With subagents** (Claude Code and any host that launches a fresh-context agent): launch the plugin's `reviewer` agent once with `gates: code` (six YAML blocks) or `gates: docs` (two blocks). When the diff exceeds ~1500 lines and the host runs subagents in parallel, you may split `code` into three runs: `spec-compliance,test-strategy` · `design-architecture,code-quality` · `security,regression`.
+   - **Without subagents:** run the gates yourself, one at a time, re-reading the pack and following `gates/<gate>.md` literally; you are judging your own work, so be harsher, not kinder.
+   - Split the returned blocks into one file each and `sdd gate-result post $pr <file>`. For `scope` `docs` also `sdd gate-result skip $pr <gate> $cycle "documentation-only change"` for `spec-compliance`, `test-strategy`, `security` and `regression`, so six results exist and the aggregate rule is unchanged.
 
-   **`scope` `code`:** `model=$(sdd-config.sh tier-model "$(sdd-config.sh reviewer-tier $1)")` resolves the reviewers' model: the repository's `.sdd/config.json` names an intelligence tier (light | standard | strong) by issue type or triage size, and this machine maps the tier to a model. Pass it as the `model` of every reviewer agent you launch. `mode` `paired` (default): launch the three paired reviewer agents, each with the pack path, issue, PR, commit sha and `rework_cycle: <cycle>`: `spec-test-reviewer` (gates spec-compliance + test-strategy), `design-quality-reviewer` (design-architecture + code-quality), `security-regression-reviewer` (security + regression). Each returns **two** YAML blocks; split them and `sdd-gate-result.sh post $pr <file>` for each, so the six gate results exist exactly as before. `mode` `single`: launch the six single-gate agents instead (`spec-reviewer`, `design-reviewer`, `test-reviewer`, `security-reviewer`, `regression-reviewer`, `quality-reviewer`), also with the pack path.
-
-5. **Aggregate.** `sdd-gate-result.sh aggregate $pr <cycle>`.
-   - `PASS` → `sdd-state.sh set $1 final-review`, `sdd-pr.sh ready $1`, `sdd-flag.sh clear lock-docs`. Post a short summary comment on the PR (gates, warnings to acknowledge). Done.
-   - `NEEDS_HUMAN` or `BLOCKED` → `sdd-state.sh set $1 final-review`; comment on the issue what needs a human. Done.
-   - In `final-review` the human either merges or writes a `/rework` comment on the PR (or the issue) with one bullet per change they require — typically WARNINGs they refuse to accept. `sdd-rework.sh apply $1` (the worker runs it on its own) appends each bullet as a new Task step and sets `rework`; `/sdd-implement` then does exactly those steps and this skill runs again.
+5. **Aggregate.** `sdd gate-result aggregate $pr $cycle`.
+   - `PASS` → `sdd state set N final-review`, `sdd pr ready N`, `sdd flag clear lock-docs`. Post a short summary comment on the PR (gates, WARNINGs the human must acknowledge). Done: Approval Gate 4 is the human's, who merges or writes a `/rework` comment on the PR with one bullet per required change (`/sdd-implement N` then applies them).
+   - `NEEDS_HUMAN` or `BLOCKED` → `sdd state set N final-review`; comment on the issue what needs a human. Done.
    - `FAIL` → step 6.
 
-6. **Rework, bounded.** If `cycle + 1 >= $max`: `sdd-state.sh set $1 final-review`, comment on the issue "NEEDS_HUMAN: rework limit reached" with the remaining BLOCKERs, and stop. Otherwise `sdd-state.sh set $1 rework`, fix **only the BLOCKER findings**, commit via `committer`, push, and go back to step 2 with `cycle + 1`. In `scope` `code` the fixes touch tests and code, never spec, design or constitution. In `scope` `docs` the documents **are** the change under review, so the fixes touch exactly the files the PR already changes and nothing else; for `docs/constitution.md` set `sdd-flag.sh set allow-constitution` for the fix and clear it right after.
+6. **Rework, bounded.** If `cycle + 1 >= max`: `sdd state set N final-review`, comment "NEEDS_HUMAN: rework budget exhausted" with the remaining BLOCKERs, stop. Otherwise `sdd state set N rework`, fix **only the BLOCKER findings**, commit per `templates/commits.md`, push, and return to step 2 with `cycle + 1`. In `scope` `code` the fixes touch code and tests, never spec, design, ADRs or constitution. In `scope` `docs` the documents **are** the change under review: fix exactly the files the PR already changes (for `docs/constitution.md`, `sdd flag set allow-constitution` around the edit).
 
 ## Rules
 
-- Reviewers are read-only and adversarial; you do not argue with a BLOCKER, you fix it or escalate it. A finding you believe is wrong goes to the human as `NEEDS_HUMAN`, with your reasoning, not silently ignored.
-- Never edit `spec.md`, `design.md` or `docs/constitution.md` to make a gate pass on a code change. A Spec Compliance drift finding means the code changes, or the issue is escalated. (A documentation-only PR is the exception by definition: there the reviewed documents are what gets fixed.)
+- Reviewers are read-only and adversarial; you do not argue with a BLOCKER, you fix it or escalate it. A finding you believe wrong goes to the human as `NEEDS_HUMAN` with your reasoning, never silently ignored.
+- Never edit `spec.md`, `design.md`, ADRs or `docs/constitution.md` to make a gate pass on a code change. Drift means the code changes, or the issue is escalated.
 - Never delete, skip or weaken a test to get Test Strategy to PASS.
