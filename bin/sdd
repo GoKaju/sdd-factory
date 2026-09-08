@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# sdd — the one command behind every sdd-factory skill. Dispatches to scripts/<cmd>.sh.
+#
+#   sdd <command> [args…]     e.g. sdd state get 12 · sdd pr find 12 · sdd review-pack build 12 · sdd ci
+#   sdd help [command]        lists the commands, or prints one command's usage
+#   sdd lang | sdd rework-budget   values read from docs/constitution.md
+set -euo pipefail
+self="$0"; while [ -L "$self" ]; do t="$(readlink "$self")"; case "$t" in /*) self="$t";; *) self="$(dirname "$self")/$t";; esac; done
+root="$(cd "$(dirname "$self")/.." && pwd -P)"; S="$root/scripts"
+
+usage() { for f in "$S"/*.sh; do n="$(basename "$f" .sh)"; [ "$n" = lib ] && continue; printf '%-13s %s\n' "$n" "$(sed -n '2p' "$f" | sed 's/^# *//')"; done; }
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+  help|-h|--help) if [ -n "${1:-}" ] && [ -f "$S/$1.sh" ]; then sed -n '2,20p' "$S/$1.sh" | sed '/^[^#]/q' | grep '^#' | sed 's/^# \{0,1\}//'; else usage; fi ;;
+  lang) . "$S/lib.sh"; constitution_lang; echo ;;
+  rework-budget) . "$S/lib.sh"; rework_budget; echo ;;
+  *) [ -f "$S/$cmd.sh" ] || { printf 'sdd: unknown command "%s"\n\n' "$cmd" >&2; usage >&2; exit 1; }; exec bash "$S/$cmd.sh" "$@" ;;
+esac

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PreToolUse (Bash): never push to main/master, never force-push, never rewrite published history.
+# Claude Code PreToolUse (Bash): never push to main/master, never force-push, never rewrite published history.
 set -u
 . "$(dirname "$0")/lib.sh"
 read_stdin

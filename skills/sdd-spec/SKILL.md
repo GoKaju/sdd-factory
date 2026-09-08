@@ -1,38 +1,36 @@
 ---
+name: sdd-spec
 description: Write or update the module spec for an issue - branch, Draft PR, spec.md with stable requirement IDs, completeness check. Requires state sdd:ready and type Feature or Change.
 argument-hint: "<issue-number>"
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 ---
 
-# /sdd-spec $1
+# /sdd-spec N
 
-Produce the specification for issue **#$1** and leave it in a Draft PR for Approval Gate 1.
+Produce the specification for issue **#N** and leave it in a Draft PR for Approval Gate 1.
 
-Scripts: `${CLAUDE_PLUGIN_ROOT}/scripts/`. Template: `${CLAUDE_PLUGIN_ROOT}/templates/spec.template.md`.
+Conventions: **N** is the issue number given as argument. `sdd` is the plugin's `bin/sdd` (in Claude Code `${CLAUDE_PLUGIN_ROOT}/bin/sdd`; elsewhere the `bin/sdd` of the plugin checkout, ideally on the PATH; `sdd help` lists its commands). Templates live in the plugin's `templates/`, gate checklists in `gates/`. Spec template: `templates/spec.template.md`.
 
 ## Steps
 
-1. **Preconditions.** `sdd-state.sh require $1 ready spec` and `sdd-type.sh require $1 Feature Change`. Read `docs/constitution.md`, the issue (`gh issue view $1 --comments`) and its triage comment (`sdd-comment.sh get $1 sdd:triage`) for the affected `docs/<domain>/<module>/`.
+1. **Preconditions.** `sdd state require N ready spec` and `sdd type require N Feature Change`. Read `docs/constitution.md`, the issue (`gh issue view N --comments`) and its triage comment (`sdd comment get N sdd:triage`) for the affected `docs/<domain>/<module>/`.
 
-2. **Branch and Draft PR.** If `sdd-pr.sh find $1` is empty: `git checkout main && git pull`, create `<type>/$1-<slug>` (`feat/` or `change/`), then `sdd-pr.sh open $1 <branch> "<type>: <title>"`. Otherwise check out the PR's branch (`sdd-pr.sh branch $1`).
+2. **Branch and Draft PR.** If `sdd pr find N` is empty: `git checkout main && git pull`, create `<feat|change>/N-<slug>`, then `sdd pr open N <branch> "<type>: <title>"`. Otherwise check out `sdd pr branch N`.
 
-3. **Spec.** For a new module copy `spec.template.md` to `docs/<domain>/<module>/spec.md`; for an existing one edit it. Rules:
-   - Every requirement has a stable ID `<MODULE>-NNN`; never renumber or reuse an ID. New requirements take the next number; a Change edits the text of existing IDs and marks superseded ones as `Removed` rather than deleting them.
-   - Describe observable behavior, not implementation. Use EARS forms where they add precision.
-   - **Business language only.** The reader is the person who opened the Issue. These words and ideas MUST NOT appear anywhere in the spec: tenant, tenancy, isolation, `tenantId`, repository, persistence, database, engine, fake, `InMemory`, view, read model, projection, event, publish, consumer, idempotent, delivery, concurrency, lock, HTTP, API, endpoint, frontend, test, class, layer, aggregate, use case. If a behavior needs one of them to be stated, restate it as what the user observes ("completing the same task twice never produces two next occurrences") or move it to `design.md`. Multi-tenancy is a separate concern governed by the constitution; the spec is written as if a single customer existed.
-   - **Out of scope** lists business capabilities deliberately excluded (e.g. "renaming lists", "reminders"). Never deferred technical decisions (pagination, concurrency control, HTTP, storage engine).
-   - **Domain concepts** are business nouns only. No projections, DTOs, views, records or ports.
-   - **Rejections, not errors.** Every business reason to refuse a request is one row of the "Rejections" table: stable English name (`TaskAlreadyCompleted`), condition in business terms, message to the user, requirement ID. Plus the checking order when several apply. The spec never says "error", "DomainError", "class" or "exception"; the design maps each rejection to one domain error.
-   - Cover edge cases and acceptance criteria per requirement.
-   - **The spec is the current state of the module; git is the history.** `## Open questions` holds only questions still open at the moment of writing (normally none; anything there blocks Gate 1). Never keep answered questions, the decisions you took while writing, their rationale, corrections from earlier cycles, or notes for the Design phase in the spec: the Issue, its triage and the PR already hold that history, and git keeps every version. Put "decisions taken while writing" and "what Design must revisit" in the **PR description** (`gh pr edit --body`), where the human reads them at Gate 1 and the Design phase reads them next. Once the human approves, those notes have served their purpose; the spec stays clean.
-   - Set `status: draft`.
+3. **Spec.** New module: copy the template to `docs/<domain>/<module>/spec.md`; existing: edit it.
+   - Every requirement has a stable ID `<MODULE>-NNN`; never renumber or reuse. New requirements take the next number; a Change edits the text of existing IDs and marks superseded ones `Removed` rather than deleting them.
+   - Observable behavior, not implementation. EARS forms where they add precision.
+   - **Business language only.** The reader is the person who opened the Issue. Never: tenant, isolation, repository, persistence, database, fake, view, projection, event, publish, consumer, idempotent, concurrency, lock, HTTP, API, endpoint, frontend, test, class, layer, aggregate, use case. Restate as what the user observes or move it to `design.md`. Isolation between customers is the constitution's concern; the spec reads as if a single customer existed.
+   - **Out of scope** lists excluded business capabilities, never deferred technical decisions. **Domain concepts** are business nouns only.
+   - **Rejections, not errors.** Every business reason to refuse a request is one row of the Rejections table (stable English name, condition, user message, requirement ID) plus the checking order. The spec never says "error", "exception" or "class".
+   - Edge cases and acceptance criteria per requirement.
+   - **The spec is the current state of the module; git is the history.** `## Open questions` holds only what is open right now (normally nothing; anything there blocks Gate 1). Decisions taken while writing and notes for Design go to the **PR description** (`gh pr edit --body`), never into the spec. Set `status: draft`.
 
-4. **Completeness check, one pass.** Run the `completeness-checker` agent once. If it returns `FAIL`, fix the BLOCKERs once and deliver without rerunning; report in your summary what you fixed and any finding you left, so the human sees it at Gate 1. Never loop.
+4. **Completeness check, one pass.** Run the gate `gates/completeness.md`: if your host can launch a fresh-context subagent, launch the plugin's `reviewer` agent with `gates: completeness`, the spec path, issue, PR and `rework_cycle: 0`; otherwise run the checklist yourself after re-reading the spec from disk. If it returns `FAIL`, fix the BLOCKERs once and deliver without rerunning; report what you fixed and what you left, so the human sees it at Gate 1. Never loop.
 
-5. **Commit.** Delegate to the `committer` agent: `docs(<module>): spec for #$1`. Push the branch (never `main`).
+5. **Commit and push** per `templates/commits.md`: `docs(<module>): spec for #N`. Never push `main`.
 
-6. **State.** `sdd-state.sh set $1 spec`. Report the PR URL, the requirement IDs added or changed, and the open questions (the ones in the spec, if any) — the decisions you took are in the PR description, not in the spec. The human reviews the diff in the PR and sets `sdd:spec-approved`; you never set it.
+6. **State.** `sdd state set N spec`. Report the PR URL, the requirement IDs added or changed, and the open questions in the spec, if any. The human reviews the PR diff and sets `sdd:spec-approved`; you never set it.
 
 ## Rules
 

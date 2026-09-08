@@ -1,4 +1,4 @@
-# Shared helpers for PreToolUse hooks. Sourced, not executed.
+# Shared helpers for PreToolUse hooks (Claude Code only; other hosts rely on the skills' rules and on branch protection). Sourced, not executed.
 # Hooks receive the tool call as JSON on stdin and block by exiting 2 (stderr is shown to the user).
 
 read_stdin() { INPUT="$(cat)"; }
@@ -17,7 +17,7 @@ json_field() {
 
 project_dir() { printf '%s' "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; }
 
-# Flags live OUTSIDE the repository, in ~/.sdd/<owner>-<repo>/ (see scripts/sdd-flag.sh): agents
+# Flags live OUTSIDE the repository, in ~/.sdd/<owner>-<repo>/ (see `sdd flag`): agents
 # cannot write inside .git/ and .claude/ counts as a sensitive path in headless runs.
 # <repo>/.claude/sdd/ and <repo>/.git/sdd/ are still honoured as legacy locations set by hand.
 repo_slug() {

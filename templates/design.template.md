@@ -12,9 +12,9 @@ Pick ONE variant. Delete the other. Sections are optional: keep only what applie
 
 ---
 
-## Variant A — Full (DDD)
+## Variant A — Full (domain model)
 
-Use when the change touches the domain model, aggregates, use cases, or context boundaries.
+Use when the change touches the domain model, use cases or module boundaries. The sections below are the usual ones for a domain model; delete the ones your constitution does not contemplate and rename them to your vocabulary.
 
 ### Bounded Context
 Three lines, no more:

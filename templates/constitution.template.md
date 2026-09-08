@@ -1,91 +1,77 @@
 # Constitution — <project name> · v1.0.0
 
-This file is the only rule file in the repository. `CLAUDE.md` and `AGENTS.md` point here and contain nothing else. Rules are one line each; how each rule is checked lives in the reviewer agents of the `sdd-factory` plugin, not here.
+This file is the only rule file in the repository. `CLAUDE.md` and `AGENTS.md` point here and contain nothing else. Rules are one line each with a stable ID; the Review Gates of the `sdd-factory` plugin check them exactly as written, so a rule that is not here is not enforced.
 
 ## Identity
 
 - **Purpose:** <one sentence: what the system does and for whom>
 - **Domains:** <list of `docs/<domain>/` names>
 - **Issue types:** Feature · Change · Bug · Task · Constitution (native tracker types; the type decides the SDD path)
-- **Language:** <en | es> — prose, issue forms and tracker comments (rule C4)
+- **Language:** <en | es> — prose, issue forms and tracker comments (rule C1)
 
 ## Rules
 
-### Architecture
-- **A1** Packages are `apps/`, `contexts/`, `libs/`; dependencies flow `apps → contexts → libs`, never sideways or upward.
-- **A2** A context never imports another context; contexts communicate only through domain events.
-- **A3** Only `apps/` and `infrastructure/` know the runtime; domain and application never import cloud, OS, HTTP or framework APIs.
-- **A4** Inside a context, `domain/<aggregate>/` holds the aggregate and, in subfolders once there is more than one of a kind, `value-objects/`, `events/`, `errors/`, `ports/`; `infrastructure/<technology>/` groups each adapter family with its `mappers/`; `use-cases/<use-case>/` one folder per use case. No flat folders past five files.
+<!-- One rule per line, `<Letter><n>` IDs unique within their block. Add the blocks your stack needs
+     (Architecture, Domain, Errors, Tests, Code…) and keep the Workflow block: it is what the SDD flow relies on.
+     A ready-made rule set for DDD / TypeScript / multi-tenant is in the plugin's templates/examples/. -->
 
-### Domain and application
-- **D1** Every building block extends the shared base: `AggregateRoot`, `Entity`, `ValueObject`, `DomainEvent`, `DomainError`.
-- **D2** Aggregates expose `create()` (invariants, ids, defaults, events) and `rehydrate()` (exact reconstruction, nothing else); both accept only domain objects.
-- **D3** Value Objects are immutable, validate on construction and offer `fromOptional()` for nullable input; never pass `null` to `create()`.
-- **D4** Aggregates expose getters, never serialization methods; persistence mappers read the getters.
-- **D5** Use cases orchestrate only: no id generation, no default derivation, no business rules, no catching domain errors, no `Result` wrappers. Loading an aggregate by id and failing with its NotFound error is orchestration, not a business rule.
-- **D6** Commands and queries are plain data without validation libraries; input is validated at the entry point.
-- **D7** Queries go through read repositories that return Views; a use case never hydrates an aggregate to build a view.
-- **D8** Persist first, publish events after; every event consumer is idempotent.
+### Architecture
+- **A1** <packages or layers and the allowed dependency direction>
+- **A2** <what may know the runtime, framework, storage; what may not>
+
+### Domain
+- **D1** <how business rules are modelled and where they live>
 
 ### Errors
-- **E1** One `DomainError` subclass per scenario, `name` equals the class name, business message in English with context in params, no infrastructure detail; user-facing translation is the client's job.
-- **E2** Domain throws, application propagates, the entry point translates once.
-
-### Multi-tenancy
-- **T1** `tenantId` appears only in infrastructure adapter constructors; never in domain, application, events or method parameters.
-- **T2** Tenant-scoped adapters are built per request and never shared; stateless adapters may be.
-- **T3** The tenant key is part of every record's identity; uniqueness is per tenant; no unscoped reads.
-- **T4** Every repository test proves tenant isolation.
+- **E1** <one named error per rejection of a spec; who throws, who translates>
 
 ### Tests
-- **Q1** Doubles hierarchy: real object > Fake > stub > spy > mock; every port ships its `InMemory` fake.
-- **Q2** Module mocking is banned; third-party libraries and domain objects are never mocked.
-- **Q3** Assert state or results, not interactions; each use case has at least one zero-mock test.
-- **Q4** Every `DomainError` has a test asserting its exact type.
-- **Q5** Deleting, skipping or weakening a test is a BLOCKER unless the Spec changed.
+- **Q1** <test-double policy: what may be faked, what may never be mocked>
+- **Q2** <what every requirement's test must assert: state or result, exact rejection type>
+- **Q3** Deleting, skipping or weakening a test is a BLOCKER unless the Spec changed.
 
 ### Code
-- **C1** Strict typing, no escape hatches, no unused symbols, named exports only (config files excepted).
-- **C2** kebab-case files without type suffixes; infrastructure files are `{technology}-{port}`.
-- **C3** No comments, except one line explaining a non-obvious *why*.
-- **C4** Everything inside code is English — identifiers, comments, test names, log and developer-facing error text; only end-user messages and prose documents use the constitution's `Language`.
+- **C1** Everything inside code is English — identifiers, comments, test names, log and developer-facing error text; only end-user messages and prose documents use `Language`.
+- **C2** <typing, lint and comment policy>
 
 ### Workflow
 - **W1** Branch from `main`, Draft PR immediately with `Closes #N`; never push to `main`.
 - **W2** Conventional Commits scoped by package; never rewrite published history.
-- **W3** Shared dependency versions live in the workspace catalog.
-- **W4** Spec, Design and this Constitution change only through their own Issue types; agents never edit them in passing.
+- **W3** Spec, Design, ADRs and this Constitution change only through their own Issue types; agents never edit them in passing.
+- **W4** Every design decision with alternatives is one immutable ADR under `docs/adrs/`; a reversal supersedes, never edits.
 
 ## Decisions
 
 | Concern | Decision |
 | --- | --- |
 | Runtime(s) | <cloud provider / on-premise / desktop> |
-| Persistence | <engine>; tenant mapping in each context's `infrastructure/persistence/README.md` |
+| Persistence | <engine> |
 | Transport / messaging | <HTTP framework, RPC protocol> / <queue, bus, outbox> |
-| Frontend | <framework + design system package, or "none"> |
-| Deployment | <serverless / container / monolith / installer>; procedure in `infra/` |
+| Frontend | <framework, or "none"> |
+| Deployment | <how and from where> |
 
 ## Commands
 
+The deterministic checks, in CI order. `sdd ci` runs exactly this block, fail-fast; Review Gates never run on a red build.
+
 ```bash
-pnpm install --frozen-lockfile
-pnpm lint          # 1
-pnpm typecheck     # 2
-pnpm build         # 3
-pnpm coverage      # 4  runs the tests; CI order is fixed
+<install with a frozen lockfile>
+<lint>
+<typecheck>
+<build>
+<tests with coverage>
 ```
 
 ## Verification
 
 - **Review Gates:** Spec Compliance · Design & Architecture · Test Strategy · Security · Regression · Code Quality
-- **Orchestrator policy** (delegated approvals, review mode, rework budget, intelligence per phase) lives in `.sdd/config.json`, not here.
-- **Test exemplars:** <domain test> · <zero-mock use-case test> · <tenant-isolation test>
+- **Rework budget:** 3 — review cycles before the issue stops as NEEDS_HUMAN
+- **Test exemplars:** <one test file per kind the gates should hold new tests to, or "none yet">
 
 ## Agents
 
-Provided by the `sdd-factory` plugin: `completeness-checker`, `spec-reviewer`, `design-reviewer`, `test-reviewer`, `security-reviewer`, `regression-reviewer`, `quality-reviewer` (all read-only), `ci-runner` (runs the Commands above), `committer` (git only, no push to `main`).
+Provided by the `sdd-factory` plugin: `reviewer` (read-only, runs the gates in `gates/`). Everything else is done by the main agent through the `/sdd-*` skills.
 
 ## Amendments
 
-Issue of type `Constitution` + human approval + version bump. Normal Issues never edit this file.
+Issue of type `Constitution` + human approval + version bump (major: a rule removed or relaxed; minor: a rule added; patch: wording). Normal Issues never edit this file.

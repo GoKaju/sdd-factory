@@ -18,3 +18,15 @@ is_state() { for s in $STATES; do [ "$s" = "$1" ] && return 0; done; return 1; }
 is_type()  { for t in $TYPES;  do [ "$t" = "$1" ] && return 0; done; return 1; }
 
 need_issue() { [ "${1:-}" ] || die "issue number required"; printf '%s' "$1" | grep -Eq '^[0-9]+$' || die "issue must be a number: $1"; }
+
+constitution_lang() {
+  # `Language` of docs/constitution.md (Identity section): en | es; default en
+  local root; root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+  { grep -oE '\*\*Language:\*\*[[:space:]]*(en|es)' "$root/docs/constitution.md" 2>/dev/null || true; } | grep -oE '(en|es)$' | head -1 | grep . || printf 'en'
+}
+
+rework_budget() {
+  # `Rework budget` of docs/constitution.md (Verification section); default 3
+  local root; root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+  { grep -oE '\*\*Rework budget:\*\*[[:space:]]*[0-9]+' "$root/docs/constitution.md" 2>/dev/null || true; } | grep -oE '[0-9]+$' | head -1 | grep . || printf '3'
+}
