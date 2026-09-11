@@ -3,7 +3,7 @@
   "id": "sdd-factory",
   "publisher": "gokaju",
   "name": "SDD Factory",
-  "version": "0.7.8",
+  "version": "1.0.1",
   "description": "Spec-Driven Development factory for GitHub repositories: a panel to run the sdd-* phases (triage, spec, design, task, implement, review) in the terminal you choose, and a command that reports the local sdd worker's status. The skills, agents and hooks themselves are a Claude Code plugin (see README).",
   "author": { "name": "GoKaju", "url": "https://github.com/GoKaju" },
   "repository": "https://github.com/GoKaju/sdd-factory",
