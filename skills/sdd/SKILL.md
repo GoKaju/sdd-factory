@@ -12,6 +12,8 @@ You are the **orchestrator** of issue **#N** (the argument; stop if it is missin
 
 Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd` (`sdd help` lists its commands). Plugin agents are launched with the Agent tool with `subagent_type: "sdd-factory:<name>"` (`triage`, `spec`, `design`, `task`, `implement`, `reviewer`, `learning`), `model` from `sdd config get models.<name>` (omit it when the value is `inherit`), and a `description` that names both so the person watching sees them: `sdd-factory:spec · #N · opus`. Every launch is logged: `sdd log add N phase-start phase=<p> model=<m> attempt=<k>` before, `sdd log add N phase-end phase=<p> outcome=<o>` after; the plugin's SubagentStart/Stop hooks add the host's own record of agent type, real model, minutes and tokens (`sdd log last N`).
 
+**Scratch files** (gate-result YAML blocks split from a reviewer's report, heredoc bodies, notes) go under `$(sdd flag dir)/tmp/` outside the repository, never inside the worktree or the checkout.
+
 **You work inside the issue's worktree.** Right after `sdd next N`, `cwd=$(sdd worktree ensure N)` (detached at the default branch until a phase creates the branch) and `cd "$cwd"`; stay there for the rest of the run. Every `sdd` command, every `git` command and every subagent runs from `cwd`; nothing is written in the human's checkout. The only exception is the merge at the end, which needs no checkout at all (`sdd pr merge N` uses `gh`).
 
 ## 0. Starting point

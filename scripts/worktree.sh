@@ -26,7 +26,7 @@ case "$cmd" in
   ensure)
     need_issue "${1:-}"; issue="$1"; want="${2:-}"; p="$dir/issue-$issue"
     mkdir -p "$dir"
-    grep -qxF '.sdd/worktrees/' "$main/.gitignore" 2>/dev/null || printf '.sdd/worktrees/\n' >> "$main/.gitignore"
+    for ign in .sdd/worktrees/ .sdd/tmp/; do grep -qxF "$ign" "$main/.gitignore" 2>/dev/null || printf '%s\n' "$ign" >> "$main/.gitignore"; done
     git -C "$main" fetch -q origin 2>/dev/null || true
     branch="$("$S/pr.sh" branch "$issue" 2>/dev/null || true)"; branch="${branch:-$want}"
     base="$(default_branch)"; base="${base:-main}"
