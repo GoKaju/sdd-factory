@@ -67,7 +67,7 @@ Never let a phase agent set a state; if a report claims it did, re-read `sdd sta
 
 Only for a gate the config lists. Verify mechanically **before** `sdd state set`; "the artifact looks fine" is not verification. When `judged: true`, additionally launch `reviewer` (gate set `completeness` for Spec, `docs` for Design and Task, over the artifact plus the issue's original body and author comments) and grant only on `PASS`; on any other verdict comment once on the issue (in `lang`) what was found and treat the gate as `human` (§4). Log every decision: `sdd log add N gate name=<gate> result=granted|withheld why=<...>`.
 
-- **Intake** → `sdd comment open N sdd:triage` is `0` and the triage comment names a type and a size ⇒ `sdd state set N ready`.
+- **Intake** → `sdd comment open N sdd:triage` is `0`, the triage comment names a type and a size, and it carries the `Clarifications`/`Assumptions` sections (empty is fine when the issue raised no question; missing means the clarity pass did not run: relaunch `triage` once) ⇒ `sdd state set N ready`.
 - **Spec** → the spec's `Open questions` has no unchecked item and no `TBD`/`TODO`; the last completeness result on the PR (`sdd gate-result list <pr>`) is `PASS` ⇒ `spec-approved`.
 - **Design** → no `NEEDS_HUMAN`, `pending human` or `TBD` in the design; every decision it lists exists as an ADR ⇒ `design-approved`.
 - **Task** → the Task comment exists, has at least one step and none is a question ⇒ `task-approved`.

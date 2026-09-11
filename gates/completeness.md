@@ -57,6 +57,9 @@ The Spec is written for the person who opened the Issue: WHAT, never HOW. Anywhe
 - "Out of scope" entries that are deferred technical decisions (pagination, storage, API) instead of excluded business capabilities.
 Only exception: a requirement that is itself technical because the customer asked for it ("data is exported as CSV").
 
+### 11. Triage clarifications and assumptions honoured — BLOCKER
+- Read the triage comment on the Issue (`<!-- sdd:triage -->`): every line under `Clarifications` (or `Aclaraciones`) and `Assumptions` (`Supuestos`) is an answer the author gave or a default they accepted. Each one must be visible in the Spec as a requirement, a rejection row, a domain concept or an acceptance criterion, or the PR description must say why it does not apply. A clarification that the Spec silently contradicts or omits is a BLOCKER quoting both texts. Do not flag a clarification that only concerns design or implementation (it is not the Spec's to state).
+
 ## Requirement status
 
 `PASS` when the requirement is identified, unambiguous and has an acceptance criterion; `FAIL` otherwise, with at least one finding referencing it.

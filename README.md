@@ -43,6 +43,8 @@ Every issue moves left to right. `/sdd N` reads the issue's `sdd:<state>` label,
 
 Approvals stay on GitHub: a label (`sdd:ready`, `sdd:spec-approved`, …) or a `/approve` comment on the issue. At Gate 4 the human merges the PR, comments `/approve` (the factory squash-merges), or comments `/rework` with one bullet per change, which becomes Task steps for the implement phase. On a review `FAIL` the issue loops back to implement with the BLOCKER findings, at most `gates.rework_budget` times.
 
+Triage is where clarity is cheapest: the `triage` agent runs a clarity pass over actors, triggers, inputs, outcomes, rejections, edge cases, existing data, deletion semantics, scope and terminology, asks every question a later phase would otherwise guess (each with a proposed answer), and records the author's answers as **Clarifications** that the spec must honour and the completeness gate verifies.
+
 The issue type decides the path: **Feature** and **Change** take every step; **Bug**, **Task** and **Constitution** go from `ready` straight to `task`. A Bug or Task whose root cause is in the spec or design is stopped and reclassified as Change. Source of the diagram: `docs/sdd-flow.html`.
 
 ## Where things live

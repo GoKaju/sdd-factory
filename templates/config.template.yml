@@ -7,7 +7,7 @@ language: en
 
 # Model of the subagent that runs each phase: haiku | sonnet | opus | inherit (the session's model).
 models:
-  triage: haiku
+  triage: sonnet
   spec: opus
   design: opus
   task: sonnet
