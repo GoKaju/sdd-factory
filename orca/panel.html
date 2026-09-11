@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, sans-serif; font-size: 13px; color: var(--foreground, #ddd); background: var(--background, transparent); }
+      h1 { font-size: 14px; margin: 0 0 4px; }
+      p { margin: 0 0 8px; color: var(--muted-foreground, #999); }
+      label { display: block; margin: 8px 0 2px; color: var(--muted-foreground, #999); }
+      select, input { width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1px solid var(--border, #555); border-radius: 6px; background: var(--secondary, #2a2a2a); color: var(--foreground, #ddd); font: inherit; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+      button { padding: 6px 10px; border: 1px solid var(--border, #555); border-radius: 6px; background: var(--secondary, #2a2a2a); color: var(--foreground, #ddd); cursor: pointer; font: inherit; text-align: left; }
+      button:disabled { opacity: 0.5; cursor: default; }
+      button.wide { grid-column: 1 / -1; }
+      .status { margin-top: 10px; min-height: 1.4em; color: var(--muted-foreground, #999); white-space: pre-wrap; }
+      small { display: block; margin-top: 10px; color: var(--muted-foreground, #999); }
+    </style>
+  </head>
+  <body>
+    <h1>SDD Factory</h1>
+    <p>Runs a phase of the factory in the terminal you pick. The terminal must be running Claude Code with the sdd-factory plugin installed.</p>
+    <label for="terms">Terminal</label>
+    <select id="terms"></select>
+    <label for="issue">Issue number</label>
+    <input id="issue" type="number" min="1" placeholder="e.g. 42" />
+    <div class="grid">
+      <button class="wide" data-cmd="sdd-status" data-issue="optional">/sdd-status</button>
+      <button data-cmd="sdd-triage">/sdd-triage</button>
+      <button data-cmd="sdd-spec">/sdd-spec</button>
+      <button data-cmd="sdd-design">/sdd-design</button>
+      <button data-cmd="sdd-task">/sdd-task</button>
+      <button data-cmd="sdd-implement">/sdd-implement</button>
+      <button data-cmd="sdd-review">/sdd-review</button>
+      <button class="wide" data-cmd="sdd-init" data-issue="none">/sdd-init (once per repository)</button>
+    </div>
+    <p class="status" id="status"></p>
+    <small>Approvals stay in GitHub: set sdd:ready / sdd:*-approved on the issue, or comment /rework on the PR. The local sdd worker, if running, does all of this on its own; use this panel for one-off runs.</small>
+    <script>
+      'use strict'
+      var seq = 0
+      var pending = {}
+      var statusEl = document.getElementById('status')
+      var termsEl = document.getElementById('terms')
+      var issueEl = document.getElementById('issue')
+
+      function call(action, params) {
+        return new Promise(function (resolve) {
+          var requestId = 'req-' + ++seq
+          pending[requestId] = resolve
+          window.parent.postMessage({ type: 'orca-panel-action', requestId: requestId, action: action, params: params }, '*')
+        })
+      }
+      window.addEventListener('message', function (event) {
+        var data = event.data
+        if (!data || data.type !== 'orca-panel-action-result') return
+        var resolve = pending[data.requestId]
+        if (!resolve) return
+        delete pending[data.requestId]
+        resolve(data)
+      })
+
+      function refreshTerminals() {
+        return call('workspace.readContext').then(function (result) {
+          termsEl.innerHTML = ''
+          if (!result.ok || !result.value) { statusEl.textContent = result.ok ? 'No focused worktree.' : 'Cannot read the worktree: ' + (result.error || result.errorCode); return }
+          result.value.terminals.forEach(function (t, i) {
+            var o = document.createElement('option'); o.value = t.id; o.textContent = 'Terminal ' + (i + 1) + ' · ' + t.id.slice(0, 12); termsEl.appendChild(o)
+          })
+          statusEl.textContent = result.value.displayName + ' on ' + result.value.branch + (result.value.terminals.length ? '' : ' · open a terminal first')
+        })
+      }
+
+      document.querySelectorAll('button[data-cmd]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var mode = b.getAttribute('data-issue') || 'required'
+          var n = issueEl.value.trim()
+          if (mode === 'required' && !n) { statusEl.textContent = 'Type the issue number first.'; issueEl.focus(); return }
+          if (!termsEl.value) { statusEl.textContent = 'No terminal to type into.'; return }
+          var text = '/sdd-factory:' + b.getAttribute('data-cmd') + (mode === 'none' ? '' : n ? ' ' + n : '')
+          call('terminal.sendText', { terminalId: termsEl.value, text: text, enter: true }).then(function (result) {
+            statusEl.textContent = result.ok ? 'Sent: ' + text : 'Send failed: ' + (result.error || result.errorCode)
+          })
+        })
+      })
+      termsEl.addEventListener('focus', refreshTerminals)
+      refreshTerminals()
+    </script>
+  </body>
+</html>
