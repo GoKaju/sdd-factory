@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Approval Gate 4 feedback: a human writes a `/rework` comment on the PR (or the issue) listing what
-# must change — typically WARNINGs of the Review Gates they refuse to accept. The orchestrator turns
-# each bullet into a new step of the Task comment and sends the issue back to `rework`, so
-# /sdd-implement does exactly those steps and /sdd-review runs again. Nothing else is touched.
+# must change — typically WARNINGs of the Review Gates they refuse to accept. /sdd turns each bullet
+# into a new step of the Task comment and sends the issue back to `rework`, so the implement phase does
+# exactly those steps and the review runs again. Nothing else is touched.
 #
 #   /rework                                 ← first line of the comment
 #   - move TaskStatus to value-objects/     ← one bullet per step (also "* " or "1. ")

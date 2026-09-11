@@ -6,11 +6,14 @@
 #   sdd pr ready  <issue>                     → marks the linked PR ready for review
 #   sdd pr branch <issue>                     → prints the linked PR's head branch
 #   sdd pr scope  <issue>                     → docs | code: docs when every changed file is documentation (docs/**, *.md)
+#   sdd pr merge  <issue>                     → squash-merges the linked PR and deletes the branch (Approval Gate 4 granted)
+#   sdd pr merged <issue>                     → exit 0 when the issue has a merged PR ("Closes #N"), prints its number
 . "$(dirname "$0")/lib.sh"
 
 cmd="${1:-}"; need_issue "${2:-}"; issue="$2"; r="$(repo)"
 
 find_pr() { gh pr list --repo "$r" --state open --search "Closes #$issue in:body" --json number,body -q ".[] | select(.body | test(\"(?m)^Closes #$issue\\\\b\")) | .number" | head -1; }
+find_merged() { gh pr list --repo "$r" --state merged --search "Closes #$issue in:body" --json number,body -q ".[] | select(.body | test(\"(?m)^Closes #$issue\\\\b\")) | .number" | head -1; }
 
 case "$cmd" in
   find) find_pr ;;
@@ -31,5 +34,10 @@ case "$cmd" in
     if printf '%s\n' "$files" | grep -Evq '^(docs/.*|[^/]*\.md|\.github/ISSUE_TEMPLATE/.*\.(yml|md))$'; then echo code; else echo docs; fi
     ;;
   ready) n="$(find_pr)"; [ -n "$n" ] || die "no PR linked to #$issue"; gh pr ready "$n" --repo "$r" && printf '%s\n' "$n" ;;
-  *) sed -n '2,8p' "$0"; exit 1 ;;
+  merge)
+    n="$(find_pr)"; [ -n "$n" ] || die "no open PR linked to #$issue"
+    [ "$(gh api "repos/$r/issues/$issue" --jq '.type.name // empty')" = Constitution ] && [ "${SDD_ALLOW_CONSTITUTION_MERGE:-}" != 1 ] && die "a Constitution issue is merged by a person, never by the factory"
+    gh pr merge "$n" --repo "$r" --squash --delete-branch && printf '%s\n' "$n" ;;
+  merged) n="$(find_merged)"; [ -n "$n" ] && printf '%s\n' "$n" ;;
+  *) sed -n '2,10p' "$0"; exit 1 ;;
 esac

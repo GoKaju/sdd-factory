@@ -1,6 +1,6 @@
 # Review Gates
 
-One file per gate. Each file is a self-contained checklist an agent follows to emit **one gate-result YAML block** (schema: `templates/gate-result.template.yaml`). The `reviewer` agent reads them; a host without subagents runs them inline from the `/sdd-review` or `/sdd-spec` skill. Nothing here depends on Claude Code.
+One file per gate. Each file is a self-contained checklist the `reviewer` agent follows to emit **one gate-result YAML block** (schema: `templates/gate-result.template.yaml`). `/sdd` launches the reviewer with the gate set each moment needs.
 
 | Gate | File | When |
 | --- | --- | --- |

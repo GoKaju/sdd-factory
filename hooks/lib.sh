@@ -1,4 +1,4 @@
-# Shared helpers for PreToolUse hooks (Claude Code only; other hosts rely on the skills' rules and on branch protection). Sourced, not executed.
+# Shared helpers for the plugin's PreToolUse hooks. Sourced, not executed.
 # Hooks receive the tool call as JSON on stdin and block by exiting 2 (stderr is shown to the user).
 
 read_stdin() { INPUT="$(cat)"; }
@@ -16,6 +16,20 @@ json_field() {
 }
 
 project_dir() { printf '%s' "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; }
+
+# The working directory of the tool call (follows the issue worktree; CLAUDE_PROJECT_DIR stays at the main checkout)
+call_cwd() {
+  local c
+  if command -v jq >/dev/null 2>&1; then c="$(printf '%s' "$INPUT" | jq -r '.cwd // empty')"
+  else c="$(printf '%s' "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('cwd',''))" 2>/dev/null || true)"; fi
+  printf '%s' "${c:-$(project_dir)}"
+}
+
+# Top-level directory of the git checkout that holds <path> (a worktree under .sdd/worktrees/ or the main checkout)
+repo_top_of() {
+  local d="$1"; [ -d "$d" ] || d="$(dirname "$d")"
+  git -C "$d" rev-parse --show-toplevel 2>/dev/null || project_dir
+}
 
 # Flags live OUTSIDE the repository, in ~/.sdd/<owner>-<repo>/ (see `sdd flag`): agents
 # cannot write inside .git/ and .claude/ counts as a sensitive path in headless runs.

@@ -1,5 +1,5 @@
 <!-- sdd:triage -->
-<!-- Exactamente un comentario de triaje por Issue. Volver a ejecutar /sdd-triage edita este comentario; nunca publica otro.
+<!-- Exactamente un comentario de triaje por Issue. Volver a ejecutar la fase de triage edita este comentario; nunca publica otro.
      El agente que lo escribe lee el repositorio pero no lo modifica.
      Aprobación de entrada (Gate 0) = un humano pone el estado `sdd:ready`. -->
 

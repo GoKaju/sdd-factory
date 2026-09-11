@@ -1,7 +1,7 @@
 {
   "name": "sdd-factory",
-  "version": "1.2.0",
-  "description": "Spec-Driven Development framework for any coding agent: typed issues, triage, spec/design/task with human approval gates, six adversarial review gates run by one reviewer over a shared review pack, bounded rework. One rule file per project (docs/constitution.md), one CLI (bin/sdd).",
+  "version": "2.0.0",
+  "description": "Spec-Driven Development factory for Claude Code: /sdd <issue> drives one GitHub issue end to end - triage, spec, design, task, implement, six adversarial review gates and bounded rework - launching one subagent per phase, waiting for human approvals without spending tokens, and leaving a learning document per issue. One rule file (docs/constitution.md), one config (.sdd/config.yml), one CLI (bin/sdd).",
   "author": {
     "name": "GoKaju"
   },

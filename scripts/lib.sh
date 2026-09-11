@@ -3,6 +3,8 @@ set -euo pipefail
 
 die() { printf 'sdd: %s\n' "$*" >&2; exit 1; }
 
+SDD_SCRIPTS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+
 repo() {
   # nameWithOwner of the repo in the current directory, or $SDD_REPO if set
   if [ -n "${SDD_REPO:-}" ]; then printf '%s' "$SDD_REPO"; return; fi
@@ -11,43 +13,41 @@ repo() {
 
 org() { repo | cut -d/ -f1; }
 
+# Per-repository scratch directory outside the repository: ~/.sdd/<owner>-<repo>/ (flags, review packs, run logs, await marks)
+sdd_home() { local d; d="${SDD_HOME:-$HOME/.sdd}/$(repo | tr '/' '-')"; mkdir -p "$d"; printf '%s' "$d"; }
+
 STATES="triage ready spec spec-approved design design-approved task task-approved implementing in-review rework final-review"
 TYPES="Feature Change Bug Task Constitution"
+PHASES="triage spec design task implement review learning"
 
 is_state() { for s in $STATES; do [ "$s" = "$1" ] && return 0; done; return 1; }
 is_type()  { for t in $TYPES;  do [ "$t" = "$1" ] && return 0; done; return 1; }
 
 need_issue() { [ "${1:-}" ] || die "issue number required"; printf '%s' "$1" | grep -Eq '^[0-9]+$' || die "issue must be a number: $1"; }
 
-constitution_lang() {
-  # `Language` of docs/constitution.md (Identity section): en | es; default en
-  local root; root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-  { grep -oE '\*\*Language:\*\*[[:space:]]*(en|es)' "$root/docs/constitution.md" 2>/dev/null || true; } | grep -oE '(en|es)$' | head -1 | grep . || printf 'en'
-}
+# ── .sdd/config.yml ──────────────────────────────────────────────────────────────────────────────
+# cfg <key> [default] → the value (scalar, or list one per line); the default when the file or key is missing
+cfg() { bash "$SDD_SCRIPTS/config.sh" get "$1" 2>/dev/null || printf '%s\n' "${2:-}"; }
 
-rework_budget() {
-  # `Rework budget` of docs/constitution.md (Verification section); default 3
-  local root; root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-  { grep -oE '\*\*Rework budget:\*\*[[:space:]]*[0-9]+' "$root/docs/constitution.md" 2>/dev/null || true; } | grep -oE '[0-9]+$' | head -1 | grep . || printf '3'
-}
+constitution_lang() { cfg language en | head -1; }
+rework_budget() { cfg gates.rework_budget 3 | head -1; }
+warnings_policy() { cfg gates.warnings_at_final human | head -1; }
+model_for() { cfg "models.$1" inherit | head -1; }
 
 delegated_gates() {
-  # `Delegated gates` of docs/constitution.md (Verification section): human approval gates the
-  # orchestrator may grant on its own. One line, e.g. `- **Delegated gates:** Intake, Spec (judged), Task`.
-  # Prints one gate per line as `<Gate> <plain|judged>`; nothing when the line is absent or says none.
-  local root line; root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-  line="$({ grep -oE '\*\*Delegated gates:\*\*[^
-]*' "$root/docs/constitution.md" 2>/dev/null || true; } | head -1 | sed 's/\*\*Delegated gates:\*\*//')"
-  printf '%s' "$line" | tr ',;·' '\n\n\n' | while read -r g; do
-    g="$(printf '%s' "$g" | sed 's/[`*]//g; s/^ *//; s/ *$//')"; [ -n "$g" ] || continue
+  # `gates.delegated` of .sdd/config.yml: human approval gates /sdd may grant on its own.
+  # Prints one gate per line as `<Gate> <plain|judged>`; nothing when the list is empty.
+  cfg gates.delegated "" | while read -r g; do
+    g="$(printf '%s' "$g" | sed 's/[`*"]//g; s/^ *//; s/ *$//')"; [ -n "$g" ] || continue
     mode=plain; case "$g" in *"(judged)"*) mode=judged; g="$(printf '%s' "$g" | sed 's/ *(judged)//')";; esac
-    case "$g" in Intake|Spec|Design|Task) printf '%s %s\n' "$g" "$mode";; Final) printf 'Final %s\n' "$mode";; esac
+    case "$g" in Intake|Spec|Design|Task|Final) printf '%s %s\n' "$g" "$mode";; esac
   done
 }
 
-warnings_policy() {
-  # `Warnings at Final` of docs/constitution.md (Verification): what a delegated Final does with WARNINGs.
-  # rework → the orchestrator files a /rework with the code warnings; merge → merges and lists them; human → holds (default)
-  local root; root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-  { grep -oE '\*\*Warnings at Final:\*\*[[:space:]]*(rework|merge|human)' "$root/docs/constitution.md" 2>/dev/null || true; } | grep -oE '(rework|merge|human)$' | head -1 | grep . || printf 'human'
+# The next state a human approval produces from the current one (empty when the state is not a gate)
+approved_state_after() {
+  case "$1" in
+    triage) echo ready;; spec) echo spec-approved;; design) echo design-approved;; task) echo task-approved;;
+    final-review) echo merge;; *) echo "";;
+  esac
 }

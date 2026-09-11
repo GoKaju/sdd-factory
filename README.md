@@ -1,32 +1,15 @@
 # sdd-factory
 
-A **Spec-Driven Development** framework for coding agents, packaged as agent skills: typed GitHub issues, triage, spec → design → task with human approval gates, implementation, six adversarial Review Gates with bounded rework, and a single rule file per project (`docs/constitution.md`).
+A **Spec-Driven Development** factory for Claude Code, packaged as a plugin: typed GitHub issues, triage, spec → design → task with human approval gates, implementation, six adversarial Review Gates with bounded rework, and a single rule file per project (`docs/constitution.md`).
 
-It runs in Claude Code as a plugin and in any other agent that reads `SKILL.md` files (Codex, Cursor, Gemini CLI, …): the skills are plain Markdown, the tooling is one bash CLI (`bin/sdd`) over `gh`, and the one subagent (`reviewer`) is an optimization the skills fall back from when the host has none.
+One command drives one issue end to end: `/sdd <issue-number>`. It launches a fresh subagent per phase with the model you configured, grants the approval gates you delegated after verifying the artifact, waits for the ones you kept **without spending tokens** (`sdd await`: bash polling of GitHub), runs the review, applies rework, and leaves a learning document per issue. Re-run it any time: it resumes from the issue's state label.
 
 ## Requirements
 
-- `gh` authenticated, `jq`, `git`, bash.
+- Claude Code, `gh` authenticated, `jq`, `python3`, `git`, bash.
 - The repository belongs to a **GitHub organization** (native Issue Types are organization-level). Creating the `Change` and `Constitution` types needs `gh auth refresh -h github.com -s admin:org` once.
 
 ## Install
-
-One step per machine:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/GoKaju/sdd-factory/main/install.sh | bash
-```
-
-It checks the prerequisites (git, gh authenticated, Claude Code or `npx`), installs the skills (Claude Code plugin by default; `--agent skills` uses `npx skills add` for any other agent) and links a stable `~/.sdd/bin/sdd`. Re-run it to update. Then, per repository: `/sdd-init` once, and `sdd orca enable` if Orca orchestrates it (see Orchestration).
-
-By hand instead — **Claude Code**, development:
-
-```bash
-cd <your-repo>
-claude --plugin-dir /path/to/sdd-factory
-```
-
-stable:
 
 ```bash
 claude plugin marketplace add GoKaju/sdd-factory
@@ -42,64 +25,64 @@ and for every collaborator, in the project's `.claude/settings.json`:
 }
 ```
 
-**Any other agent:** clone this repository, put `bin/` on the PATH (`export PATH="/path/to/sdd-factory/bin:$PATH"`), and point the host at `skills/` (each `skills/<name>/SKILL.md` follows the Agent Skills format; copy or symlink them where your host discovers skills). The `/sdd-init` skill writes an `AGENTS.md` that lists the skills, so a host with no skill system can still be told "follow skills/sdd-triage/SKILL.md for issue 12".
+Development: `claude --plugin-dir /path/to/sdd-factory` inside your repository.
+
+Then, once per repository, `/sdd-init`: constitution, `.sdd/config.yml` (assisted), labels, Issue Types, issue forms. `/sdd-config` changes the config later.
 
 ## Flow
 
-![The SDD flow: six agent skills, five human gates, one artifact per step on GitHub](docs/sdd-flow.svg)
+![The SDD flow: six phases, five human gates, one artifact per step on GitHub](docs/sdd-flow.svg)
 
-`/sdd-init` runs once per repository (constitution, `CLAUDE.md`, `AGENTS.md`, labels, Issue Types, issue forms). After that every issue moves left to right: the agent runs a skill, leaves an artifact and a state label on GitHub, and a human approves at the gate before the next skill may run. Review runs the six gates over one review pack; on PASS the PR is marked ready and the human merges (Gate 4) or comments `/rework` with one bullet per change, which `/sdd-implement` turns into Task steps. On FAIL the issue loops back to implement, at most the constitution's Rework budget. Source: `docs/sdd-flow.html`.
+Every issue moves left to right. `/sdd N` reads the issue's `sdd:<state>` label, asks `sdd next N` what the state machine requires, and acts:
 
-The issue type decides the path: **Feature** and **Change** take every step; **Bug**, **Task** and **Constitution** go from `ready` straight to `/sdd-task`. A Bug or Task whose root cause is in the spec or design is stopped and reclassified as Change.
+| `sdd next` says | `/sdd` does |
+| --- | --- |
+| `run <phase>` | launches the phase subagent (`triage`, `spec`, `design`, `task`, `implement`; `review` is coordinated by `/sdd` itself: `sdd ci`, review pack, `reviewer` subagent, aggregate, rework) and sets the next state from its report |
+| `approve <gate>` | the gate is delegated in `.sdd/config.yml`: verifies the artifact mechanically (and with the `reviewer` when `(judged)`), grants it or withholds it with a comment |
+| `human` | the gate is a person's: `sdd await N` polls GitHub in bash until a label changes, someone comments `/approve` (write permission), `/rework`, or anything else; a human comment relaunches the current phase with it as feedback |
+
+Approvals stay on GitHub: a label (`sdd:ready`, `sdd:spec-approved`, …) or a `/approve` comment on the issue. At Gate 4 the human merges the PR, comments `/approve` (the factory squash-merges), or comments `/rework` with one bullet per change, which becomes Task steps for the implement phase. On a review `FAIL` the issue loops back to implement with the BLOCKER findings, at most `gates.rework_budget` times.
+
+The issue type decides the path: **Feature** and **Change** take every step; **Bug**, **Task** and **Constitution** go from `ready` straight to `task`. A Bug or Task whose root cause is in the spec or design is stopped and reclassified as Change. Source of the diagram: `docs/sdd-flow.html`.
 
 ## Where things live
 
 | Place | Holds |
 | --- | --- |
 | Issue | intent, triage comment, Task comment with checklist, `sdd:<state>` label |
-| Draft PR | `spec.md`, `design.md`, ADRs, code, gate results as comments |
-| `docs/` on `main` | approved, merged truth: `docs/<domain>/<module>/{spec,design}.md` (the current state of the module, never its history: git is the history) and `docs/adrs/NNNN-*.md` (one immutable file per decision; reversals supersede) |
-| `docs/constitution.md` | the only rule file: Identity, Rules (one line each, stable IDs), Decisions, Commands (what `sdd ci` runs), Verification (gates, rework budget). `CLAUDE.md` and `AGENTS.md` just point to it |
+| Draft PR | `spec.md`, `design.md`, ADRs, code, gate results as comments, `.sdd/learning/<N>.md` |
+| `docs/` on `main` | approved, merged truth: `docs/<domain>/<module>/{spec,design}.md` (the current state of the module, never its history) and `docs/adrs/NNNN-*.md` (one immutable file per decision; reversals supersede) |
+| `docs/constitution.md` | the only **rule** file: Identity, Rules (one line each, stable IDs), Decisions, Verification. `CLAUDE.md` just points to it |
+| `.sdd/config.yml` | how the factory **operates**: language, model per phase, delegated gates, warnings policy, rework budget, await limits, check commands (`sdd ci`) |
+| `.sdd/learning/<N>.md` | one learning document per issue, for the people improving the project's rules and this plugin: metrics per phase, findings, escalations, frictions with concrete suggestions. `/sdd` never reads them |
+| `.sdd/worktrees/issue-<N>/` | git worktree per issue (git-ignored): the phases work there, your checkout stays untouched, two issues can run in two sessions |
+| `~/.sdd/<owner>-<repo>/` | scratch outside the repository: hook flags, review packs, run logs (`sdd log`), await marks |
 
 ## Layout
 
 ```
 .claude-plugin/   plugin.json, marketplace.json
-bin/sdd           the one CLI the skills call: sdd state|type|org-types|comment|pr|gate-result|review-pack|rework|flag|ci, sdd lang, sdd rework-budget
-scripts/          the bash behind each sdd command (gh + jq + git)
-skills/           sdd-init, sdd-triage, sdd-spec, sdd-design, sdd-task, sdd-implement, sdd-review, sdd-status
+bin/sdd           the one CLI: sdd state|type|org-types|comment|pr|gate-result|review-pack|rework|flag|ci|next|await|worktree|log|config
+scripts/          the bash behind each sdd command (gh + jq + git + python3 for JSON/YAML)
+skills/           sdd (the orchestrator), sdd-init, sdd-config, sdd-status
+agents/           one subagent per phase: triage, spec, design, task, implement, reviewer, learning (model and effort in the frontmatter; model overridden by .sdd/config.yml)
 gates/            one checklist per Review Gate (completeness, spec-compliance, test-strategy, design-architecture, code-quality, security, regression, docs) + README with the common rules
-agents/           reviewer — the only subagent; runs any set of gates over the review pack, fresh context
-hooks/            Claude Code PreToolUse hooks: protect docs/constitution.md and approved spec/design/ADRs; deny push to main, force-push, history rewrites
-templates/        constitution, commits, spec, design, adr, gate-result, comments/{en,es}, issue-forms/{en,es}, examples/constitution.ddd-ts.md
+hooks/            PreToolUse hooks: protect docs/constitution.md and approved spec/design/ADRs (also inside issue worktrees); deny push to main, force-push, history rewrites
+templates/        constitution, config, learning, commits, spec, design, adr, gate-result, comments/{en,es}, issue-forms/{en,es}, examples/constitution.ddd-ts.md
 ```
 
 ## Design choices
 
-- **Stack-agnostic.** The constitution template ships only the workflow rules; every architecture, domain, test and code rule is written by the project (or copied from `templates/examples/`). The gates check the constitution's rules as written and skip what it does not state. Nothing in the framework names a folder layout, a language or a package manager.
-- **One reviewer.** The six gates are checklists in `gates/`; the `reviewer` agent runs the requested set over one review pack in one reading with independent verdicts. Hosts without subagents run the same checklists inline. Deterministic checks are a script (`sdd ci`), not an agent; committing follows `templates/commits.md`, not an agent.
+- **One entry point, mechanical decisions.** A person starts each issue with `/sdd N`; nothing scans the tracker. `sdd next N` is the state machine of that one issue and `sdd await N` the waiting: both bash, both free. The `/sdd` skill spends tokens only to read a subagent's report, verify an artifact, and decide what a human comment means.
+- **One subagent per phase, fresh context.** Each phase reads only what it needs and ends with a YAML report; `/sdd` owns every state transition. The reviewer never shares context with the agent it judges.
+- **Rules and operation apart.** The constitution changes through a Constitution issue; the config changes with `/sdd-config`. The gates check the constitution's rules as written and skip what it does not state; nothing in the framework names a folder layout, a language or a package manager.
 - **Documents are the current truth.** Spec and design never carry history; decisions are ADRs; deltas live in the PR description; drift is fixed in code, never by editing the document.
-- **Humans hold the gates.** No skill ever sets `sdd:ready` or an `*-approved` label, merges, or edits an approved document in passing.
+- **Humans hold the gates** unless they delegate them explicitly, gate by gate. A Constitution issue is never merged by the factory.
 
 ## Guarantees
 
-In Claude Code, hooks enforce: `docs/constitution.md` changes only during a Constitution-type issue; approved `spec.md`, `design.md` and ADRs cannot be edited while their issue is in implementation or review; no `git push` to `main`, no force-push, no rebase / amend / reset --hard. In other hosts the same rules are stated in every skill and backed by the branch protection `/sdd-init` recommends.
+Hooks enforce, in the main checkout and in every issue worktree: `docs/constitution.md` changes only during a Constitution-type issue; approved `spec.md`, `design.md` and ADRs cannot be edited while their issue is in implementation or review; no `git push` to `main`, no force-push, no rebase / amend / reset --hard.
 
 ## Adding a gate
 
-Write `gates/<name>.md` (question, procedure, checklist with severities, output schema), list it in the constitution's Verification, and name it in the `gates:` input of the reviewer or in `/sdd-review`. `sdd gate-result aggregate` treats every posted result the same way.
-
-## Orca
-
-The repository is also an [Orca](https://www.onorca.dev) plugin marketplace. In Orca: Settings → Plugins (enable the plugin system) → Marketplaces → add the git source `https://github.com/GoKaju/sdd-factory.git`, then install **SDD Factory** (`gokaju.sdd-factory`, manifest `orca-plugin.json`). It contributes a **panel** that types `/sdd-<phase> <issue>` into the terminal of the focused worktree you choose; that terminal must run an agent with this plugin's skills loaded.
-
-Orca plugins cannot ship agent skills yet, so the skills, gates and hooks stay agent skills: install the plugin in Claude Code as above, or pull single skills with `npx skills add https://github.com/GoKaju/sdd-factory --skill sdd-triage` (every `skills/<name>/SKILL.md` is a valid Orca skill source). Approvals never go through Orca: they stay labels on the issue and `/rework` comments on the PR.
-
-## Orchestration
-
-The framework decides mechanically; an orchestrator only chooses when, how many and where. Two pieces ship here:
-
-- **`sdd next [--all]`** — one JSON line per open issue with the verdict of the state machine: `run` (a phase to launch), `approve` (a gate the constitution delegates, to verify first), `human`, `busy`. Exit code 1 when nothing is runnable, so it doubles as a free precheck.
-- **`/sdd-orchestrate`** — the coordinator skill for [Orca](https://www.onorca.dev): reads `sdd next`, grants delegated gates only after verifying the artifact (and, for `(judged)` gates, after the `reviewer` agent passes it), launches each runnable phase as a supervised Orca worker in the issue's own worktree, waits for `worker_done`, and reports. `sdd orca enable`, run inside the repository, creates the Orca automation (dedicated worktree on the default branch, every five minutes, `--precheck sdd next`, disabled until `--on`), so idle ticks cost nothing; `sdd orca show|run|disable|remove` manage it.
-
-Delegation is a constitution line — `- **Delegated gates:** Intake, Spec (judged), Task` — and a Constitution issue is never merged by a machine. A second line, `- **Warnings at Final:** human | merge | rework`, says what a delegated Final does when the gates PASS with WARNINGs: hold for a person, merge and list them, or file the `/rework` itself (code WARNINGs only, within the rework budget). Any other orchestrator (a poller, a control plane) consumes the same commands, labels, comments and gate results.
+Write `gates/<name>.md` (question, procedure, checklist with severities, output schema), list it in the constitution's Verification, and name it in the `gates:` input of the reviewer. `sdd gate-result aggregate` treats every posted result the same way.

@@ -19,11 +19,11 @@
 <body>
   <div class="frame">
     <p class="eyebrow">Swimlane · sdd-factory</p>
-    <h1>The SDD flow: six skills, five human gates</h1>
+    <h1>The SDD flow: six phases, five human gates</h1>
 
     <svg viewBox="0 64 1260 476" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sdd-flow-title sdd-flow-desc">
       <title id="sdd-flow-title">The SDD flow of sdd-factory</title>
-      <desc id="sdd-flow-desc">Swimlane diagram: an agent runs triage, spec, design, task, implement and review in order; a human approves at gates 0 to 3 between the steps and at gate 4 after review; bug, task and constitution issues skip from gate 0 to task; a failed review or a human rework comment loops back to implement; each step leaves an artifact and a state label on the GitHub issue or pull request.</desc>
+      <desc id="sdd-flow-desc">Swimlane diagram: /sdd launches one subagent per phase, triage, spec, design, task, implement and review, in order; a human approves at gates 0 to 3 between the steps and at gate 4 after review; bug, task and constitution issues skip from gate 0 to task; a failed review or a human rework comment loops back to implement; each step leaves an artifact and a state label on the GitHub issue or pull request.</desc>
       <defs>
         <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#737373"/></marker>
         <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1447e6"/></marker>
@@ -93,27 +93,27 @@
       <g font-family="'Geist', system-ui, sans-serif" text-anchor="middle">
         <rect x="200" y="240" width="128" height="72" rx="6" fill="#ffffff" stroke="#0a0a0a" stroke-width="1"/>
         <text x="264" y="272" fill="#0a0a0a" font-size="12" font-weight="600">Triage</text>
-        <text x="264" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">/sdd-triage</text>
+        <text x="264" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">triage</text>
 
         <rect x="376" y="240" width="128" height="72" rx="6" fill="#ffffff" stroke="#0a0a0a" stroke-width="1"/>
         <text x="440" y="272" fill="#0a0a0a" font-size="12" font-weight="600">Spec</text>
-        <text x="440" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">/sdd-spec</text>
+        <text x="440" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">spec</text>
 
         <rect x="552" y="240" width="128" height="72" rx="6" fill="#ffffff" stroke="#0a0a0a" stroke-width="1"/>
         <text x="616" y="272" fill="#0a0a0a" font-size="12" font-weight="600">Design</text>
-        <text x="616" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">/sdd-design</text>
+        <text x="616" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">design</text>
 
         <rect x="728" y="240" width="128" height="72" rx="6" fill="#ffffff" stroke="#0a0a0a" stroke-width="1"/>
         <text x="792" y="272" fill="#0a0a0a" font-size="12" font-weight="600">Task</text>
-        <text x="792" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">/sdd-task</text>
+        <text x="792" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">task</text>
 
         <rect x="904" y="240" width="128" height="72" rx="6" fill="#ffffff" stroke="#0a0a0a" stroke-width="1"/>
         <text x="968" y="272" fill="#0a0a0a" font-size="12" font-weight="600">Implement</text>
-        <text x="968" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">/sdd-implement</text>
+        <text x="968" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">implement</text>
 
         <rect x="1080" y="240" width="128" height="72" rx="6" fill="rgba(20,71,230,0.08)" stroke="#1447e6" stroke-width="1"/>
         <text x="1144" y="272" fill="#0a0a0a" font-size="12" font-weight="600">Review · 6 gates</text>
-        <text x="1144" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">/sdd-review</text>
+        <text x="1144" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">review</text>
       </g>
 
       <!-- GitHub artifacts and states -->
@@ -139,7 +139,7 @@
       <text x="40" y="492" fill="#737373" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">LEGEND</text>
       <g font-family="'Geist', system-ui, sans-serif" font-size="8" fill="#737373">
         <rect x="40" y="508" width="16" height="12" rx="2" fill="#ffffff" stroke="#0a0a0a" stroke-width="1"/>
-        <text x="64" y="517">Agent skill</text>
+        <text x="64" y="517">Phase (subagent)</text>
         <polygon points="168,506 176,514 168,522 160,514" fill="#ffffff" stroke="#0a0a0a" stroke-width="1"/>
         <text x="184" y="517">Human approval gate</text>
         <rect x="320" y="508" width="16" height="12" rx="2" fill="rgba(20,71,230,0.08)" stroke="#1447e6" stroke-width="1"/>
