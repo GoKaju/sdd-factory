@@ -23,7 +23,13 @@ You run the **design** phase of the SDD factory for one issue: produce the techn
    - **Errors** map one to one to the spec's Rejections, same names; messages in English with context values as params.
    - **Layout** follows the constitution's folder rules and fixes every placement decision and every file-level name the rules do not determine. The Task never decides names; if it needs one you did not fix, the issue comes back here.
    - **Prefer the simplest structure that satisfies the rules.** Every extra class or indirection must earn its place in a decision.
-   - **Decisions are ADRs.** A real decision (a choice between alternatives with consequences) is one file `docs/adrs/<NNNN>-<slug>.md` (next free number). The design's `### Decisions` only links them. Reversing a decision never edits the old ADR: write a new one and mark the old `Superseded by ADR-<NNNN>`.
+   - **ADRs are rare.** An ADR records a decision that is **architecturally significant**: it passes all four tests below. Everything else is a **design note**: one line in the section of the design it belongs to (Domain Model, Errors, Persistence, Layout…), stating the choice and citing the requirement or rule it follows. Most issues need zero or one ADR; more than two needs a sentence of justification in the PR description.
+     1. **Not already decided.** Neither the constitution nor the spec nor an existing ADR determines it. Applying a rule (D2 + D6 ⇒ the use case validates input), choosing between two layouts a rule allows, or modelling what the spec already states (a due date is a calendar day) is compliance, not a decision.
+     2. **Cross-cutting.** It constrains more than this module or every future change to it: a package or bounded-context boundary, an aggregate boundary, a contract other modules or clients depend on, a persisted format, an external library or technology the whole repository adopts.
+     3. **Costly to reverse.** Undoing it means migrating data, breaking a contract, or rewriting more than the module itself.
+     4. **Genuinely open.** A competent engineer could reasonably have chosen otherwise, and the alternatives have different consequences worth reading later.
+     Fails one test → design note, not ADR. One file per ADR, `docs/adrs/<NNNN>-<slug>.md` (next free number); the design's `### Decisions` links them. Reversing a decision never edits the old ADR: write a new one and mark the old `Superseded by ADR-<NNNN>`.
+     Calibration: *aggregate boundary of a new context* → ADR. *The repository adopts UUIDv7 for every identifier* → ADR. *A collation for comparing names, a `parse` vs `create` split, reading creation order from the id, how the in-memory fake keys by tenant, which of two allowed folder layouts, a date being a day because the spec says so* → design notes.
    - **The design is the current state of the module; git is the history.** No "changes to existing code", no "not in this change", no per-issue annotations. What this change touches, leaves out or leaves for Task goes in the **PR description** (`gh pr edit --body`). Set `status: draft`.
 5. **One pass, no self-review.** The human judges the design at Approval Gate 2 and the Review Gates judge it again against the code. Report in the PR description what you left open for the human.
 6. **Commit and push** per `templates/commits.md`: `docs(<module>): design for #N` (ADRs in the same commit). Leave no uncommitted change.
@@ -42,7 +48,8 @@ outcome: done | escalated | failed
 pr: <PR number>
 variant: full | light
 design: docs/<domain>/<module>/design.md
-adrs: [<docs/adrs/NNNN-slug.md created or superseded>]
+adrs: [<docs/adrs/NNNN-slug.md created or superseded; usually empty or one>]
+design_notes: <number of one-line choices recorded in the design instead of ADRs>
 document_only: true | false   # true when the Task comment already exists with every step ticked and this amendment needs no code change
 to: spec                      # only when escalated
 summary: <one sentence for the human>

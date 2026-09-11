@@ -19,6 +19,7 @@ The PR changes **only documents**: `docs/constitution.md`, a `spec.md`, a `desig
 - Every requirement keeps its stable ID; renumbered or reused IDs are BLOCKER.
 - The Spec uses business language only (see `completeness.md` §10): WARNING each, BLOCKER if a requirement depends on the technical term.
 - The Design cites rule IDs instead of restating rules (restated rule: WARNING). Every decision the design links exists as an ADR; an edited ADR instead of a superseding one is BLOCKER.
+- ADR discipline: an ADR that fails any of the four tests in `templates/adr.template.md` (already decided by a rule, the spec or an earlier ADR; module-local; cheap to reverse; not genuinely open) is WARNING, `required_action: fold into design.md as a one-line note`; a cross-cutting, costly-to-reverse choice recorded only as a design note is WARNING; more than two ADRs in one PR without justification in the PR description is WARNING.
 - In the changed parts, a design element without a requirement, or a requirement without a design element, is BLOCKER.
 
 ### Security of the rules — BLOCKER unless noted

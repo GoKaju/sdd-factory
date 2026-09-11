@@ -44,6 +44,11 @@ Verify each domain rule of the constitution as written: base classes to extend, 
 ### I. Design document hygiene (when the PR edits design.md) — WARNING, NIT if minor
 - Sentences that restate a constitution rule instead of a module-specific decision; a file inventory or test list in the design; errors whose names do not match the Spec's Rejections; any narration of history ("changed after…", "not in this change").
 
+### J. ADR discipline (when the PR adds or edits ADRs) — WARNING
+- An ADR that fails any of the four tests of `templates/adr.template.md` (already decided by a rule, the spec or an earlier ADR; module-local; cheap to reverse; not genuinely open) → WARNING with `required_action: fold into design.md as a one-line note under <section>`. An ADR whose Context only cites rule IDs it applies is the typical case.
+- The opposite gap: a package or context boundary, an aggregate boundary, a contract other modules depend on, a persisted format or a repository-wide library chosen in the design or the code with no ADR → WARNING.
+- More than two ADRs in one PR without a justification in the PR description → WARNING.
+
 ## Output
 
 ```yaml
