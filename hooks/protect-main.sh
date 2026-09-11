@@ -16,8 +16,9 @@ flat="$(printf '%s' "$flat" | sed -E "s/git +-C +['\"]?[^ '\";&|]+['\"]? +/git /
 if printf '%s' "$flat" | grep -Eq '(^|[;&| ])git push'; then
   printf '%s' "$flat" | grep -Eq 'git push[^;&|]*( -f| --force)' && block "force push is denied. Rule W2."
   printf '%s' "$flat" | grep -Eq 'git push[^;&|]*(origin|upstream)?[[:space:]]+(main|master)([[:space:]]|$)' && block "push to main is denied; open a PR. Rule W1."
-  # `git push` with no refspec while on main
-  if printf '%s' "$flat" | grep -Eq 'git push([[:space:]]+(-u|--set-upstream|origin|upstream))*([;&|]|$)'; then
+  # `git push` with no refspec while on the default branch: strip every option (-q, -u, --tags, -o …) and see whether a ref remains
+  rest="$(printf '%s' "$flat" | sed -E 's/.*git push//; s/[;&|].*$//' | tr ' ' '\n' | grep -vE '^(-.*|origin|upstream)?$' | head -1)"
+  if [ -z "$rest" ]; then
     dir="$(printf '%s' "$flat" | grep -oE "(^|[;&|] *)cd +['\"]?[^ '\";&|]+" | tail -1 | sed -E "s/.*cd +['\"]?//")"
     [ -z "$dir" ] && dir="$cdir"
     case "$dir" in "") dir="$(call_cwd)";; /*) ;; *) dir="$(call_cwd)/$dir";; esac
