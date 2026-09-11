@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Claude Code PreToolUse (Bash): never push to main/master, never force-push, never rewrite published history.
+# Works from the main checkout and from issue worktrees (`cd <path> && git push`, `git -C <path> push`).
 set -u
 . "$(dirname "$0")/lib.sh"
 read_stdin
@@ -8,13 +9,19 @@ cmd="$(json_field command)"
 
 # Normalise whitespace so "git  push" and multi-line chains are matched.
 flat="$(printf '%s' "$cmd" | tr '\n' ' ' | tr -s ' ')"
+# `git -C <path> push` reads as `git push` for the patterns; the path is recovered below for the branch check
+cdir="$(printf '%s' "$flat" | grep -oE "git +-C +['\"]?[^ '\";&|]+" | tail -1 | sed -E "s/.*-C +['\"]?//")"
+flat="$(printf '%s' "$flat" | sed -E "s/git +-C +['\"]?[^ '\";&|]+['\"]? +/git /g")"
 
 if printf '%s' "$flat" | grep -Eq '(^|[;&| ])git push'; then
   printf '%s' "$flat" | grep -Eq 'git push[^;&|]*( -f| --force)' && block "force push is denied. Rule W2."
   printf '%s' "$flat" | grep -Eq 'git push[^;&|]*(origin|upstream)?[[:space:]]+(main|master)([[:space:]]|$)' && block "push to main is denied; open a PR. Rule W1."
   # `git push` with no refspec while on main
   if printf '%s' "$flat" | grep -Eq 'git push([[:space:]]+(-u|--set-upstream|origin|upstream))*([;&|]|$)'; then
-    branch="$(git -C "$(project_dir)" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+    dir="$(printf '%s' "$flat" | grep -oE "(^|[;&|] *)cd +['\"]?[^ '\";&|]+" | tail -1 | sed -E "s/.*cd +['\"]?//")"
+    [ -z "$dir" ] && dir="$cdir"
+    case "$dir" in "") dir="$(call_cwd)";; /*) ;; *) dir="$(call_cwd)/$dir";; esac
+    branch="$(git -C "$dir" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
     case "$branch" in main|master) block "you are on $branch; push to main is denied. Rule W1." ;; esac
   fi
 fi

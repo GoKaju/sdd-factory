@@ -13,7 +13,7 @@ The PR changes **only documents**: `docs/constitution.md`, a `spec.md`, a `desig
 - The version bump follows the change: removing or rewording a rule so that something previously forbidden is allowed is a **major**; added rules are a **minor**; wording only is a **patch**. Mismatch is BLOCKER.
 - The change is exactly what the issue body describes: a rule the issue does not mention, added or removed, is BLOCKER; a rule the issue announces and the diff lacks is BLOCKER.
 - No model names, runner settings, provider names or costs inside the constitution: orchestrator policy does not live here (WARNING if descriptive, BLOCKER if it acts as a rule).
-- Identity, Decisions, Commands and Verification stay consistent with the Rules. `CLAUDE.md` and `AGENTS.md` remain pointers only.
+- Identity, Decisions and Verification stay consistent with the Rules. `CLAUDE.md` remains a pointer only.
 
 ### Spec and design changes — BLOCKER unless noted
 - Every requirement keeps its stable ID; renumbered or reused IDs are BLOCKER.
@@ -44,7 +44,7 @@ Two rules that grant and forbid the same crossing are a contradiction and BLOCKE
 - Duplicated statements inside one document, or the same rule in two places: WARNING.
 - Ambiguous quantifiers ("usually", "when possible", "should" where a rule is meant): WARNING in a rule, BLOCKER in a requirement.
 - Placeholders left behind (`<...>`, `TBD`, `TODO`, `???`): BLOCKER in a constitution or spec, WARNING in a design.
-- Prose follows the constitution's `Language`; rule IDs, identifiers and paths stay as they are. A mixed-language sentence is WARNING.
+- Prose follows the language configured in `.sdd/config.yml`; rule IDs, identifiers and paths stay as they are. A mixed-language sentence is WARNING.
 - Formatting that breaks the template's structure (missing section, uneven table, skipped heading level): WARNING; pure style: NIT.
 
 ## Output

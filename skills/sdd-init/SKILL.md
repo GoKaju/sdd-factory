@@ -1,44 +1,47 @@
 ---
 name: sdd-init
-description: Initialize a repository for the SDD factory - constitution, pointer files, state labels, organization Issue Types and issue forms. Run once per project; idempotent.
+description: Initialize a repository for the SDD factory - constitution, .sdd/config.yml (assisted), CLAUDE.md pointer, state labels, organization Issue Types and issue forms. Run once per project; idempotent.
 argument-hint: "[project-name]"
 disable-model-invocation: true
+allowed-tools: Bash, Read, Write, Edit, Grep, Glob, AskUserQuestion
 ---
 
 # /sdd-init [project-name]
 
-Initialize the current repository for Spec-Driven Development. Idempotent: re-running adds what is missing and never overwrites an existing `docs/constitution.md`.
+Initialize the current repository for Spec-Driven Development with the sdd-factory plugin. Idempotent: re-running adds what is missing and never overwrites an existing `docs/constitution.md` or `.sdd/config.yml`.
 
-Conventions: **N** is the issue number given as argument. `sdd` is the plugin's `bin/sdd` (in Claude Code `${CLAUDE_PLUGIN_ROOT}/bin/sdd`; elsewhere the `bin/sdd` of the plugin checkout, ideally on the PATH; `sdd help` lists its commands). Templates live in the plugin's `templates/`, gate checklists in `gates/`.
+Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd` (`sdd help` lists its commands). Templates live in `${CLAUDE_PLUGIN_ROOT}/templates/`.
 
 ## Steps
 
-1. **Preconditions.** `gh auth status` succeeds; the repository has a GitHub remote; the owner is an **organization** (native Issue Types do not exist on personal accounts). If the owner is a user account, stop and explain. `jq` is installed. If `sdd` is not on the PATH, print the line to add (`export PATH="<plugin>/bin:$PATH"`) and keep using the full path meanwhile.
+1. **Preconditions.** `gh auth status` succeeds; the repository has a GitHub remote; the owner is an **organization** (native Issue Types do not exist on personal accounts). If the owner is a user account, stop and explain. `jq` and `python3` are installed.
 
-2. **Constitution.** If `docs/constitution.md` does not exist, copy `templates/constitution.template.md` there and fill in what the repository reveals: project name (the argument or the repo name), the check commands for the `## Commands` block (read the package manifest scripts and `.github/workflows/*.yml`), runtime and persistence if obvious from dependencies. Leave every unknown as its `<placeholder>` and list the placeholders at the end so the human fills them. Do not invent rules: the `## Rules` blocks carry placeholders the team writes (or copies from `templates/examples/`); only the Workflow block, C1 and Q3 are the framework's own and stay as they are.
+2. **Constitution.** If `docs/constitution.md` does not exist, copy `templates/constitution.template.md` there and fill in what the repository reveals: project name (the argument or the repo name), runtime and persistence if obvious from dependencies. Leave every unknown as its `<placeholder>` and list the placeholders at the end so the human fills them. Do not invent rules: the `## Rules` blocks carry placeholders the team writes (or copies from `templates/examples/`); only the Workflow block, C1 and Q3 are the framework's own and stay as they are. If an existing constitution still carries a `## Commands` block or `Language` / `Rework budget` / `Delegated gates` / `Warnings at Final` lines (v1 layout), leave the file alone here: step 3 migrates the values and you then propose the cleanup as a Constitution issue.
 
-3. **Pointer files.** Write `CLAUDE.md` with exactly:
+3. **Config, assisted.** `sdd config init --from-constitution` creates `.sdd/config.yml` from the template (and migrates v1 values when present). Then fill it with the human, one question at a time when the repository does not answer it:
+   - `language` (en | es) — from the constitution or the issue templates if any; else ask.
+   - `commands` — read the package manifest scripts and `.github/workflows/*.yml`; propose the install / lint / typecheck / build / test lines in CI order and confirm them; `sdd config set commands "<cmd1>" "<cmd2>" ...`.
+   - `models.*` — keep the defaults unless the human wants otherwise; say what they are.
+   - `gates.delegated` — default none; explain in two lines what delegating means (the factory grants the gate after mechanical verification; `(judged)` adds the reviewer) and ask which, if any.
+   - `gates.warnings_at_final`, `gates.rework_budget`, `await.*` — defaults; mention them, change only on request.
+   Finish with `sdd config validate` and `sdd ci list`.
+
+4. **Pointer file.** Write `CLAUDE.md` with exactly:
    ```
    @docs/constitution.md
    ```
-   and `AGENTS.md` with a pointer plus the skill list, so hosts without a skill system still find the flow:
-   ```
-   # Agents
-   All rules and commands for this repository live in `docs/constitution.md`. Read it first; nothing else here is authoritative.
+   If it exists with other content, do not overwrite: show the diff and ask.
 
-   The development flow is Spec-Driven Development, run with the sdd-factory skills (one SKILL.md each under the plugin's `skills/`):
-   sdd-triage · sdd-spec · sdd-design · sdd-task · sdd-implement · sdd-review · sdd-status · sdd-init
-   ```
-   If either file exists with other content, do not overwrite: show the diff and ask.
+5. **State labels.** `sdd state ensure-labels`.
 
-4. **State labels.** `sdd state ensure-labels`.
+6. **Issue Types.** `sdd org-types ensure`. For every line starting with `MANUAL`, tell the human exactly what to create and where.
 
-5. **Issue Types.** `sdd org-types ensure`. For every line starting with `MANUAL`, tell the human exactly what to create and where.
+7. **Issue forms.** `lang=$(sdd config get language)`; copy `templates/issue-forms/<lang>/*.yml` into `.github/ISSUE_TEMPLATE/`. The forms are for non-technical authors; do not add technical fields.
 
-6. **Issue forms.** `lang=$(sdd lang)`; copy `templates/issue-forms/<lang>/*.yml` into `.github/ISSUE_TEMPLATE/`. The forms are for non-technical authors; do not add technical fields.
+8. **Ignore the worktrees.** Ensure `.gitignore` contains `.sdd/worktrees/` (`/sdd` keeps one git worktree per issue there). `.sdd/config.yml` and `.sdd/learning/` are versioned.
 
-7. **Host permissions (Claude Code only).** If the host is Claude Code, ensure `.claude/settings.json` denies `Bash(git push origin main:*)`, `Bash(git push -f:*)`, `Bash(git push --force:*)` (merge into the existing file). Other hosts rely on branch protection.
+9. **Permissions.** Ensure `.claude/settings.json` denies `Bash(git push origin main:*)`, `Bash(git push -f:*)`, `Bash(git push --force:*)` (merge into the existing file). The plugin's hooks enforce the same at runtime.
 
-8. **Branch protection.** Do not change it; print the recommended settings for `main`: require PR, require the CI check, one approval, no force push.
+10. **Branch protection.** Do not change it; print the recommended settings for `main`: require PR, require the CI check, one approval, no force push.
 
-9. **Report.** Files created or changed, labels and types created, remaining `<placeholders>`, manual steps. Do not commit unless the human asks (then follow `templates/commits.md`).
+11. **Report.** Files created or changed, config values set, labels and types created, remaining `<placeholders>`, manual steps, and that the flow starts with `/sdd <issue-number>`. Do not commit unless the human asks (then follow `templates/commits.md`).

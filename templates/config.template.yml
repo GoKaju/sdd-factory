@@ -1,0 +1,43 @@
+# .sdd/config.yml — how the sdd-factory plugin operates in this repository.
+# Created by /sdd-init, edited with /sdd-config (or by hand). Versioned: every collaborator runs the same factory.
+# Rules of the project live in docs/constitution.md; nothing here is a rule.
+
+# Prose of tracker comments, issue forms and PR bodies: en | es
+language: en
+
+# Model of the subagent that runs each phase: haiku | sonnet | opus | inherit (the session's model).
+models:
+  triage: haiku
+  spec: opus
+  design: opus
+  task: sonnet
+  implement: opus
+  reviewer: opus
+  learning: sonnet
+
+gates:
+  # Human approval gates /sdd may grant on its own once the artifact is verifiably clean.
+  # Any of: Intake, Spec, Design, Task, Final. Add "(judged)" to require the reviewer's PASS first.
+  # A Constitution issue is never merged by a machine. Empty list = every gate waits for a person.
+  delegated: []
+  # What a delegated Final does when every gate is PASS but WARNINGs remain:
+  #   human  → hold the PR for a person (default)
+  #   merge  → merge and list the WARNINGs on the PR
+  #   rework → file a /rework with the code WARNINGs (bounded by rework_budget; docs WARNINGs are listed for a Change)
+  warnings_at_final: human
+  # Review cycles before the issue stops as NEEDS_HUMAN
+  rework_budget: 3
+
+await:
+  # sdd await polls GitHub every interval_seconds, in bash, without an agent turn
+  interval_seconds: 30
+  # /sdd keeps waiting for a human up to max_minutes in total, then ends the turn (re-run /sdd N to resume)
+  max_minutes: 120
+
+# Deterministic checks, in CI order. `sdd ci` runs exactly this list, fail-fast; Review Gates never run on a red build.
+commands:
+  - "<install with a frozen lockfile>"
+  - "<lint>"
+  - "<typecheck>"
+  - "<build>"
+  - "<tests with coverage>"

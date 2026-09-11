@@ -1,5 +1,5 @@
 <!-- sdd:triage -->
-<!-- Exactly one triage comment per Issue. Re-running /sdd-triage edits this comment; it never posts a second one.
+<!-- Exactly one triage comment per Issue. Re-running the triage phase edits this comment; it never posts a second one.
      The agent that writes this reads the repository but never modifies it.
      Intake approval = a human sets the tracker state `sdd:ready`. -->
 

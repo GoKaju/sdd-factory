@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
-# What the factory should do next, per open issue, from the labels and comments on GitHub. Pure
-# read; the rules are the state machine of the framework (see the table in skills/sdd-status).
+# What one issue needs next, from its labels and comments on GitHub: the state machine of the framework in
+# bash, so /sdd never reasons about it. Pure read.
 #
-#   sdd next [--all]        → one JSON object per line: issue, title, type, state, action, phase|gate, reason, pr
+#   sdd next <issue>        → one JSON object: issue, title, type, state, action, phase|gate, judged, reason, pr, waits_for
 #                             action: run     — a phase to launch      (phase: triage|spec|design|task|implement|review)
-#                                     approve — a delegated human gate the orchestrator may grant after verifying
-#                                               the artifact (gate: Intake|Spec|Design|Task|Final; judged: true|false)
-#                                     human   — waits for a person (only with --all)
-#                                     busy    — a phase is running or just ran (only with --all)
-#                             exit 0 when at least one run/approve line was printed, 1 otherwise
-#                             (so `--precheck "sdd next"` in an Orca automation skips idle ticks for free)
+#                                     approve — a delegated human gate /sdd may grant after verifying the artifact
+#                                               (gate: Intake|Spec|Design|Task|Final; judged: true|false)
+#                                     human   — waits for a person (waits_for: the state a human approval produces)
+#                                     busy    — an implement phase is running or just ran
 #   STALE_MINUTES (env, default 45): an `implementing` issue idle longer than this is resumed
 . "$(dirname "$0")/lib.sh"
 S="$(dirname "$0")"
-all=0; [ "${1:-}" = "--all" ] && all=1
+need_issue "${1:-}"; one="$1"
 stale="${STALE_MINUTES:-45}"
 r="$(repo)"
 delegated="$(delegated_gates)"
@@ -31,9 +29,8 @@ author_answered() {
     | awk -v e="$edited" '$0 > e {found=1} END {exit found?0:1}'
 }
 
-found=0
-gh issue list --repo "$r" --state open --limit 200 --json number,title,labels,updatedAt \
-  --jq '.[] | [.number, (.labels | map(.name) | map(select(startswith("sdd:"))) | .[0] // "-"), .updatedAt, .title] | @tsv' \
+gh issue view "$one" --repo "$r" --json number,title,labels,updatedAt \
+  --jq '[.number, (.labels | map(.name) | map(select(startswith("sdd:"))) | .[0] // "-"), .updatedAt, .title] | @tsv' \
 | while IFS="$(printf '\t')" read -r n label updated title; do
   [ "$label" = "-" ] && label=""   # @tsv leaves an empty field, which `read` would collapse
   state="${label#sdd:}"; type="$("$S/type.sh" get "$n" 2>/dev/null || true)"
@@ -70,10 +67,8 @@ gh issue list --repo "$r" --state open --limit 200 --json number,title,labels,up
       else reason="human merges the PR or comments /rework (Gate 4)"; fi ;;
     *) action=human; reason="unknown state sdd:$state" ;;
   esac
-  case "$action" in run|approve) found=1;; *) [ "$all" = 1 ] || continue;; esac
   pr="$("$S/pr.sh" find "$n" 2>/dev/null || true)"
   key=phase; [ "$action" = approve ] && key=gate
-  json issue "$n" title "$title" type "$type" state "$state" action "$action" "$key" "$what" judged "$judged" reason "$reason" pr "$pr"
-  [ "$found" = 1 ] && touch "${TMPDIR:-/tmp}/sdd-next-found-$$"
+  waits=""; [ "$action" = human ] && waits="$(approved_state_after "$state")"
+  json issue "$n" title "$title" type "$type" state "$state" action "$action" "$key" "$what" judged "$judged" reason "$reason" pr "$pr" waits_for "$waits"
 done
-[ -f "${TMPDIR:-/tmp}/sdd-next-found-$$" ] && { rm -f "${TMPDIR:-/tmp}/sdd-next-found-$$"; exit 0; } || exit 1

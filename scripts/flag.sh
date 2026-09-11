@@ -4,7 +4,7 @@
 #
 #   sdd flag dir                 → prints the flag directory for the current repository
 #   sdd flag set <flag>          → creates the flag
-#   sdd flag clear <flag>        → removes the flag
+#   sdd flag clear <flag>...     → removes the flag(s)
 #   sdd flag has <flag>          → exit 0 if present
 set -euo pipefail
 slug() {
@@ -17,7 +17,7 @@ dir="${SDD_FLAG_HOME:-$HOME/.sdd}/$(slug)"
 case "${1:-}" in
   dir) printf '%s\n' "$dir" ;;
   set) [ -n "${2:-}" ] || { echo "flag name required" >&2; exit 1; }; mkdir -p "$dir"; : > "$dir/$2"; printf '%s/%s\n' "$dir" "$2" ;;
-  clear) [ -n "${2:-}" ] || { echo "flag name required" >&2; exit 1; }; rm -f "$dir/$2"; echo "cleared $2" ;;
+  clear) shift; [ $# -gt 0 ] || { echo "flag name required" >&2; exit 1; }; for f in "$@"; do rm -f "$dir/$f"; done; echo "cleared $*" ;;
   has) [ -f "$dir/${2:-}" ] ;;
   *) sed -n '2,8p' "$0"; exit 1 ;;
 esac

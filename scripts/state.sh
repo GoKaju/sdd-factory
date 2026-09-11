@@ -25,7 +25,7 @@ case "$cmd" in
     # removing the previous one; report the most advanced one in the canonical order.
     found="$(gh issue view "$1" --repo "$(repo)" --json labels -q '.labels[].name' | sed -n 's/^sdd://p')"
     best=""; for s in $STATES; do printf '%s\n' "$found" | grep -qx "$s" && best="$s"; done
-    [ -n "$best" ] && printf '%s\n' "$best"
+    [ -n "$best" ] && printf '%s\n' "$best"; exit 0
     ;;
   set)
     need_issue "${1:-}"; is_state "${2:-}" || die "unknown state '${2:-}'. Valid: $STATES"

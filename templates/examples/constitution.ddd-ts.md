@@ -2,14 +2,13 @@
      `## Rules` of templates/constitution.template.md; the gates check whatever rules your constitution states. -->
 # Constitution — <project name> · v1.0.0
 
-This file is the only rule file in the repository. `CLAUDE.md` and `AGENTS.md` point here and contain nothing else. Rules are one line each; how each rule is checked lives in the reviewer agents of the `sdd-factory` plugin, not here.
+This file is the only rule file in the repository. `CLAUDE.md` points here and contains nothing else. Rules are one line each; how each rule is checked lives in the reviewer agents of the `sdd-factory` plugin, not here.
 
 ## Identity
 
 - **Purpose:** <one sentence: what the system does and for whom>
 - **Domains:** <list of `docs/<domain>/` names>
 - **Issue types:** Feature · Change · Bug · Task · Constitution (native tracker types; the type decides the SDD path)
-- **Language:** <en | es> — prose, issue forms and tracker comments (rule C4)
 
 ## Rules
 
@@ -50,7 +49,7 @@ This file is the only rule file in the repository. `CLAUDE.md` and `AGENTS.md` p
 - **C1** Strict typing, no escape hatches, no unused symbols, named exports only (config files excepted).
 - **C2** kebab-case files without type suffixes; infrastructure files are `{technology}-{port}`.
 - **C3** No comments, except one line explaining a non-obvious *why*.
-- **C4** Everything inside code is English — identifiers, comments, test names, log and developer-facing error text; only end-user messages and prose documents use the constitution's `Language`.
+- **C4** Everything inside code is English — identifiers, comments, test names, log and developer-facing error text; only end-user messages and prose documents use the language configured in `.sdd/config.yml`.
 
 ### Workflow
 - **W1** Branch from `main`, Draft PR immediately with `Closes #N`; never push to `main`.
@@ -68,25 +67,11 @@ This file is the only rule file in the repository. `CLAUDE.md` and `AGENTS.md` p
 | Frontend | <framework + design system package, or "none"> |
 | Deployment | <serverless / container / monolith / installer>; procedure in `infra/` |
 
-## Commands
-
-```bash
-pnpm install --frozen-lockfile
-pnpm lint          # 1
-pnpm typecheck     # 2
-pnpm build         # 3
-pnpm coverage      # 4  runs the tests; CI order is fixed
-```
-
 ## Verification
 
 - **Review Gates:** Spec Compliance · Design & Architecture · Test Strategy · Security · Regression · Code Quality
-- **Rework budget:** 3
 - **Test exemplars:** <domain test> · <zero-mock use-case test> · <tenant-isolation test>
-
-## Agents
-
-Provided by the `sdd-factory` plugin: `reviewer` (read-only, runs the gates in `gates/`). Everything else is done by the main agent through the `/sdd-*` skills.
+- Check commands (`pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm coverage`), rework budget and delegated gates: `.sdd/config.yml`.
 
 ## Amendments
 
