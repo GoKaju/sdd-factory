@@ -22,7 +22,11 @@ You are the **coordinator** of one tick of the factory. The decision of which ph
    - `Spec` → check out the PR branch (`sdd pr branch N`); the spec's `Open questions` has no unchecked item and no `TBD`/`TODO`; the last completeness result on the PR (`sdd gate-result list <pr>`) is `PASS`. Set `spec-approved`.
    - `Design` → the design carries no `NEEDS_HUMAN`, `pending human` or `TBD`; every decision it lists exists as an ADR. Set `design-approved`.
    - `Task` → the Task comment exists, has at least one step and none is a question. Set `task-approved`.
-   - `Final` → every gate result of the latest review cycle is `PASS` (`sdd gate-result aggregate <pr> <cycle>`), the PR is ready and mergeable, and the issue is not of type Constitution. Merge with `gh pr merge --squash --delete-branch`.
+   - `Final` → every gate result of the latest review cycle is `PASS` (`sdd gate-result aggregate <pr> <cycle>`), the PR is ready and mergeable, and the issue is not of type Constitution. Then apply the constitution's **`Warnings at Final`** policy (`sdd gate-result warnings <pr> <cycle>` lists them, `docs/` locations first):
+     - no WARNING → merge with `gh pr merge --squash --delete-branch`.
+     - `human` (default) → do not merge; comment on the PR listing the WARNINGs and that a person decides (merge, or `/rework`).
+     - `merge` → merge and leave one PR comment listing the WARNINGs that were accepted.
+     - `rework` → split them: WARNINGs whose location is under `docs/` cannot go to rework (W3: spec, design and ADRs change only through their own issue) — list them in a PR comment as input for a Change. For the rest, if `cycle + 1 < Rework budget`, write **one** PR comment starting with `/rework` and one bullet per code WARNING (`<gate> · <location> · <what to change>`), then `sdd rework apply N`: the bullets become Task steps and the state goes to `rework`; the next tick launches implement. If the budget is exhausted, or every WARNING is documentation, fall back to `human`. Never file a `/rework` for a NIT.
    - `judged: true` → before granting, run the `reviewer` agent with gate set `completeness` (Spec) or `docs` (Design, Task) over the artifact and the issue's original body and author comments; grant only on `PASS`. On any other verdict, do not grant: comment on the issue what the reviewer found and leave the gate to the human.
    - When a check fails, do not grant; comment once on the issue why the gate was withheld (in the constitution's `Language`) and move on.
    Approvals granted here change `sdd next`; re-run it before step 4 so the newly approved issues get their next phase in the same tick.
@@ -49,5 +53,6 @@ You are the **coordinator** of one tick of the factory. The decision of which ph
 
 - Mechanical decisions stay in `sdd next`; if you disagree with a `run` line, hold it and say why, never launch something else.
 - A delegated gate is granted only after the verification above; "the artifact looks fine" is not verification.
+- WARNINGs never become BLOCKERs by your judgement: the `Warnings at Final` policy decides, and a `/rework` you file carries every code WARNING of the cycle, not a selection.
 - Never `sdd state set` to `ready` or `*-approved` for a gate that is not delegated; never merge a Constitution issue; never push to `main`.
 - One tick, one Run; leave no worker unsettled without saying so in the report.

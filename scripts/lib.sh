@@ -44,3 +44,10 @@ delegated_gates() {
     case "$g" in Intake|Spec|Design|Task) printf '%s %s\n' "$g" "$mode";; Final) printf 'Final %s\n' "$mode";; esac
   done
 }
+
+warnings_policy() {
+  # `Warnings at Final` of docs/constitution.md (Verification): what a delegated Final does with WARNINGs.
+  # rework → the orchestrator files a /rework with the code warnings; merge → merges and lists them; human → holds (default)
+  local root; root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+  { grep -oE '\*\*Warnings at Final:\*\*[[:space:]]*(rework|merge|human)' "$root/docs/constitution.md" 2>/dev/null || true; } | grep -oE '(rework|merge|human)$' | head -1 | grep . || printf 'human'
+}

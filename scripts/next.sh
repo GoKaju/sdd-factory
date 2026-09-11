@@ -62,7 +62,11 @@ gh issue list --repo "$r" --state open --limit 200 --json number,title,labels,up
     in-review) action=run; what=review; reason="implementation finished, review pending" ;;
     final-review)
       if [ -n "$("$S/rework.sh" pending "$n" 2>/dev/null || true)" ]; then action=run; what=implement; reason="human asked for changes with /rework"
-      elif [ "$type" != Constitution ] && [ -n "$(delegated_mode Final)" ]; then action=approve; what=Final; [ "$(delegated_mode Final)" = judged ] && judged=true; reason="Final delegated; merge only if every gate is PASS"
+      elif [ "$type" != Constitution ] && [ -n "$(delegated_mode Final)" ]; then
+        action=approve; what=Final; [ "$(delegated_mode Final)" = judged ] && judged=true
+        pr_n="$("$S/pr.sh" find "$n" 2>/dev/null || true)"; cyc="$("$S/gate-result.sh" list "${pr_n:-0}" 2>/dev/null | wc -l | tr -d ' ')"; cyc=$(( cyc > 0 ? (cyc - 1) / 6 : 0 ))
+        warn_n="$("$S/gate-result.sh" warnings "${pr_n:-0}" "$cyc" 2>/dev/null | grep -c . || true)"
+        reason="Final delegated; every gate must be PASS; $warn_n WARNING(s), policy $(warnings_policy)"
       else reason="human merges the PR or comments /rework (Gate 4)"; fi ;;
     *) action=human; reason="unknown state sdd:$state" ;;
   esac

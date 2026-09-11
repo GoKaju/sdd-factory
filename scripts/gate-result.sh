@@ -5,6 +5,7 @@
 #   sdd gate-result list <pr> [cycle]              → "<gate> <status>" per gate result found
 #   sdd gate-result aggregate <pr> <cycle>         → PASS | FAIL | NEEDS_HUMAN | BLOCKED for that cycle
 #   sdd gate-result skip <pr> <gate> <cycle> <why> → posts a PASS with not_applicable: true (gate has nothing to judge, e.g. documentation-only PR)
+#   sdd gate-result warnings <pr> <cycle>          → one line per WARNING of that cycle: "<gate>\t<location>\t<description>" (docs/ locations first)
 . "$(dirname "$0")/lib.sh"
 
 cmd="${1:-}"; pr="${2:-}"; printf '%s' "$pr" | grep -Eq '^[0-9]+$' || die "pr number required"
@@ -39,6 +40,20 @@ case "$cmd" in
           /^<!-- sdd:gate:/ { split($2, a, ":"); gate=a[3]; c=a[4]; keep = (want=="" || c==want); next }
           keep && /^status:/ { print gate, $2; keep=0 }'
     ;;
+  warnings)
+    cycle="${3:-0}"
+    gh api "repos/$r/issues/$pr/comments" --paginate --jq '.[].body' \
+      | awk -v want="$cycle" '
+          /^<!-- sdd:gate:/ { split($2, a, ":"); gate=a[3]; c=a[4]; keep=(c==want); w=0; next }
+          !keep { next }
+          /^  - severity:/ { if (w && loc!="") print gate "\t" loc "\t" desc; w=0; d=0; if ($0 ~ /WARNING/) { w=1; loc=""; desc="" }; next }
+          w && /^    location:/ { sub(/^    location:[ ]*/, ""); loc=$0; next }
+          w && /^    description: >/ { d=1; next }
+          w && d && /^      / { sub(/^      /, ""); desc = desc (desc==""?"":" ") $0; next }
+          w && /^    (required_action|requirement):/ { d=0; next }
+          /^```$/ { if (w && loc!="") print gate "\t" loc "\t" desc; w=0; d=0 }' \
+      | sort -t"$(printf '\t')" -k2,2 | awk -F"\t" '$2 ~ /^docs\// {print; next} {rest = rest $0 "\n"} END {printf "%s", rest}'
+    ;;
   aggregate)
     cycle="${3:-0}"; results="$("$0" list "$pr" "$cycle")"
     [ -n "$results" ] || { echo BLOCKED; exit 0; }
@@ -47,5 +62,5 @@ case "$cmd" in
     echo "$results" | grep -q ' NEEDS_HUMAN$' && { echo NEEDS_HUMAN; exit 0; }
     echo PASS
     ;;
-  *) sed -n '2,7p' "$0"; exit 1 ;;
+  *) sed -n '2,8p' "$0"; exit 1 ;;
 esac
