@@ -11,7 +11,15 @@ It runs in Claude Code as a plugin and in any other agent that reads `SKILL.md` 
 
 ## Install
 
-**Claude Code**, development:
+One step per machine:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/GoKaju/sdd-factory/main/install.sh | bash
+```
+
+It checks the prerequisites (git, gh authenticated, Claude Code or `npx`), installs the skills (Claude Code plugin by default; `--agent skills` uses `npx skills add` for any other agent) and links a stable `~/.sdd/bin/sdd`. Re-run it to update. Then, per repository: `/sdd-init` once, and `sdd orca enable` if Orca orchestrates it (see Orchestration).
+
+By hand instead — **Claude Code**, development:
 
 ```bash
 cd <your-repo>
@@ -92,6 +100,6 @@ Orca plugins cannot ship agent skills yet, so the skills, gates and hooks stay a
 The framework decides mechanically; an orchestrator only chooses when, how many and where. Two pieces ship here:
 
 - **`sdd next [--all]`** — one JSON line per open issue with the verdict of the state machine: `run` (a phase to launch), `approve` (a gate the constitution delegates, to verify first), `human`, `busy`. Exit code 1 when nothing is runnable, so it doubles as a free precheck.
-- **`/sdd-orchestrate`** — the coordinator skill for [Orca](https://www.onorca.dev): reads `sdd next`, grants delegated gates only after verifying the artifact (and, for `(judged)` gates, after the `reviewer` agent passes it), launches each runnable phase as a supervised Orca worker in the issue's own worktree, waits for `worker_done`, and reports. Scheduled with an Orca automation whose `--precheck` is `sdd next`, so idle ticks cost nothing.
+- **`/sdd-orchestrate`** — the coordinator skill for [Orca](https://www.onorca.dev): reads `sdd next`, grants delegated gates only after verifying the artifact (and, for `(judged)` gates, after the `reviewer` agent passes it), launches each runnable phase as a supervised Orca worker in the issue's own worktree, waits for `worker_done`, and reports. `sdd orca enable`, run inside the repository, creates the Orca automation (dedicated worktree on the default branch, every five minutes, `--precheck sdd next`, disabled until `--on`), so idle ticks cost nothing; `sdd orca show|run|disable|remove` manage it.
 
 Delegation is a constitution line — `- **Delegated gates:** Intake, Spec (judged), Task` — and a Constitution issue is never merged by a machine. Any other orchestrator (a poller, a control plane) consumes the same commands, labels, comments and gate results.

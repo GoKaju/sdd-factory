@@ -43,13 +43,7 @@ You are the **coordinator** of one tick of the factory. The decision of which ph
 
 ## Running it on a schedule
 
-```bash
-orca automations create --name "SDD factory" --trigger "*/5 * * * *" \
-  --precheck "cd <repo path> && git pull -q && sdd next" \
-  --prompt "/sdd-orchestrate" --provider claude --workspace <orchestrator worktree selector> \
-  --reuse-session --disabled --json
-```
-`sdd next` exits 1 when nothing is runnable, so idle ticks are recorded as skipped and cost nothing; the orchestrator only wakes when there is work. Enable with `orca automations edit <id> --enabled --json` after one manual `orca automations run <id> --json`. The orchestrator's workspace is a worktree of the repository on `main` that no phase ever uses.
+`sdd orca enable` (inside the repository) creates the Orca automation **SDD factory · <repo>**: every five minutes the precheck `sdd next` runs in a dedicated worktree on the default branch; it exits 1 when nothing is runnable, so idle ticks are recorded as skipped and cost nothing, and only when there is work does Orca wake this skill in that worktree with `--reuse-session`. It is created disabled: `sdd orca run` tries one tick by hand (manual runs skip the precheck), `sdd orca enable --on` turns it on, `sdd orca show|disable|remove` manage it.
 
 ## Rules
 
