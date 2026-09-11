@@ -101,17 +101,29 @@ if ! grep -q 'Delegated gates' "$repo/docs/constitution.md" 2>/dev/null; then wa
 step "4. Orca automation"
 if "$ORCA" repo list --json 2>/dev/null | grep -q "\"path\": *\"$repo\""; then ok "Orca already knows $name"
 else "$ORCA" repo add --path "$repo" --json >/dev/null && ok "repository added to Orca"; fi
+# The orchestrator gets its own Orca worktree on the default branch, so it never shares a checkout with a phase.
+wt_name="sdd-orchestrator"
+wt_path="$("$ORCA" worktree list --repo "path:$repo" --json 2>/dev/null | python3 -c 'import json,sys,os; d=json.load(sys.stdin); r=d.get("result",d); n=sys.argv[1]
+print(next((w.get("path","") for w in r.get("worktrees",[]) if os.path.basename(w.get("path",""))==n or w.get("displayName")==n), ""))' "$wt_name")"
+if [ -n "$wt_path" ] && [ -d "$wt_path" ]; then ok "orchestrator worktree: $wt_path"
+else
+  default_branch="$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')"; default_branch="${default_branch:-main}"
+  out="$("$ORCA" worktree create --repo "path:$repo" --name "$wt_name" --no-parent --setup skip --base-branch "$default_branch" --json 2>/dev/null || "$ORCA" worktree create --repo "path:$repo" --name "$wt_name" --no-parent --setup skip --json)"
+  wt_path="$(printf '%s' "$out" | python3 -c 'import json,sys; d=json.load(sys.stdin); r=d.get("result",d); print(r.get("worktree",r).get("path",""))')"
+  [ -n "$wt_path" ] || fail "could not create the orchestrator worktree in Orca"
+  ok "orchestrator worktree created: $wt_path (from $default_branch)"
+fi
 auto_name="SDD factory · $name"
-precheck="cd '$repo' && git pull -q --ff-only 2>/dev/null; '$SDD_HOME/bin/sdd' next"
+precheck="cd '$wt_path' && git pull -q --ff-only 2>/dev/null; '$SDD_HOME/bin/sdd' next"
 existing="$("$ORCA" automations list --json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); r=d.get("result",d); items=r.get("automations") or r.get("items") or []; n=sys.argv[1]; print(next((a.get("id","") for a in items if a.get("name")==n), ""))' "$auto_name")"
 state_flag=--disabled; [ "$enable" = 1 ] && state_flag=--enabled
 if [ -n "$existing" ]; then
-  "$ORCA" automations edit "$existing" --trigger "*/$every * * * *" --precheck "$precheck" --prompt "/sdd-orchestrate" --provider claude --reuse-session $state_flag --json >/dev/null \
+  "$ORCA" automations edit "$existing" --trigger "*/$every * * * *" --precheck "$precheck" --precheck-timeout 180 --prompt "/sdd-orchestrate" --provider claude --workspace "path:$wt_path" --reuse-session $state_flag --json >/dev/null \
     && ok "automation updated: $auto_name ($existing)"
   auto_id="$existing"
 else
-  out="$("$ORCA" automations create --name "$auto_name" --trigger "*/$every * * * *" --precheck "$precheck" --prompt "/sdd-orchestrate" --provider claude \
-        --workspace "path:$repo" --reuse-session $state_flag --json)"
+  out="$("$ORCA" automations create --name "$auto_name" --trigger "*/$every * * * *" --precheck "$precheck" --precheck-timeout 180 --prompt "/sdd-orchestrate" --provider claude \
+        --workspace "path:$wt_path" --reuse-session $state_flag --json)"
   auto_id="$(printf '%s' "$out" | python3 -c 'import json,sys; d=json.load(sys.stdin); r=d.get("result",d); a=r.get("automation",r); print(a.get("id",""))')"
   ok "automation created: $auto_name (${auto_id:-see Orca → Automations})"
 fi
@@ -119,7 +131,7 @@ fi
 step "Done"
 cat <<MSG
   Every $every min Orca runs the precheck \`sdd next\` in $name; when an issue has a runnable phase or a
-  delegated gate, the orchestrator (/sdd-orchestrate) wakes in the repository's main worktree, launches each
+  delegated gate, the orchestrator (/sdd-orchestrate) wakes in its own worktree ($wt_path), launches each
   phase as a supervised Orca worker in the issue's worktree and reports. Idle ticks cost nothing.
 
   Next:
