@@ -89,6 +89,10 @@ Two hooks the plugin ships (`SubagentStart`, `SubagentStop`, matcher `^sdd-facto
 
 Hooks enforce, in the main checkout and in every issue worktree: `docs/constitution.md` changes only during a Constitution-type issue; approved `spec.md`, `design.md` and ADRs cannot be edited while their issue is in implementation or review; no `git push` to `main`, no force-push, no rebase / amend / reset --hard.
 
+## Releasing a change
+
+Every PR bumps `version` in `.claude-plugin/plugin.json` (patch for fixes, minor for new behaviour, major for breaking changes). `claude plugin update` reinstalls only when the version differs from the installed one, so a merged PR without a bump never reaches anyone.
+
 ## Adding a gate
 
 Write `gates/<name>.md` (question, procedure, checklist with severities, output schema), list it in the constitution's Verification, and name it in the `gates:` input of the reviewer. `sdd gate-result aggregate` treats every posted result the same way.
