@@ -4,86 +4,153 @@
     <meta charset="utf-8" />
     <style>
       body { margin: 0; padding: 12px; font-family: system-ui, sans-serif; font-size: 13px; color: var(--foreground, #ddd); background: var(--background, transparent); }
-      h1 { font-size: 14px; margin: 0 0 4px; }
-      p { margin: 0 0 8px; color: var(--muted-foreground, #999); }
+      h1 { font-size: 14px; margin: 0 0 8px; }
       label { display: block; margin: 8px 0 2px; color: var(--muted-foreground, #999); }
       select, input { width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1px solid var(--border, #555); border-radius: 6px; background: var(--secondary, #2a2a2a); color: var(--foreground, #ddd); font: inherit; }
-      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
-      button { padding: 6px 10px; border: 1px solid var(--border, #555); border-radius: 6px; background: var(--secondary, #2a2a2a); color: var(--foreground, #ddd); cursor: pointer; font: inherit; text-align: left; }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      ol.steps { list-style: none; margin: 12px 0 0; padding: 0; }
+      ol.steps li { display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border, #333); }
+      ol.steps li .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--muted-foreground, #777); box-sizing: border-box; }
+      ol.steps li.done .dot { background: var(--muted-foreground, #777); border-color: var(--muted-foreground, #777); }
+      ol.steps li.current .dot { border-color: var(--primary, #4c9aff); background: var(--primary, #4c9aff); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #4c9aff) 30%, transparent); }
+      ol.steps li.skipped { opacity: 0.35; }
+      ol.steps li.done .name { color: var(--muted-foreground, #999); }
+      ol.steps li.current .name { font-weight: 600; }
+      ol.steps li .who { font-size: 11px; color: var(--muted-foreground, #999); }
+      ol.steps li.current .who { color: var(--foreground, #ddd); }
+      ol.steps li.gate .dot { border-radius: 2px; }
+      button { padding: 6px 10px; border: 1px solid var(--border, #555); border-radius: 6px; background: var(--secondary, #2a2a2a); color: var(--foreground, #ddd); cursor: pointer; font: inherit; }
+      button.primary { background: var(--primary, #4c9aff); color: var(--primary-foreground, #fff); border-color: transparent; }
       button:disabled { opacity: 0.5; cursor: default; }
-      button.wide { grid-column: 1 / -1; }
+      .next { margin-top: 12px; padding: 10px; border: 1px solid var(--border, #444); border-radius: 8px; }
+      .next p { margin: 0 0 8px; }
       .status { margin-top: 10px; min-height: 1.4em; color: var(--muted-foreground, #999); white-space: pre-wrap; }
-      small { display: block; margin-top: 10px; color: var(--muted-foreground, #999); }
+      details { margin-top: 10px; } summary { cursor: pointer; color: var(--muted-foreground, #999); }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+      .grid button { text-align: left; }
     </style>
   </head>
   <body>
     <h1>SDD Factory</h1>
-    <p>Runs a phase of the factory in the terminal you pick. The terminal must be running Claude Code with the sdd-factory plugin installed.</p>
-    <label for="terms">Terminal</label>
-    <select id="terms"></select>
-    <label for="issue">Issue number</label>
-    <input id="issue" type="number" min="1" placeholder="e.g. 42" />
-    <div class="grid">
-      <button class="wide" data-cmd="sdd-status" data-issue="optional">/sdd-status</button>
-      <button data-cmd="sdd-triage">/sdd-triage</button>
-      <button data-cmd="sdd-spec">/sdd-spec</button>
-      <button data-cmd="sdd-design">/sdd-design</button>
-      <button data-cmd="sdd-task">/sdd-task</button>
-      <button data-cmd="sdd-implement">/sdd-implement</button>
-      <button data-cmd="sdd-review">/sdd-review</button>
-      <button class="wide" data-cmd="sdd-init" data-issue="none">/sdd-init (once per repository)</button>
+    <div class="row">
+      <div><label for="issue">Issue</label><input id="issue" type="number" min="1" placeholder="from the branch" /></div>
+      <div><label for="type">Type</label><select id="type"><option value="full">Feature / Change</option><option value="short">Bug / Task / Constitution</option></select></div>
     </div>
+    <label for="state">State label on the issue (sdd:…)</label>
+    <select id="state">
+      <option value="">none yet (new issue)</option>
+      <option>triage</option><option>ready</option><option>spec</option><option>spec-approved</option><option>design</option><option>design-approved</option>
+      <option>task</option><option>task-approved</option><option>implementing</option><option>in-review</option><option>rework</option><option>final-review</option>
+    </select>
+    <ol class="steps" id="steps"></ol>
+    <div class="next" id="next"></div>
+    <label for="terms">Terminal to type into</label>
+    <select id="terms"></select>
     <p class="status" id="status"></p>
-    <small>Approvals stay in GitHub: set sdd:ready / sdd:*-approved on the issue, or comment /rework on the PR. A headless orchestrator, if you run one, does all of this on its own; use this panel for one-off runs.</small>
+    <details><summary>Run any phase</summary>
+      <div class="grid">
+        <button data-cmd="sdd-status" data-issue="optional">/sdd-status</button>
+        <button data-cmd="sdd-triage">/sdd-triage</button>
+        <button data-cmd="sdd-spec">/sdd-spec</button>
+        <button data-cmd="sdd-design">/sdd-design</button>
+        <button data-cmd="sdd-task">/sdd-task</button>
+        <button data-cmd="sdd-implement">/sdd-implement</button>
+        <button data-cmd="sdd-review">/sdd-review</button>
+        <button data-cmd="sdd-init" data-issue="none">/sdd-init</button>
+      </div>
+    </details>
     <script>
       'use strict'
-      var seq = 0
-      var pending = {}
-      var statusEl = document.getElementById('status')
-      var termsEl = document.getElementById('terms')
-      var issueEl = document.getElementById('issue')
-
+      // The SDD path: skills the agent runs and gates a human approves on GitHub. The panel cannot
+      // read GitHub (Orca panels have no network), so the state comes from the human and the issue
+      // number from the branch name; the panel then shows what is done, what is now, what is next.
+      var STEPS = [
+        { id: 'triage',    name: 'Triage',           who: 'agent · /sdd-triage',      states: ['', 'triage'] },
+        { id: 'gate0',     name: 'Gate 0 · ready',   who: 'human · sdd:ready',        states: ['triage'], gate: true },
+        { id: 'spec',      name: 'Spec',             who: 'agent · /sdd-spec',        states: ['ready', 'spec'], full: true },
+        { id: 'gate1',     name: 'Gate 1 · spec',    who: 'human · sdd:spec-approved', states: ['spec'], gate: true, full: true },
+        { id: 'design',    name: 'Design',           who: 'agent · /sdd-design',      states: ['spec-approved', 'design'], full: true },
+        { id: 'gate2',     name: 'Gate 2 · design',  who: 'human · sdd:design-approved', states: ['design'], gate: true, full: true },
+        { id: 'task',      name: 'Task',             who: 'agent · /sdd-task',        states: ['design-approved', 'ready*', 'task'] },
+        { id: 'gate3',     name: 'Gate 3 · task',    who: 'human · sdd:task-approved', states: ['task'], gate: true },
+        { id: 'implement', name: 'Implement',        who: 'agent · /sdd-implement',   states: ['task-approved', 'implementing', 'rework'] },
+        { id: 'review',    name: 'Review · 6 gates', who: 'agent · /sdd-review',      states: ['in-review'] },
+        { id: 'gate4',     name: 'Gate 4 · merge',   who: 'human · merge or /rework', states: ['final-review'], gate: true }
+      ]
+      // What to do now, per state: [who, command or label]
+      var NEXT = {
+        '': ['agent', 'sdd-triage'], 'triage': ['human', 'answer the triage questions, then set sdd:ready'],
+        'ready': ['agent', null], 'spec': ['human', 'read spec.md in the PR, then set sdd:spec-approved'],
+        'spec-approved': ['agent', 'sdd-design'], 'design': ['human', 'read design.md in the PR, then set sdd:design-approved'],
+        'design-approved': ['agent', 'sdd-task'], 'task': ['human', 'read the Task comment, then set sdd:task-approved'],
+        'task-approved': ['agent', 'sdd-implement'], 'implementing': ['agent', 'sdd-implement'], 'rework': ['agent', 'sdd-implement'],
+        'in-review': ['agent', 'sdd-review'], 'final-review': ['human', 'merge the PR, or comment /rework with one bullet per change']
+      }
+      var seq = 0, pending = {}
+      var el = function (id) { return document.getElementById(id) }
       function call(action, params) {
         return new Promise(function (resolve) {
-          var requestId = 'req-' + ++seq
-          pending[requestId] = resolve
+          var requestId = 'req-' + ++seq; pending[requestId] = resolve
           window.parent.postMessage({ type: 'orca-panel-action', requestId: requestId, action: action, params: params }, '*')
         })
       }
       window.addEventListener('message', function (event) {
-        var data = event.data
-        if (!data || data.type !== 'orca-panel-action-result') return
-        var resolve = pending[data.requestId]
-        if (!resolve) return
-        delete pending[data.requestId]
-        resolve(data)
+        var d = event.data; if (!d || d.type !== 'orca-panel-action-result') return
+        var r = pending[d.requestId]; if (!r) return; delete pending[d.requestId]; r(d)
       })
 
-      function refreshTerminals() {
-        return call('workspace.readContext').then(function (result) {
-          termsEl.innerHTML = ''
-          if (!result.ok || !result.value) { statusEl.textContent = result.ok ? 'No focused worktree.' : 'Cannot read the worktree: ' + (result.error || result.errorCode); return }
-          result.value.terminals.forEach(function (t, i) {
-            var o = document.createElement('option'); o.value = t.id; o.textContent = 'Terminal ' + (i + 1) + ' · ' + t.id.slice(0, 12); termsEl.appendChild(o)
-          })
-          statusEl.textContent = result.value.displayName + ' on ' + result.value.branch + (result.value.terminals.length ? '' : ' · open a terminal first')
+      function render() {
+        var state = el('state').value, full = el('type').value === 'full'
+        var visible = STEPS.filter(function (s) { return full || !s.full })
+        var currentIdx = -1
+        visible.forEach(function (s, i) {
+          var hit = s.states.indexOf(state) >= 0 || (!full && state === 'ready' && s.states.indexOf('ready*') >= 0)
+          if (hit && currentIdx < 0) currentIdx = i
+        })
+        // a state names the step in progress (agent) or the gate waiting (human); everything before is done
+        el('steps').innerHTML = visible.map(function (s, i) {
+          var cls = (s.gate ? 'gate ' : '') + (i < currentIdx ? 'done' : i === currentIdx ? 'current' : '')
+          return '<li class="' + cls + '"><span class="dot"></span><span class="name">' + s.name + '</span><span class="who">' + s.who + '</span></li>'
+        }).join('')
+        var n = NEXT[state] || ['agent', null]
+        var who = n[0], what = n[1]
+        if (state === 'ready') what = full ? 'sdd-spec' : 'sdd-task'
+        var issue = el('issue').value.trim()
+        if (who === 'agent') {
+          el('next').innerHTML = '<p><b>Now:</b> agent runs <code>/' + what + (issue ? ' ' + issue : ' &lt;issue&gt;') + '</code></p><button class="primary" id="run">Run it in the terminal</button>'
+          el('run').addEventListener('click', function () { send(what, 'required') })
+        } else {
+          el('next').innerHTML = '<p><b>Now:</b> a human — ' + what + '.</p><p class="status">Approvals are labels on the issue in GitHub; nothing to type here.</p>'
+        }
+      }
+      function send(cmd, mode) {
+        var n = el('issue').value.trim()
+        if (mode === 'required' && !n) { el('status').textContent = 'Type the issue number first.'; el('issue').focus(); return }
+        if (!el('terms').value) { el('status').textContent = 'No terminal to type into. Open one in this worktree.'; return }
+        var text = '/' + cmd + (mode === 'none' ? '' : n ? ' ' + n : '')
+        call('terminal.sendText', { terminalId: el('terms').value, text: text, enter: true }).then(function (r) {
+          el('status').textContent = r.ok ? 'Sent: ' + text : 'Send failed: ' + (r.error || r.errorCode)
         })
       }
-
-      document.querySelectorAll('button[data-cmd]').forEach(function (b) {
-        b.addEventListener('click', function () {
-          var mode = b.getAttribute('data-issue') || 'required'
-          var n = issueEl.value.trim()
-          if (mode === 'required' && !n) { statusEl.textContent = 'Type the issue number first.'; issueEl.focus(); return }
-          if (!termsEl.value) { statusEl.textContent = 'No terminal to type into.'; return }
-          var text = '/' + b.getAttribute('data-cmd') + (mode === 'none' ? '' : n ? ' ' + n : '')
-          call('terminal.sendText', { terminalId: termsEl.value, text: text, enter: true }).then(function (result) {
-            statusEl.textContent = result.ok ? 'Sent: ' + text : 'Send failed: ' + (result.error || result.errorCode)
-          })
+      function refreshContext() {
+        return call('workspace.readContext').then(function (r) {
+          var t = el('terms'); t.innerHTML = ''
+          if (!r.ok || !r.value) { el('status').textContent = r.ok ? 'No focused worktree.' : 'Cannot read the worktree: ' + (r.error || r.errorCode); return }
+          r.value.terminals.forEach(function (term, i) { var o = document.createElement('option'); o.value = term.id; o.textContent = 'Terminal ' + (i + 1); t.appendChild(o) })
+          // feat/12-slug, fix/12-slug, chore/12-slug, constitution/12-slug → issue 12
+          var m = /^(?:[a-z]+\/)?(\d+)[-_]/.exec(r.value.branch || '')
+          if (m && !el('issue').value) el('issue').value = m[1]
+          if (m && /^(fix|chore|constitution)\//.test(r.value.branch)) el('type').value = 'short'
+          el('status').textContent = r.value.displayName + ' · ' + r.value.branch + (r.value.terminals.length ? '' : ' · open a terminal first')
+          render()
         })
+      }
+      document.querySelectorAll('button[data-cmd]').forEach(function (b) {
+        b.addEventListener('click', function () { send(b.getAttribute('data-cmd'), b.getAttribute('data-issue') || 'required') })
       })
-      termsEl.addEventListener('focus', refreshTerminals)
-      refreshTerminals()
+      ;['state', 'type', 'issue'].forEach(function (id) { el(id).addEventListener('change', render); el(id).addEventListener('input', render) })
+      el('terms').addEventListener('focus', refreshContext)
+      render(); refreshContext()
     </script>
   </body>
 </html>
