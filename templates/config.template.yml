@@ -34,6 +34,25 @@ await:
   # /sdd keeps waiting for a human up to max_minutes in total, then ends the turn (re-run /sdd N to resume)
   max_minutes: 120
 
+# Optional: USD per million tokens per model family, so `sdd log summary` and the learning document estimate the cost of
+# every subagent run (tokens come from the host's SubagentStop hook). Copy your plan's prices; without this block only tokens are shown.
+# pricing:
+#   haiku:
+#     input: <usd>
+#     output: <usd>
+#     cache_write: <usd>
+#     cache_read: <usd>
+#   sonnet:
+#     input: <usd>
+#     output: <usd>
+#     cache_write: <usd>
+#     cache_read: <usd>
+#   opus:
+#     input: <usd>
+#     output: <usd>
+#     cache_write: <usd>
+#     cache_read: <usd>
+
 # Deterministic checks, in CI order. `sdd ci` runs exactly this list, fail-fast; Review Gates never run on a red build.
 commands:
   - "<install with a frozen lockfile>"
