@@ -11,7 +11,15 @@ It runs in Claude Code as a plugin and in any other agent that reads `SKILL.md` 
 
 ## Install
 
-**Claude Code**, development:
+One step, any machine:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/GoKaju/sdd-factory/main/install.sh | bash -s -- --repo /path/to/your-repo
+```
+
+It checks the prerequisites (git, gh authenticated, Claude Code or `npx`, Orca if present), installs the skills (Claude Code plugin by default; `--agent skills` uses `npx skills add` for any other agent), links a stable `~/.sdd/bin/sdd`, and when Orca is running creates the disabled automation **SDD factory · <repo>** that runs `sdd next` every five minutes and wakes `/sdd-orchestrate` only when there is work. Re-run it to update; `--enable` turns the automation on; `--no-orca` skips that part.
+
+By hand instead — **Claude Code**, development:
 
 ```bash
 cd <your-repo>
