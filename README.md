@@ -43,6 +43,8 @@ Every issue moves left to right. `/sdd N` reads the issue's `sdd:<state>` label,
 
 Approvals stay on GitHub: a label (`sdd:ready`, `sdd:spec-approved`, …) or a `/approve` comment on the issue. At Gate 4 the human merges the PR, comments `/approve` (the factory squash-merges), or comments `/rework` with one bullet per change, which becomes Task steps for the implement phase. On a review `FAIL` the issue loops back to implement with the BLOCKER findings, at most `gates.rework_budget` times.
 
+Triage is where clarity is cheapest: the `triage` agent runs a clarity pass over actors, triggers, inputs, outcomes, rejections, edge cases, existing data, deletion semantics, scope and terminology, asks every question a later phase would otherwise guess (each with a proposed answer), and records the author's answers as **Clarifications** that the spec must honour and the completeness gate verifies.
+
 The issue type decides the path: **Feature** and **Change** take every step; **Bug**, **Task** and **Constitution** go from `ready` straight to `task`. A Bug or Task whose root cause is in the spec or design is stopped and reclassified as Change. Source of the diagram: `docs/sdd-flow.html`.
 
 ## Where things live
@@ -55,8 +57,8 @@ The issue type decides the path: **Feature** and **Change** take every step; **B
 | `docs/constitution.md` | the only **rule** file: Identity, Rules (one line each, stable IDs), Decisions, Verification. `CLAUDE.md` just points to it |
 | `.sdd/config.yml` | how the factory **operates**: language, model per phase, delegated gates, warnings policy, rework budget, await limits, check commands (`sdd ci`) |
 | `.sdd/learning/<N>.md` | one learning document per issue, for the people improving the project's rules and this plugin: metrics per phase, findings, escalations, frictions with concrete suggestions. `/sdd` never reads them |
-| `.sdd/worktrees/issue-<N>/` | git worktree per issue (git-ignored): the phases work there, your checkout stays untouched, two issues can run in two sessions |
-| `~/.sdd/<owner>-<repo>/` | scratch outside the repository: hook flags, review packs, run logs (`sdd log`), await marks |
+| `.sdd/worktrees/issue-<N>/` | git worktree per issue (git-ignored): `/sdd` moves in at start and every phase works there; your checkout stays untouched; two issues can run in two sessions |
+| `~/.sdd/<owner>-<repo>/` | scratch outside the repository: hook flags, review packs, run logs with the hooks' agent/model/token records (`sdd log`), await marks |
 
 ## Layout
 
@@ -78,6 +80,10 @@ templates/        constitution, config, learning, commits, spec, design, adr, ga
 - **Rules and operation apart.** The constitution changes through a Constitution issue; the config changes with `/sdd-config`. The gates check the constitution's rules as written and skip what it does not state; nothing in the framework names a folder layout, a language or a package manager.
 - **Documents are the current truth.** Spec and design never carry history; decisions are ADRs; deltas live in the PR description; drift is fixed in code, never by editing the document.
 - **Humans hold the gates** unless they delegate them explicitly, gate by gate. A Constitution issue is never merged by the factory.
+
+## Control: agent, model, time and tokens per phase
+
+Two hooks the plugin ships (`SubagentStart`, `SubagentStop`, matcher `^sdd-factory:`) record on the host's side which agent type ran for which issue, with which real model, for how long and with how many tokens, into `~/.sdd/<owner>-<repo>/runs/<N>.jsonl`. This is evidence from Claude Code, not the agent's own report. `/sdd` prints it after every phase (`sdd log last N <phase>`) and at the end (`sdd log summary N`); the learning document copies it. Add an optional `pricing:` block to `.sdd/config.yml` (USD per million tokens per model family) and the same tables show the estimated cost.
 
 ## Guarantees
 

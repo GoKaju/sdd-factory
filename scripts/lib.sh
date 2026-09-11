@@ -13,8 +13,15 @@ repo() {
 
 org() { repo | cut -d/ -f1; }
 
-# Per-repository scratch directory outside the repository: ~/.sdd/<owner>-<repo>/ (flags, review packs, run logs, await marks)
-sdd_home() { local d; d="${SDD_HOME:-$HOME/.sdd}/$(repo | tr '/' '-')"; mkdir -p "$d"; printf '%s' "$d"; }
+# Per-repository scratch directory outside the repository: ~/.sdd/<owner>-<repo>/ (flags, review packs, run logs,
+# await marks, current issue). Slug from the git remote (no network), same as the hooks and `sdd flag`.
+repo_slug() {
+  local url; url="${SDD_REPO:-}"
+  [ -n "$url" ] || { url="$(git config --get remote.origin.url 2>/dev/null || true)"; url="${url%.git}"; url="${url##*github.com[:/]}"; }
+  [ -n "$url" ] || url="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")"
+  printf '%s' "${url//\//-}"
+}
+sdd_home() { local d; d="${SDD_HOME:-$HOME/.sdd}/$(repo_slug)"; mkdir -p "$d"; printf '%s' "$d"; }
 
 STATES="triage ready spec spec-approved design design-approved task task-approved implementing in-review rework final-review"
 TYPES="Feature Change Bug Task Constitution"

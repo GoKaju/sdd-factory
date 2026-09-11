@@ -34,13 +34,13 @@ repo_top_of() {
 # Flags live OUTSIDE the repository, in ~/.sdd/<owner>-<repo>/ (see `sdd flag`): agents
 # cannot write inside .git/ and .claude/ counts as a sensitive path in headless runs.
 # <repo>/.claude/sdd/ and <repo>/.git/sdd/ are still honoured as legacy locations set by hand.
-repo_slug() {
-  local url; url="$(git -C "$(project_dir)" config --get remote.origin.url 2>/dev/null || true)"
-  url="${url%.git}"; url="${url##*github.com[:/]}"; url="${url//\//-}"
-  [ -n "$url" ] || url="$(basename "$(project_dir)")"
-  printf '%s' "$url"
+repo_slug() { # repo_slug [dir] → <owner>-<repo> from the remote of <dir> (default: the project dir); honours SDD_REPO like bin/sdd
+  local d="${1:-$(project_dir)}" url="${SDD_REPO:-}"
+  [ -n "$url" ] || { url="$(git -C "$d" config --get remote.origin.url 2>/dev/null || true)"; url="${url%.git}"; url="${url##*github.com[:/]}"; }
+  [ -n "$url" ] || url="$(basename "$d")"
+  printf '%s' "${url//\//-}"
 }
-flag_dir() { printf '%s/%s' "${SDD_FLAG_HOME:-$HOME/.sdd}" "$(repo_slug)"; }
+flag_dir() { printf '%s/%s' "${SDD_FLAG_HOME:-${SDD_HOME:-$HOME/.sdd}}" "$(repo_slug "${1:-}")"; }
 
 has_flag() { [ -f "$(flag_dir)/$1" ] || [ -f "$(project_dir)/.claude/sdd/$1" ] || [ -f "$(project_dir)/.git/sdd/$1" ]; }
 

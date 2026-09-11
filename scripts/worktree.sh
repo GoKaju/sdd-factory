@@ -2,8 +2,10 @@
 # One git worktree per issue, inside the repository under .sdd/worktrees/issue-<N> (git-ignored), so the phases
 # of /sdd work on the issue's branch while the human's checkout stays untouched and two issues can run at once.
 #
-#   sdd worktree ensure <issue> [<branch>]  → creates the worktree if missing (on the PR branch when the issue has a PR,
-#                                             else on <branch> created from origin/<default>) and prints its path
+#   sdd worktree ensure <issue> [<branch>]  → creates the worktree if missing and prints its path: on the PR branch when the
+#                                             issue has a PR; else on <branch> (created from origin/<default>); else detached at
+#                                             origin/<default>, so /sdd can move in before any branch exists (triage). A later
+#                                             call with <branch> turns the detached worktree into that branch in place.
 #   sdd worktree path <issue>               → prints the path (exit 1 when there is none)
 #   sdd worktree list                       → one line per issue worktree: "<issue> <branch> <path>"
 #   sdd worktree clean <issue>              → removes the worktree (never the branch); safe when it does not exist
@@ -24,18 +26,21 @@ case "$cmd" in
   ensure)
     need_issue "${1:-}"; issue="$1"; want="${2:-}"; p="$dir/issue-$issue"
     mkdir -p "$dir"
-    grep -qxF '.sdd/worktrees/' "$main/.gitignore" 2>/dev/null || printf '.sdd/worktrees/\n' >> "$main/.gitignore"
+    for ign in .sdd/worktrees/ .sdd/tmp/; do grep -qxF "$ign" "$main/.gitignore" 2>/dev/null || printf '%s\n' "$ign" >> "$main/.gitignore"; done
     git -C "$main" fetch -q origin 2>/dev/null || true
     branch="$("$S/pr.sh" branch "$issue" 2>/dev/null || true)"; branch="${branch:-$want}"
     base="$(default_branch)"; base="${base:-main}"
     if [ -f "$p/.git" ]; then
-      cur="$(git -C "$p" rev-parse --abbrev-ref HEAD)"
+      cur="$(git -C "$p" rev-parse --abbrev-ref HEAD)"   # HEAD when detached
       if [ -n "$branch" ] && [ "$cur" != "$branch" ]; then
         git -C "$p" fetch -q origin "$branch" 2>/dev/null || true
-        git -C "$p" checkout -q "$branch" 2>/dev/null || git -C "$p" checkout -q -b "$branch" "origin/$branch" 2>/dev/null || git -C "$p" checkout -q -b "$branch" "origin/$base"
+        if [ "$cur" = HEAD ]; then git -C "$p" checkout -q -b "$branch" 2>/dev/null || git -C "$p" checkout -q "$branch"   # detached → the branch starts here
+        else git -C "$p" checkout -q "$branch" 2>/dev/null || git -C "$p" checkout -q -b "$branch" "origin/$branch" 2>/dev/null || git -C "$p" checkout -q -b "$branch" "origin/$base"; fi
+      elif [ -z "$branch" ] && [ "$cur" = HEAD ]; then git -C "$p" fetch -q origin "$base" 2>/dev/null && git -C "$p" checkout -q --detach "origin/$base" 2>/dev/null || true
       fi
+    elif [ -z "$branch" ]; then
+      git -C "$main" worktree add -q --detach "$p" "origin/$base" 2>/dev/null || git -C "$main" worktree add -q --detach "$p" "$base"
     else
-      [ -n "$branch" ] || die "issue #$issue has no PR: pass the branch to create, e.g. sdd worktree ensure $issue feat/$issue-slug"
       if git -C "$main" show-ref -q --verify "refs/remotes/origin/$branch"; then
         git -C "$main" worktree add -q "$p" "$branch" 2>/dev/null || git -C "$main" worktree add -q --track -b "$branch" "$p" "origin/$branch"
       elif git -C "$main" show-ref -q --verify "refs/heads/$branch"; then git -C "$main" worktree add -q "$p" "$branch"

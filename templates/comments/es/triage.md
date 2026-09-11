@@ -24,7 +24,18 @@
 | <todos/tasks> | <existe · nueva> | <TSK-002, TSK-003 · ninguno todavía> |
 
 ### Preguntas abiertas
-- [ ] <pregunta que el autor debe responder antes de que el Issue pueda pasar a `sdd:ready`>
+<!-- Todo lo que una fase posterior tendría que adivinar. Una casilla por pregunta; cada una lleva una respuesta propuesta
+     que el autor puede confirmar con una palabra, y la fase que la adivinaría. Se marca al responderse y se registra en Aclaraciones. -->
+- [ ] <pregunta> — **propuesta:** <valor por defecto de negocio> _(<spec | design | implement>)_
 - [ ] <…>
 
-<!-- Cuando todas las casillas estén marcadas (o la lista esté vacía), el Issue está listo para el Gate 0. -->
+### Aclaraciones
+<!-- Respuestas del autor, una línea cada una, con sus palabras cuando son cortas. Son entradas de la spec: cada una se convierte
+     en requisito, rechazo o criterio de aceptación, y la gate de completitud lo comprueba. Nunca se borran en ejecuciones posteriores. -->
+- <pregunta> → <respuesta>
+
+### Supuestos
+<!-- Valores por defecto de negocio asumidos porque solo hay una lectura razonable; escritos aquí para que el autor pueda objetar antes de `sdd:ready`. -->
+- <supuesto>
+
+<!-- Cuando todas las casillas de Preguntas abiertas estén marcadas (o la lista esté vacía), el Issue está listo para el Gate 0. -->

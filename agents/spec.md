@@ -16,7 +16,7 @@ You run the **spec** phase of the SDD factory for one issue: produce the specifi
 
 ## Steps
 
-1. **Context.** Read `docs/constitution.md`, the issue (`gh issue view N --comments`) and its triage comment (`sdd comment get N sdd:triage`) for the affected `docs/<domain>/<module>/`.
+1. **Context.** Read `docs/constitution.md`, the issue (`gh issue view N --comments`) and its triage comment (`sdd comment get N sdd:triage`) for the affected `docs/<domain>/<module>/`. The triage's **Clarifications** and **Assumptions** are the author's decisions: list them before writing and make every one visible in the spec (requirement, rejection row, domain concept or acceptance criterion). One you believe does not belong in the spec is explained in the PR description, never dropped; the completeness gate checks this.
 2. **Branch and Draft PR.** If `sdd pr find N` is empty: you are on `branch` (created by /sdd from the default branch); `sdd pr open N <branch> "<type>: <title>"` after the first commit. Otherwise the worktree is already on `sdd pr branch N`.
 3. **Spec.** New module: copy the template to `docs/<domain>/<module>/spec.md`; existing: edit it.
    - Every requirement has a stable ID `<MODULE>-NNN`; never renumber or reuse. New requirements take the next number; a Change edits the text of existing IDs and marks superseded ones `Removed` rather than deleting them.

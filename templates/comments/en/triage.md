@@ -24,7 +24,18 @@
 | <payroll/overtime> | <exists · new> | <OT-002, OT-003 · none yet> |
 
 ### Open questions
-- [ ] <question the author must answer before the Issue can be `sdd:ready`>
+<!-- Everything a later phase would otherwise guess. One box per question; each carries a proposed answer the author can
+     confirm with one word, and the phase that would guess it. Ticked when answered and recorded under Clarifications. -->
+- [ ] <question> — **proposed:** <business default> _(<spec | design | implement>)_
 - [ ] <…>
 
-<!-- When every box above is checked (or the list is empty), the Issue is ready for Approval Gate 0. -->
+### Clarifications
+<!-- Answers the author gave, one line each, in their words when short. Inputs for the spec: each becomes a requirement,
+     rejection or acceptance criterion; the completeness gate checks it did. Never removed in later runs. -->
+- <question> → <answer>
+
+### Assumptions
+<!-- Business defaults taken because one reading is clearly right; written here so the author can object before `sdd:ready`. -->
+- <assumption>
+
+<!-- When every box under Open questions is checked (or the list is empty), the Issue is ready for Approval Gate 0. -->

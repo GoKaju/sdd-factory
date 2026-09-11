@@ -26,9 +26,10 @@ while [ $# -gt 0 ]; do case "$1" in --timeout) timeout="$2"; shift 2;; --interva
 
 pr="$("$S/pr.sh" find "$issue" 2>/dev/null || true)"
 json() { python3 -c 'import json,sys; print(json.dumps(dict(zip(sys.argv[1::2], sys.argv[2::2])), ensure_ascii=False))' "$@"; }
+# The issue-comments endpoint ignores sort/direction: paginate everything and take the highest id.
 newest_comment() { # highest comment id across the issue and its PR
-  { gh api "repos/$r/issues/$issue/comments?per_page=100&sort=created&direction=desc" --jq '.[0].id // 0' 2>/dev/null
-    [ -n "$pr" ] && gh api "repos/$r/issues/$pr/comments?per_page=100&sort=created&direction=desc" --jq '.[0].id // 0' 2>/dev/null; true
+  { gh api "repos/$r/issues/$issue/comments?per_page=100" --paginate --jq '[.[].id] | max // 0' 2>/dev/null
+    [ -n "$pr" ] && gh api "repos/$r/issues/$pr/comments?per_page=100" --paginate --jq '[.[].id] | max // 0' 2>/dev/null; true
   } | sort -n | tail -1; }
 can_approve() { gh api "repos/$r/collaborators/$1/permission" --jq .permission 2>/dev/null | grep -Eq '^(admin|write|maintain)$'; }
 
@@ -57,7 +58,7 @@ while :; do
   evt="$(mktemp)"
   for t in "$issue" ${pr:+$pr}; do
     on=issue; [ -n "$pr" ] && [ "$t" = "$pr" ] && [ "$t" != "$issue" ] && on=pr
-    gh api "repos/$r/issues/$t/comments?per_page=100&sort=created&direction=desc" \
+    gh api "repos/$r/issues/$t/comments?per_page=100" --paginate \
       --jq ".[] | select(.id > $since) | select(.user.type != \"Bot\") | select(.body | startswith(\"<!-- sdd:\") | not) | \"\(.id)\t\(.user.login)\t\(.body | gsub(\"[\\n\\r\\t]\"; \" \") | .[0:400])\"" 2>/dev/null \
       | sort -n | head -1 | while IFS="$(printf '\t')" read -r id who body; do
           printf '%s\n' "$id" > "$markf"

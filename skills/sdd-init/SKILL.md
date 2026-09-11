@@ -38,7 +38,7 @@ Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd` (`sdd help` lists its comma
 
 7. **Issue forms.** `lang=$(sdd config get language)`; copy `templates/issue-forms/<lang>/*.yml` into `.github/ISSUE_TEMPLATE/`. The forms are for non-technical authors; do not add technical fields.
 
-8. **Ignore the worktrees.** Ensure `.gitignore` contains `.sdd/worktrees/` (`/sdd` keeps one git worktree per issue there). `.sdd/config.yml` and `.sdd/learning/` are versioned.
+8. **Ignore the worktrees.** Ensure `.gitignore` contains `.sdd/worktrees/` (`/sdd` keeps one git worktree per issue there) and `.sdd/tmp/`. `.sdd/config.yml` and `.sdd/learning/` are versioned.
 
 9. **Permissions.** Ensure `.claude/settings.json` denies `Bash(git push origin main:*)`, `Bash(git push -f:*)`, `Bash(git push --force:*)` (merge into the existing file). The plugin's hooks enforce the same at runtime.
 
