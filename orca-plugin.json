@@ -4,21 +4,16 @@
   "publisher": "gokaju",
   "name": "SDD Factory",
   "version": "1.0.1",
-  "description": "Spec-Driven Development factory for GitHub repositories: a panel to run the sdd-* phases (triage, spec, design, task, implement, review) in the terminal you choose, and a command that reports the local sdd worker's status. The skills, agents and hooks themselves are a Claude Code plugin (see README).",
+  "description": "Spec-Driven Development framework for GitHub repositories, driven from Orca: a panel that runs the sdd-* phases (init, status, triage, spec, design, task, implement, review) in the terminal you choose. The skills, gates and hooks themselves are agent skills (skills/<name>/SKILL.md) installable in Claude Code or with npx skills add.",
   "author": { "name": "GoKaju", "url": "https://github.com/GoKaju" },
   "repository": "https://github.com/GoKaju/sdd-factory",
   "engines": { "orca": ">=1.4.0" },
   "pluginApi": 1,
-  "main": "orca/main.mjs",
   "contributes": {
-    "panels": [{ "id": "sdd", "title": "SDD Factory", "icon": "plug", "entry": "orca/panel.html" }],
-    "commands": [
-      { "id": "sdd-worker-status", "title": "SDD Factory: worker status", "context": "global" }
-    ]
+    "panels": [{ "id": "sdd", "title": "SDD Factory", "icon": "plug", "entry": "orca/panel.html" }]
   },
   "capabilities": [
     { "kind": "workspace:read" },
-    { "kind": "terminal:send" },
-    { "kind": "notifications:show" }
+    { "kind": "terminal:send" }
   ]
 }

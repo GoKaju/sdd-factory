@@ -34,7 +34,7 @@
       <button class="wide" data-cmd="sdd-init" data-issue="none">/sdd-init (once per repository)</button>
     </div>
     <p class="status" id="status"></p>
-    <small>Approvals stay in GitHub: set sdd:ready / sdd:*-approved on the issue, or comment /rework on the PR. The local sdd worker, if running, does all of this on its own; use this panel for one-off runs.</small>
+    <small>Approvals stay in GitHub: set sdd:ready / sdd:*-approved on the issue, or comment /rework on the PR. A headless orchestrator, if you run one, does all of this on its own; use this panel for one-off runs.</small>
     <script>
       'use strict'
       var seq = 0
@@ -76,7 +76,7 @@
           var n = issueEl.value.trim()
           if (mode === 'required' && !n) { statusEl.textContent = 'Type the issue number first.'; issueEl.focus(); return }
           if (!termsEl.value) { statusEl.textContent = 'No terminal to type into.'; return }
-          var text = '/sdd-factory:' + b.getAttribute('data-cmd') + (mode === 'none' ? '' : n ? ' ' + n : '')
+          var text = '/' + b.getAttribute('data-cmd') + (mode === 'none' ? '' : n ? ' ' + n : '')
           call('terminal.sendText', { terminalId: termsEl.value, text: text, enter: true }).then(function (result) {
             statusEl.textContent = result.ok ? 'Sent: ' + text : 'Send failed: ' + (result.error || result.errorCode)
           })

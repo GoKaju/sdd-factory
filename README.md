@@ -83,12 +83,9 @@ Write `gates/<name>.md` (question, procedure, checklist with severities, output 
 
 ## Orca
 
-The repository is also an [Orca](https://www.onorca.dev) plugin marketplace. In Orca: Settings → Plugins (enable the plugin system) → Marketplaces → add the git source `https://github.com/GoKaju/sdd-factory.git`, then install **SDD Factory** (`gokaju.sdd-factory`, manifest `orca-plugin.json`). It contributes:
+The repository is also an [Orca](https://www.onorca.dev) plugin marketplace. In Orca: Settings → Plugins (enable the plugin system) → Marketplaces → add the git source `https://github.com/GoKaju/sdd-factory.git`, then install **SDD Factory** (`gokaju.sdd-factory`, manifest `orca-plugin.json`). It contributes a **panel** that types `/sdd-<phase> <issue>` into the terminal of the focused worktree you choose; that terminal must run an agent with this plugin's skills loaded.
 
-- a **panel** that types `/sdd-factory:sdd-<phase> <issue>` into the terminal you choose (the terminal must run Claude Code with this plugin installed), and
-- a **command** `SDD Factory: worker status` that reads the local worker's `/status` and shows it as a notification.
-
-Orca plugins cannot ship agent skills yet, so the skills, agents and hooks stay a Claude Code plugin: install it in Claude Code as above, or pull single skills with `npx skills add https://github.com/GoKaju/sdd-factory --skill sdd-triage` (every `skills/<name>/SKILL.md` is a valid Orca skill source). Approvals never go through Orca: they stay labels on the issue and `/rework` comments on the PR.
+Orca plugins cannot ship agent skills yet, so the skills, gates and hooks stay agent skills: install the plugin in Claude Code as above, or pull single skills with `npx skills add https://github.com/GoKaju/sdd-factory --skill sdd-triage` (every `skills/<name>/SKILL.md` is a valid Orca skill source). Approvals never go through Orca: they stay labels on the issue and `/rework` comments on the PR.
 
 ## Orchestration
 
