@@ -66,6 +66,7 @@ The deterministic checks, in CI order. `sdd ci` runs exactly this block, fail-fa
 
 - **Review Gates:** Spec Compliance · Design & Architecture · Test Strategy · Security · Regression · Code Quality
 - **Rework budget:** 3 — review cycles before the issue stops as NEEDS_HUMAN
+- **Delegated gates:** none — human approval gates an orchestrator may grant on its own once the artifact is verifiably clean: any of `Intake`, `Spec`, `Design`, `Task`, `Final`; add `(judged)` to require the reviewer's verdict first, e.g. `Intake, Spec (judged), Task`. A Constitution issue is never merged by a machine.
 - **Test exemplars:** <one test file per kind the gates should hold new tests to, or "none yet">
 
 ## Agents

@@ -83,4 +83,9 @@ Write `gates/<name>.md` (question, procedure, checklist with severities, output 
 
 ## Orchestration
 
-Headless orchestrators (pollers, workers, control planes) live in their own repositories and consume this plugin as is: they run the same skills and read the same labels, comments and gate results.
+The framework decides mechanically; an orchestrator only chooses when, how many and where. Two pieces ship here:
+
+- **`sdd next [--all]`** — one JSON line per open issue with the verdict of the state machine: `run` (a phase to launch), `approve` (a gate the constitution delegates, to verify first), `human`, `busy`. Exit code 1 when nothing is runnable, so it doubles as a free precheck.
+- **`/sdd-orchestrate`** — the coordinator skill for [Orca](https://www.onorca.dev): reads `sdd next`, grants delegated gates only after verifying the artifact (and, for `(judged)` gates, after the `reviewer` agent passes it), launches each runnable phase as a supervised Orca worker in the issue's own worktree, waits for `worker_done`, and reports. Scheduled with an Orca automation whose `--precheck` is `sdd next`, so idle ticks cost nothing.
+
+Delegation is a constitution line — `- **Delegated gates:** Intake, Spec (judged), Task` — and a Constitution issue is never merged by a machine. Any other orchestrator (a poller, a control plane) consumes the same commands, labels, comments and gate results.
