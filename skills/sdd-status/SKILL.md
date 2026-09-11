@@ -28,4 +28,6 @@ For each issue print one row: number · title · `sdd type get` · `sdd state ge
 | in-review | `/sdd-review N` |
 | final-review | human: Approval Gate 4 on the PR — merge, or a `/rework` comment listing what must change; then `/sdd-implement N` turns the bullets into Task steps and continues |
 
+`sdd next --all` prints the same verdict per issue as JSON (action `run`, `approve`, `human`, `busy`); orchestrators use it.
+
 Read-only. Change nothing.

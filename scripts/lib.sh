@@ -30,3 +30,17 @@ rework_budget() {
   local root; root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
   { grep -oE '\*\*Rework budget:\*\*[[:space:]]*[0-9]+' "$root/docs/constitution.md" 2>/dev/null || true; } | grep -oE '[0-9]+$' | head -1 | grep . || printf '3'
 }
+
+delegated_gates() {
+  # `Delegated gates` of docs/constitution.md (Verification section): human approval gates the
+  # orchestrator may grant on its own. One line, e.g. `- **Delegated gates:** Intake, Spec (judged), Task`.
+  # Prints one gate per line as `<Gate> <plain|judged>`; nothing when the line is absent or says none.
+  local root line; root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+  line="$({ grep -oE '\*\*Delegated gates:\*\*[^
+]*' "$root/docs/constitution.md" 2>/dev/null || true; } | head -1 | sed 's/\*\*Delegated gates:\*\*//')"
+  printf '%s' "$line" | tr ',;·' '\n\n\n' | while read -r g; do
+    g="$(printf '%s' "$g" | sed 's/[`*]//g; s/^ *//; s/ *$//')"; [ -n "$g" ] || continue
+    mode=plain; case "$g" in *"(judged)"*) mode=judged; g="$(printf '%s' "$g" | sed 's/ *(judged)//')";; esac
+    case "$g" in Intake|Spec|Design|Task) printf '%s %s\n' "$g" "$mode";; Final) printf 'Final %s\n' "$mode";; esac
+  done
+}
