@@ -6,10 +6,26 @@ die() { printf 'sdd: %s\n' "$*" >&2; exit 1; }
 SDD_SCRIPTS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
 repo() {
-  # nameWithOwner of the repo in the current directory, or $SDD_REPO if set
+  # owner/name of the repository in the current directory, or $SDD_REPO if set. Read from the git remote, never from
+  # the network: `gh repo view` goes through GraphQL, which some sandboxes block; only REST (`gh api repos/…`) is used.
   if [ -n "${SDD_REPO:-}" ]; then printf '%s' "$SDD_REPO"; return; fi
-  gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || die "not inside a GitHub repository (set SDD_REPO=owner/name)"
+  local url; url="$(git config --get remote.origin.url 2>/dev/null || true)"
+  url="${url%.git}"; url="${url%/}"
+  case "$url" in
+    *github.com[:/]*) url="${url##*github.com[:/]}" ;;
+    *) url="" ;;
+  esac
+  [ -n "$url" ] && printf '%s' "$url" || die "not inside a GitHub repository (set SDD_REPO=owner/name)"
 }
+
+# ── GitHub through REST only ─────────────────────────────────────────────────────────────────────
+# Every GitHub call of the factory is `gh api` on a REST endpoint. The `gh issue|pr|label|repo` subcommands are
+# GraphQL underneath (api.github.com/graphql), and Claude's cloud sandboxes block that endpoint while allowing REST.
+urlenc() { printf '%s' "$1" | python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read(), safe=""))'; }
+issue_labels() { gh api "repos/$(repo)/issues/$1" --jq '.labels[].name'; }                 # one label per line
+issue_state()  { gh api "repos/$(repo)/issues/$1" --jq '.state'; }                         # open | closed
+pr_state()     { gh api "repos/$(repo)/pulls/$1" --jq 'if .merged then "MERGED" elif .state == "closed" then "CLOSED" else "OPEN" end'; }
+default_branch() { gh api "repos/$(repo)" --jq '.default_branch'; }
 
 org() { repo | cut -d/ -f1; }
 

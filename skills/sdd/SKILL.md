@@ -26,7 +26,7 @@ line=$(sdd next N)   # one JSON object: state, type, pr, action run|approve|huma
 
 Fails when the issue does not exist → say so and stop. Tell the human in one line where the issue is (`state`, `action`, `reason`). Then, once per run:
 
-1. If `gh issue view N --json state -q .state` is `CLOSED`, report and stop. Another `/sdd` driving this issue? `sdd flag has running-N` with the flag file younger than 10 minutes (`find "$(sdd flag dir)" -name running-N -mmin -10`) → stop and say so. Else `sdd flag set running-N` (refresh it after every phase; `sdd flag clear running-N` when you end the turn) and `sdd log current N`.
+1. If `sdd issue state N` is `closed`, report and stop. Another `/sdd` driving this issue? `sdd flag has running-N` with the flag file younger than 10 minutes (`find "$(sdd flag dir)" -name running-N -mmin -10`) → stop and say so. Else `sdd flag set running-N` (refresh it after every phase; `sdd flag clear running-N` when you end the turn) and `sdd log current N`.
 2. `cwd=$(sdd worktree ensure N)` and `cd "$cwd"`. From here on everything runs in the worktree. `sdd config validate` must pass there (else say what to fix with `/sdd-config` and stop).
 3. Read once: `lang=$(sdd config get language)`, `budget=$(sdd config get gates.rework_budget)`, `max_wait=$(sdd config get await.max_minutes)`, `policy=$(sdd config get gates.warnings_at_final)`; `type` comes from the `sdd next` line.
 4. Keep `waited=0` (minutes spent in `sdd await` this run) and `notes=[]` (observations for the learning agent: decisions without a rule, failed commands, relaunches, a real model that differs from the configured one).

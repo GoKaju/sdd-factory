@@ -17,24 +17,32 @@ label_color() {
   esac
 }
 
+# Create or update the sdd:<state> label (REST: GET → POST | PATCH); idempotent.
+ensure_label() {
+  local r; r="$(repo)"
+  if gh api "repos/$r/labels/$(urlenc "sdd:$1")" >/dev/null 2>&1; then
+    gh api -X PATCH "repos/$r/labels/$(urlenc "sdd:$1")" -f "color=$(label_color "$1")" -f "description=SDD state: $1" >/dev/null
+  else
+    gh api -X POST "repos/$r/labels" -f "name=sdd:$1" -f "color=$(label_color "$1")" -f "description=SDD state: $1" >/dev/null
+  fi
+}
+
 cmd="${1:-}"; shift || true
 case "$cmd" in
   get)
     need_issue "${1:-}"
     # Several sdd:* labels can coexist for a moment while a human adds the next state before
     # removing the previous one; report the most advanced one in the canonical order.
-    found="$(gh issue view "$1" --repo "$(repo)" --json labels -q '.labels[].name' | sed -n 's/^sdd://p')"
+    found="$(issue_labels "$1" | sed -n 's/^sdd://p')"
     best=""; for s in $STATES; do printf '%s\n' "$found" | grep -qx "$s" && best="$s"; done
     [ -n "$best" ] && printf '%s\n' "$best"; exit 0
     ;;
   set)
     need_issue "${1:-}"; is_state "${2:-}" || die "unknown state '${2:-}'. Valid: $STATES"
-    r="$(repo)"
-    gh label create "sdd:$2" --repo "$r" --color "$(label_color "$2")" --description "SDD state: $2" --force >/dev/null
-    current="$(gh issue view "$1" --repo "$r" --json labels -q '.labels[].name' | grep '^sdd:' || true)"
-    args=(--add-label "sdd:$2")
-    for l in $current; do [ "$l" != "sdd:$2" ] && args+=(--remove-label "$l"); done
-    gh issue edit "$1" --repo "$r" "${args[@]}" >/dev/null
+    r="$(repo)"; ensure_label "$2"
+    current="$(issue_labels "$1" | grep '^sdd:' || true)"
+    gh api -X POST "repos/$r/issues/$1/labels" -f "labels[]=sdd:$2" >/dev/null
+    for l in $current; do [ "$l" != "sdd:$2" ] && { gh api -X DELETE "repos/$r/issues/$1/labels/$(urlenc "$l")" >/dev/null 2>&1 || true; }; done
     printf '%s\n' "$2"
     ;;
   require)
@@ -45,7 +53,7 @@ case "$cmd" in
     ;;
   ensure-labels)
     r="$(repo)"
-    for s in $STATES; do gh label create "sdd:$s" --repo "$r" --color "$(label_color "$s")" --description "SDD state: $s" --force >/dev/null && printf 'label sdd:%s\n' "$s"; done
+    for s in $STATES; do ensure_label "$s" && printf 'label sdd:%s\n' "$s"; done
     ;;
   list) printf '%s\n' $STATES ;;
   *) sed -n '2,8p' "$0"; exit 1 ;;

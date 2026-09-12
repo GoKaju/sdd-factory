@@ -44,7 +44,7 @@ while :; do
   st="$(gh api "repos/$r/issues/$issue" --jq '.state' 2>/dev/null || echo open)"
   [ "$st" = closed ] && { json event closed; exit 0; }
   if [ -n "$pr" ]; then
-    prst="$(gh pr view "$pr" --repo "$r" --json state -q .state 2>/dev/null || echo OPEN)"
+    prst="$(pr_state "$pr" 2>/dev/null || echo OPEN)"
     [ "$prst" = MERGED ] && { json event merged; exit 0; }
     [ "$prst" = CLOSED ] && { json event pr-closed; exit 0; }
   fi
