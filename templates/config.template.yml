@@ -35,23 +35,31 @@ await:
   max_minutes: 120
 
 # Optional: USD per million tokens per model family, so `sdd log summary` and the learning document estimate the cost of
-# every subagent run (tokens come from the host's SubagentStop hook). Copy your plan's prices; without this block only tokens are shown.
+# every subagent run (tokens come from the host's SubagentStop hook). Without this block the plugin uses the list prices
+# of https://platform.claude.com/docs/en/about-claude/pricing as of 2026-09-11 (base input · output · 5-minute cache
+# write · cache read): fable 10/50/12.50/0.25 · opus 5/25/6.25/0.50 · sonnet 2/10/2.50/0.20 · haiku 1/5/1.25/0.10.
+# Uncomment a family to override it with your plan's prices (e.g. 1-hour cache writes are 2x base input, not 1.25x).
 # pricing:
-#   haiku:
-#     input: <usd>
-#     output: <usd>
-#     cache_write: <usd>
-#     cache_read: <usd>
-#   sonnet:
-#     input: <usd>
-#     output: <usd>
-#     cache_write: <usd>
-#     cache_read: <usd>
+#   fable:
+#     input: 10
+#     output: 50
+#     cache_write: 12.50
+#     cache_read: 0.25
 #   opus:
-#     input: <usd>
-#     output: <usd>
-#     cache_write: <usd>
-#     cache_read: <usd>
+#     input: 5
+#     output: 25
+#     cache_write: 6.25
+#     cache_read: 0.50
+#   sonnet:
+#     input: 2
+#     output: 10
+#     cache_write: 2.50
+#     cache_read: 0.20
+#   haiku:
+#     input: 1
+#     output: 5
+#     cache_write: 1.25
+#     cache_read: 0.10
 
 # Deterministic checks, in CI order. `sdd ci` runs exactly this list, fail-fast; Review Gates never run on a red build.
 commands:
