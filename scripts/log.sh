@@ -12,7 +12,7 @@
 #   sdd log last <issue> [phase]                  → one line for the last finished subagent: agent, model, minutes, tokens, cost
 #   sdd log show <issue>                          → the raw lines
 #   sdd log summary <issue>                       → per phase: runs, minutes, model, tokens, cost; waits; review cycles; gates; totals
-#   Cost is estimated only when .sdd/config.yml has a `pricing:` block (USD per million tokens per model family).
+#   Cost is estimated with the list prices embedded below; a `pricing:` block in .sdd/config.yml overrides them per family.
 . "$(dirname "$0")/lib.sh"
 
 cmd="${1:-}"; need_issue "${2:-}"; issue="$2"; shift 2 || true
@@ -44,9 +44,22 @@ rows = [json.loads(l) for l in open(path) if l.strip()]
 t = lambda r: datetime.datetime.strptime(r["ts"], "%Y-%m-%dT%H:%M:%SZ")
 num = lambda v: int(float(v)) if str(v).strip() not in ("", "None") else 0
 
+# Default list prices, USD per million tokens, from https://platform.claude.com/docs/en/about-claude/pricing (2026-09-11):
+# base input · output · 5-minute cache write · cache read. A `pricing:` block in .sdd/config.yml overrides a family.
+DEFAULT_DATE = "2026-09-11"
+DEFAULT_PRICING = {
+    "fable":  {"input": 10.0, "output": 50.0, "cache_write": 12.50, "cache_read": 0.25},
+    "mythos": {"input": 10.0, "output": 50.0, "cache_write": 12.50, "cache_read": 0.25},
+    "opus":   {"input": 5.0,  "output": 25.0, "cache_write": 6.25,  "cache_read": 0.50},
+    "sonnet": {"input": 2.0,  "output": 10.0, "cache_write": 2.50,  "cache_read": 0.20},
+    "haiku":  {"input": 1.0,  "output": 5.0,  "cache_write": 1.25,  "cache_read": 0.10},
+}
+user_pricing = pricing
+pricing = dict(DEFAULT_PRICING); pricing.update(user_pricing)
+
 def family(model):
     m = (model or "").lower()
-    for k in ("haiku", "sonnet", "opus", "fable"):
+    for k in ("haiku", "sonnet", "opus", "fable", "mythos"):
         if k in m: return k
     return m or "unknown"
 
@@ -57,8 +70,10 @@ def cost(model, i, o, cw, cr):
     return (i*g("input") + o*g("output") + cw*g("cache_write") + cr*g("cache_read")) / 1e6
 
 # pair agent-start / agent-stop by id → one run each
-starts, runs = {}, []
+starts, runs, unattributed = {}, [], 0
 for r in rows:
+    if r["event"] in ("agent-start", "agent-stop") and not r.get("agent"):
+        unattributed += 1; continue   # stops without agent_type, recorded by hook versions before 2.2.1: not factory runs
     if r["event"] == "agent-start": starts[r.get("id", "")] = r
     elif r["event"] == "agent-stop":
         s = starts.pop(r.get("id", ""), None)
@@ -121,7 +136,9 @@ if runs:
         for k in ("runs", "minutes", "input", "output", "cw", "cr", "cost"): tot[k] += g[k]
         tot["priced"] = tot["priced"] and g["priced"]
     print("%-12s %4d %8.1f  %-30s %8s/%-8s   %8s/%-8s  %s" % ("total", tot["runs"], tot["minutes"], "", fmt_tok(tot["input"]), fmt_tok(tot["output"]), fmt_tok(tot["cw"]), fmt_tok(tot["cr"]), fmt_cost(tot["cost"] if tot["priced"] else None)))
-    if not pricing: print("(no `pricing:` block in .sdd/config.yml: cost not estimated)")
+    if unattributed: print("(ignored %d agent rows without agent type, logged by a hook older than 2.2.1)" % unattributed)
+    src = "list prices of %s" % DEFAULT_DATE if not user_pricing else "`pricing:` in .sdd/config.yml over list prices of %s" % DEFAULT_DATE
+    print("(cost: USD per million tokens, %s; families without a price show -)" % src)
 
 if phases:
     print("\nphases as /sdd logged them")

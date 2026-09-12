@@ -83,7 +83,7 @@ templates/        constitution, config, learning, commits, spec, design, adr, ga
 
 ## Control: agent, model, time and tokens per phase
 
-Two hooks the plugin ships (`SubagentStart`, `SubagentStop`, matcher `^sdd-factory:`) record on the host's side which agent type ran for which issue, with which real model, for how long and with how many tokens, into `~/.sdd/<owner>-<repo>/runs/<N>.jsonl`. This is evidence from Claude Code, not the agent's own report. `/sdd` prints it after every phase (`sdd log last N <phase>`) and at the end (`sdd log summary N`); the learning document copies it. Add an optional `pricing:` block to `.sdd/config.yml` (USD per million tokens per model family) and the same tables show the estimated cost.
+Two hooks the plugin ships (`SubagentStart`, `SubagentStop`, matcher `^sdd-factory:`) record on the host's side which agent type ran for which issue, with which real model, for how long and with how many tokens, into `~/.sdd/<owner>-<repo>/runs/<N>.jsonl`. This is evidence from Claude Code, not the agent's own report. `/sdd` prints it after every phase (`sdd log last N <phase>`) and at the end (`sdd log summary N`); the learning document copies it. The same tables show the estimated cost in USD, computed with the list prices of platform.claude.com embedded in the plugin (dated in `sdd log summary`'s footer); an optional `pricing:` block in `.sdd/config.yml` (USD per million tokens per model family) overrides them. The model column is the one that answered inside the subagent's transcript, not the parent session's model.
 
 ## Guarantees
 

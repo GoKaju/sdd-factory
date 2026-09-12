@@ -15,7 +15,7 @@ j() { printf '%s' "$INPUT" | jq -r "$1 // empty"; }
 
 event="$(j .hook_event_name)"; agent="$(j .agent_type)"; agent_id="$(j .agent_id)"
 cwd="$(call_cwd)"
-case "$agent" in sdd-factory:*|"") ;; *) exit 0;; esac   # only the factory's agents (matcher already filters; belt and braces)
+case "$agent" in sdd-factory:*) ;; *) exit 0;; esac   # only the factory's agents: an empty agent_type is not one of them
 
 sdd="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd -P)}/bin/sdd"
 issue="$(printf '%s' "$cwd" | sed -nE 's#.*/\.sdd/worktrees/issue-([0-9]+).*#\1#p')"
@@ -28,16 +28,21 @@ case "$event" in
     (cd "$cwd" 2>/dev/null && "$sdd" log add "$issue" agent-start agent="$agent" phase="$phase" id="$agent_id" >/dev/null 2>&1) || true
     ;;
   SubagentStop)
-    model="$(j .model)"; effort="$(j .effort.level)"; [ -z "$effort" ] && effort="$(j .effort)"
+    # The hook input's `model`/`effort` describe the parent session, not the subagent: the transcript is the only
+    # place where the model that really answered is recorded (`message.model` on every assistant message), so it wins.
+    host_model="$(j .model)"; host_effort="$(j .effort.level)"; [ -z "$host_effort" ] && host_effort="$(j .effort)"
     in="$(j .usage.input_tokens)"; out="$(j .usage.output_tokens)"; cw="$(j .usage.cache_creation_input_tokens)"; cr="$(j .usage.cache_read_input_tokens)"
     tp="$(j .transcript_path)"
-    if [ -f "$tp" ] && { [ -z "$model" ] || [ -z "$out" ]; }; then
-      read -r tmodel tin tout tcw tcr < <(jq -rs '
+    model=""; effort=""
+    if [ -f "$tp" ]; then
+      read -r tmodel teffort tin tout tcw tcr < <(jq -rs '
         [.[] | select(.type=="assistant" and .message.usage) | .message] |
-        "\(map(.model) | map(select(.!=null)) | last // "") \(map(.usage.input_tokens // 0) | add // 0) \(map(.usage.output_tokens // 0) | add // 0) \(map(.usage.cache_creation_input_tokens // 0) | add // 0) \(map(.usage.cache_read_input_tokens // 0) | add // 0)"' "$tp" 2>/dev/null || echo "    ")
-      [ -z "$model" ] && model="$tmodel"
+        "\(map(.model) | map(select(.!=null and .!="<synthetic>")) | last // "") \(map(.effort // .thinking.effort // empty) | last // "-") \(map(.usage.input_tokens // 0) | add // 0) \(map(.usage.output_tokens // 0) | add // 0) \(map(.usage.cache_creation_input_tokens // 0) | add // 0) \(map(.usage.cache_read_input_tokens // 0) | add // 0)"' "$tp" 2>/dev/null || echo "     ")
+      model="$tmodel"; [ "$teffort" != "-" ] && effort="$teffort"
       [ -z "$out" ] && { in="$tin"; out="$tout"; cw="$tcw"; cr="$tcr"; }
     fi
+    [ -z "$model" ] && model="$host_model"
+    [ -z "$effort" ] && effort="$host_effort"
     (cd "$cwd" 2>/dev/null && "$sdd" log add "$issue" agent-stop agent="$agent" phase="$phase" id="$agent_id" model="${model:-unknown}" effort="${effort:-}" \
         input="${in:-0}" output="${out:-0}" cache_write="${cw:-0}" cache_read="${cr:-0}" >/dev/null 2>&1) || true
     ;;
