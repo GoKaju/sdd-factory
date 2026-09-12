@@ -85,6 +85,10 @@ templates/        constitution, config, learning, commits, spec, design, adr, ga
 
 Two hooks the plugin ships (`SubagentStart`, `SubagentStop`, matcher `^sdd-factory:`) record on the host's side which agent type ran for which issue, with which real model, for how long and with how many tokens, into `~/.sdd/<owner>-<repo>/runs/<N>.jsonl`. This is evidence from Claude Code, not the agent's own report. `/sdd` prints it after every phase (`sdd log last N <phase>`) and at the end (`sdd log summary N`); the learning document copies it. Add an optional `pricing:` block to `.sdd/config.yml` (USD per million tokens per model family) and the same tables show the estimated cost.
 
+## GitHub access
+
+Every GitHub call the factory makes is `gh api` on a REST endpoint (`repos/…`, `search/issues`, `orgs/…/issue-types`): the `gh issue`, `gh pr`, `gh label` and `gh repo` subcommands are GraphQL underneath and Claude's cloud sandboxes block `api.github.com/graphql` while allowing REST. Agents read issues and PRs with `sdd issue show|list|search` and `sdd pr view|files|diff|comments`. The one operation GitHub exposes only through GraphQL, marking a draft PR ready for review, is attempted and, when blocked, left to a person (the PR page has the button).
+
 ## Guarantees
 
 Hooks enforce, in the main checkout and in every issue worktree: `docs/constitution.md` changes only during a Constitution-type issue; approved `spec.md`, `design.md` and ADRs cannot be edited while their issue is in implementation or review; no `git push` to `main`, no force-push, no rebase / amend / reset --hard.

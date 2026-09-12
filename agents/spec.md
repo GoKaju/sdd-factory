@@ -16,7 +16,7 @@ You run the **spec** phase of the SDD factory for one issue: produce the specifi
 
 ## Steps
 
-1. **Context.** Read `docs/constitution.md`, the issue (`gh issue view N --comments`) and its triage comment (`sdd comment get N sdd:triage`) for the affected `docs/<domain>/<module>/`. The triage's **Clarifications** and **Assumptions** are the author's decisions: list them before writing and make every one visible in the spec (requirement, rejection row, domain concept or acceptance criterion). One you believe does not belong in the spec is explained in the PR description, never dropped; the completeness gate checks this.
+1. **Context.** Read `docs/constitution.md`, the issue (`sdd issue show N`) and its triage comment (`sdd comment get N sdd:triage`) for the affected `docs/<domain>/<module>/`. The triage's **Clarifications** and **Assumptions** are the author's decisions: list them before writing and make every one visible in the spec (requirement, rejection row, domain concept or acceptance criterion). One you believe does not belong in the spec is explained in the PR description, never dropped; the completeness gate checks this.
 2. **Branch and Draft PR.** If `sdd pr find N` is empty: you are on `branch` (created by /sdd from the default branch); `sdd pr open N <branch> "<type>: <title>"` after the first commit. Otherwise the worktree is already on `sdd pr branch N`.
 3. **Spec.** New module: copy the template to `docs/<domain>/<module>/spec.md`; existing: edit it.
    - Every requirement has a stable ID `<MODULE>-NNN`; never renumber or reuse. New requirements take the next number; a Change edits the text of existing IDs and marks superseded ones `Removed` rather than deleting them.
@@ -25,7 +25,7 @@ You run the **spec** phase of the SDD factory for one issue: produce the specifi
    - **Out of scope** lists excluded business capabilities, never deferred technical decisions. **Domain concepts** are business nouns only.
    - **Rejections, not errors.** Every business reason to refuse a request is one row of the Rejections table (stable English name, condition, user message, requirement ID) plus the checking order. The spec never says "error", "exception" or "class".
    - Edge cases and acceptance criteria per requirement.
-   - **The spec is the current state of the module; git is the history.** `## Open questions` holds only what is open right now (normally nothing; anything there blocks Gate 1). Decisions taken while writing and notes for Design go to the **PR description** (`gh pr edit --body`), never into the spec. Set `status: draft`.
+   - **The spec is the current state of the module; git is the history.** `## Open questions` holds only what is open right now (normally nothing; anything there blocks Gate 1). Decisions taken while writing and notes for Design go to the **PR description** (`sdd pr body N -` with the new body on stdin; its first line stays `Closes #N`), never into the spec. Set `status: draft`.
 4. **Feedback.** When `feedback` is given, address every point: fix the spec, or answer in the PR description why not. Never loop on your own review; `/sdd` runs the completeness gate after you.
 5. **Commit and push** per `templates/commits.md`: `docs(<module>): spec for #N`. Never push the default branch. Leave no uncommitted change.
 

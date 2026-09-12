@@ -15,9 +15,9 @@ out="$dir/review-pack-$issue.md"
 [ "$cmd" = "build" ] || die "usage: sdd review-pack build|path <issue> [cycle]"
 
 pr="$("$S/pr.sh" find "$issue")"; [ -n "$pr" ] || die "issue #$issue has no PR"
-read -r head base < <(gh pr view "$pr" --json headRefOid,baseRefName -q '"\(.headRefOid) \(.baseRefName)"')
+read -r head base < <(gh api "repos/$r/pulls/$pr" --jq '"\(.head.sha) \(.base.ref)"')
 git fetch -q origin "$base" 2>/dev/null || true
-files="$(gh pr diff "$pr" --name-only)"
+files="$(gh api "repos/$r/pulls/$pr/files?per_page=100" --paginate --jq '.[].filename')"
 section() { printf '\n\n## %s\n\n' "$1"; }
 fence() { printf '```%s\n' "${1:-}"; cat; printf '\n```\n'; }
 
@@ -27,7 +27,7 @@ fence() { printf '```%s\n' "${1:-}"; cat; printf '\n```\n'; }
   printf -- '- This pack is the primary input of every Review Gate. Open repository files only for what it lacks (code surrounding a hunk, a file the diff references but does not contain).\n'
 
   section "Constitution (docs/constitution.md)"; cat docs/constitution.md
-  section "Issue #$issue with comments (triage and Task included)"; gh issue view "$issue" --comments
+  section "Issue #$issue with comments (triage and Task included)"; "$S/issue.sh" show "$issue"
 
   # Changed spec/design: the PR version in full, plus a unified diff against the approved version
   # (instead of two full copies: the approved text is recoverable from the diff and halves the pack).
@@ -63,7 +63,8 @@ fence() { printf '```%s\n' "${1:-}"; cat; printf '\n```\n'; }
 
   # Code diff without lockfiles/generated files and without the docs already shown above.
   section "PR diff (code and tests; docs shown above, lockfiles omitted)"
-  gh pr diff "$pr" | awk '
+  # The diff comes from git when the head commit is local (the worktree is at it); REST otherwise. Never `gh pr diff` (GraphQL).
+  { git cat-file -e "$head^{commit}" 2>/dev/null && git diff "origin/$base...$head" || gh api -H 'Accept: application/vnd.github.diff' "repos/$r/pulls/$pr"; } | awk '
     /^diff --git/ { skip = ($0 ~ /(pnpm-lock\.yaml|package-lock\.json|yarn\.lock|bun\.lockb?|Cargo\.lock|poetry\.lock|uv\.lock|go\.sum|composer\.lock|Gemfile\.lock|\.snap$|^diff --git a\/docs\/)/) }
     !skip { print }' | head -c 600000 | fence diff
 } > "$out"

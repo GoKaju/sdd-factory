@@ -29,8 +29,8 @@ author_answered() {
     | awk -v e="$edited" '$0 > e {found=1} END {exit found?0:1}'
 }
 
-gh issue view "$one" --repo "$r" --json number,title,labels,updatedAt \
-  --jq '[.number, (.labels | map(.name) | map(select(startswith("sdd:"))) | .[0] // "-"), .updatedAt, .title] | @tsv' \
+gh api "repos/$r/issues/$one" \
+  --jq '[.number, (.labels | map(.name) | map(select(startswith("sdd:"))) | .[0] // "-"), .updated_at, .title] | @tsv' \
 | while IFS="$(printf '\t')" read -r n label updated title; do
   [ "$label" = "-" ] && label=""   # @tsv leaves an empty field, which `read` would collapse
   state="${label#sdd:}"; type="$("$S/type.sh" get "$n" 2>/dev/null || true)"

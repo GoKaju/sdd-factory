@@ -10,7 +10,7 @@ allowed-tools: Bash, Read
 
 Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd` (`sdd help` lists its commands).
 
-If an issue number is given, report that issue; otherwise `gh issue list --state open --json number` and report each (`sdd next <n>` per issue).
+If an issue number is given, report that issue; otherwise `sdd issue list` and report each (`sdd next <n>` per issue).
 
 For each issue print one row: number · title · type · state · linked PR (`sdd pr find`) with draft/ready · open triage or task checkboxes (`sdd comment open <n> sdd:triage` / `sdd:task`) · pending `/rework` comments (`sdd rework pending <n>`) · live worktree (`sdd worktree list`) · **who acts next**, from the `action` of `sdd next`:
 
