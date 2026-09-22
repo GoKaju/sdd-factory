@@ -16,7 +16,7 @@ For each issue print one row: number · title · type · state · linked PR (`sd
 
 | `sdd next` | Who | What |
 | --- | --- | --- |
-| `run <phase>` | `/sdd N` | launches the phase (`triage`, `spec`, `design`, `task`, `implement`, `review`) |
+| `run <phase>` | `/sdd N` | launches the phase (`triage`, `plan`, `implement`, `review`) |
 | `approve <gate>` | `/sdd N` | verifies the artifact and grants the delegated gate (`judged`: after the reviewer) |
 | `human` | a person | sets `waits_for` (label or `/approve` comment); in `final-review`: merges the PR, comments `/approve`, or comments `/rework` with one bullet per change |
 | `busy` | — | a `/sdd N` run is implementing; `/sdd N` resumes it once idle |

@@ -14,7 +14,7 @@
 - Every element the Design names (each row of Components with its Location, each Error, each Contract) exists with that name, in that place.
 - No element the Design does not declare: a new port, event, use case, table or entry point is BLOCKER; a purely internal helper is WARNING.
 - Decisions recorded in the linked ADRs are honored. A decision reversed in code without a superseding ADR is a deviation.
-- Any element implemented differently from the Design (placement, collaborator, shape, name) without the design amended in the same PR through the design phase → BLOCKER. A note in the PR body does not count: merged code and design must say the same thing.
+- Any element implemented differently from the Design (placement, collaborator, shape, name) without the design amended in the same PR through the plan phase → BLOCKER. A note in the PR body does not count: merged code and design must say the same thing.
 
 ### B. Boundaries and layering — BLOCKER when the constitution states the rule
 Check each architecture rule of the constitution as written. Typical checks:

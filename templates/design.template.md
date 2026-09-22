@@ -1,7 +1,7 @@
 # Design — <Module name>
 
 spec: ./spec.md
-status: draft | approved   ← flipped to approved by the next phase when the human sets design-approved
+status: draft | approved   ← flipped to approved by /sdd when the human sets plan-approved
 
 <!-- A Design records DECISIONS specific to this module. It never restates rules that already live in
      docs/constitution.md; when a decision exists because of a rule, cite the rule ID in parentheses

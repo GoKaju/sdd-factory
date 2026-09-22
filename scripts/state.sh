@@ -11,7 +11,7 @@
 label_color() {
   case "$1" in
     triage) echo "ededed";; ready) echo "c2e0c6";;
-    spec|design|task) echo "fef2c0";; *-approved) echo "0e8a16";;
+    plan) echo "fef2c0";; *-approved) echo "0e8a16";;
     implementing) echo "1d76db";; in-review) echo "5319e7";; rework) echo "d93f0b";; final-review) echo "b60205";;
     *) echo "cccccc";;
   esac

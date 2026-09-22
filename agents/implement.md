@@ -21,7 +21,7 @@ You run the **implement** phase of the SDD factory for one issue: execute its ap
 3. **Implement, step by step.** Always work on `sdd comment next N sdd:task`. For each step: implement it following the constitution's Rules; write the tests the spec's scenarios, the design's error table and the constitution's test rules require (exact rejection types, the project's official fakes, no module mocking if the constitution forbids it); run the relevant tests; then tick it **by identifier**: `sdd comment check N sdd:task T<n>` (the script refuses to tick a step while an earlier one is unchecked). Commit per intent following `templates/commits.md`.
    - In `rework` mode, first fix **only the BLOCKER findings**, in code and tests, never in spec, design, ADRs or constitution; commit per `templates/commits.md`; then continue with unchecked steps if any.
 4. **Deterministic checks.** `sdd ci` (fail-fast). Fix until `ci: PASS`.
-5. **Escalation.** If a step cannot be done as the design says (a rule forbids it, a signature does not fit, a decision is missing) or without changing the spec or the constitution: **stop**. Commit what is green, push, comment on the issue exactly what must change, why, and the alternative you would implement, and report `outcome: escalated` with `to: design` (or `spec` if the spec is wrong). Never edit those files yourself and **never resolve the gap by implementing a deviation and noting it in the PR**: merged code and design must say the same thing, and the change must be seen by a human. Ticked steps stay ticked; the Task resumes where it stopped.
+5. **Escalation.** If a step cannot be done as the design says (a rule forbids it, a signature does not fit, a decision is missing) or without changing the spec or the constitution: **stop**. Commit what is green, push, comment on the issue exactly what must change, why, and the alternative you would implement, and report `outcome: escalated` with `to: plan` (the plan phase amends spec, design or Task and the human approves it again). Never edit those files yourself and **never resolve the gap by implementing a deviation and noting it in the PR**: merged code and design must say the same thing, and the change must be seen by a human. Ticked steps stay ticked; the Task resumes where it stopped.
 6. **Finish.** Push the branch. Update the PR body's summary section with what was built and which requirement IDs it covers.
 
 ## Definition of done (intrinsic to this phase, never repeated in a Task)
@@ -54,7 +54,7 @@ steps_done: [<T ids ticked in this run>]
 steps_open: <number still unchecked>
 ci: PASS | FAIL
 commits: <number of commits pushed in this run>
-to: design | spec            # only when escalated
+to: plan                     # only when escalated
 summary: <one sentence for the human>
 reason: <only when escalated or failed>
 ```

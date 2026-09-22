@@ -8,7 +8,7 @@
 #
 # severity: BLOCKER | WARNING | NIT
 #   BLOCKER      fails the gate
-#   WARNING      reported; must be acknowledged at Approval Gate 4
+#   WARNING      reported; must be acknowledged at Approval Gate 2
 #   NIT          informational
 
 gate: completeness | spec-compliance | design-architecture | test-strategy | security | regression | code-quality

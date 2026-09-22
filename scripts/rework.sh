@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Approval Gate 4 feedback: a human writes a `/rework` comment on the PR (or the issue) listing what
+# Approval Gate 2 feedback: a human writes a `/rework` comment on the PR (or the issue) listing what
 # must change — typically WARNINGs of the Review Gates they refuse to accept. /sdd turns each bullet
 # into a new step of the Task comment and sends the issue back to `rework`, so the implement phase does
 # exactly those steps and the review runs again. Nothing else is touched.
@@ -47,7 +47,7 @@ case "$cmd" in
     printf '%s\n' "$list" | while read -r id author; do steps_of "$id" | sed "s/$/\t$author/"; done > "$steps"
     [ -s "$steps" ] || die "the /rework comment(s) carry no bullet; nothing to add"
     tmp="$(mktemp)"; printf '%s\n' "$body" > "$tmp"
-    while IFS="$(printf '\t')" read -r step author; do n=$((n+1)); printf -- '- [ ] **T%s** %s _(Gate 4, @%s)_\n' "$n" "$step" "$author" >> "$tmp"; done < "$steps"
+    while IFS="$(printf '\t')" read -r step author; do n=$((n+1)); printf -- '- [ ] **T%s** %s _(Gate 2, @%s)_\n' "$n" "$step" "$author" >> "$tmp"; done < "$steps"
     "$S/comment.sh" upsert "$issue" sdd:task "$tmp" >/dev/null
     printf '%s\n' "$list" | while read -r id author; do gh api -X POST "repos/$r/issues/comments/$id/reactions" -f content=eyes --jq .id >/dev/null; done
     "$S/state.sh" set "$issue" rework

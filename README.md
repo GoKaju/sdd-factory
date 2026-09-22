@@ -1,6 +1,6 @@
 # sdd-factory
 
-A **Spec-Driven Development** factory for Claude Code, packaged as a plugin: typed GitHub issues, triage, spec → design → task with human approval gates, implementation, six adversarial Review Gates with bounded rework, and a single rule file per project (`docs/constitution.md`).
+A **Spec-Driven Development** factory for Claude Code, packaged as a plugin: typed GitHub issues, triage, one plan step (spec + design + Task, approved together), implementation, six adversarial Review Gates with bounded rework, and a single rule file per project (`docs/constitution.md`).
 
 One command drives one issue end to end: `/sdd <issue-number>`. It launches a fresh subagent per phase with the model you configured, grants the approval gates you delegated after verifying the artifact, waits for the ones you kept **without spending tokens** (`sdd await`: bash polling of GitHub), runs the review, applies rework, and leaves a learning document per issue. Re-run it any time: it resumes from the issue's state label.
 
@@ -31,21 +31,21 @@ Then, once per repository, `/sdd-init`: constitution, `.sdd/config.yml` (assiste
 
 ## Flow
 
-![The SDD flow: six phases, five human gates, one artifact per step on GitHub](docs/sdd-flow.svg)
+![The SDD flow: four phases, three human gates, one artifact per step on GitHub](docs/sdd-flow.svg)
 
 Every issue moves left to right. `/sdd N` reads the issue's `sdd:<state>` label, asks `sdd next N` what the state machine requires, and acts:
 
 | `sdd next` says | `/sdd` does |
 | --- | --- |
-| `run <phase>` | launches the phase subagent (`triage`, `spec`, `design`, `task`, `implement`; `review` is coordinated by `/sdd` itself: `sdd ci`, review pack, `reviewer` subagent, aggregate, rework) and sets the next state from its report |
+| `run <phase>` | launches the phase subagent (`triage`, `plan`, `implement`; `review` is coordinated by `/sdd` itself: `sdd ci`, review pack, `reviewer` subagent, aggregate, rework) and sets the next state from its report |
 | `approve <gate>` | the gate is delegated in `.sdd/config.yml`: verifies the artifact mechanically (and with the `reviewer` when `(judged)`), grants it or withholds it with a comment |
 | `human` | the gate is a person's: `sdd await N` polls GitHub in bash until a label changes, someone comments `/approve` (write permission), `/rework`, or anything else; a human comment relaunches the current phase with it as feedback |
 
-Approvals stay on GitHub: a label (`sdd:ready`, `sdd:spec-approved`, …) or a `/approve` comment on the issue. At Gate 4 the human merges the PR, comments `/approve` (the factory squash-merges), or comments `/rework` with one bullet per change, which becomes Task steps for the implement phase. On a review `FAIL` the issue loops back to implement with the BLOCKER findings, at most `gates.rework_budget` times.
+Approvals stay on GitHub: a label (`sdd:ready`, `sdd:plan-approved`) or a `/approve` comment on the issue. At Gate 2 the human merges the PR, comments `/approve` (the factory squash-merges), or comments `/rework` with one bullet per change, which becomes Task steps for the implement phase. On a review `FAIL` the issue loops back to implement with the BLOCKER findings, at most `gates.rework_budget` times.
 
 Triage is where clarity is cheapest: the `triage` agent runs a clarity pass over actors, triggers, inputs, outcomes, rejections, edge cases, existing data, deletion semantics, scope and terminology, asks every question a later phase would otherwise guess (each with a proposed answer), and records the author's answers as **Clarifications** that the spec must honour and the completeness gate verifies.
 
-The issue type decides the path: **Feature** and **Change** take every step; **Bug**, **Task** and **Constitution** go from `ready` straight to `task`. A Bug or Task whose root cause is in the spec or design is stopped and reclassified as Change. Source of the diagram: `docs/sdd-flow.html`.
+The **plan** phase writes, in one pass like an OpenSpec proposal, everything the issue needs before code: for **Feature** and **Change** the spec, the design (and its rare ADRs) on the Draft PR and the Task comment; for **Bug**, **Task** and **Constitution** only the Task. The completeness gate runs on the spec, and the human approves the whole plan at once (Gate 1, `sdd:plan-approved`). A Bug or Task whose root cause is in the spec or design is stopped and reclassified as Change. Source of the diagram: `docs/sdd-flow.html`.
 
 ## Where things live
 
@@ -67,7 +67,7 @@ The issue type decides the path: **Feature** and **Change** take every step; **B
 bin/sdd           the one CLI: sdd state|type|org-types|comment|pr|gate-result|review-pack|rework|flag|ci|next|await|worktree|log|config
 scripts/          the bash behind each sdd command (gh + jq + git + python3 for JSON/YAML)
 skills/           sdd (the orchestrator), sdd-init, sdd-config, sdd-status
-agents/           one subagent per phase: triage, spec, design, task, implement, reviewer, learning (model and effort in the frontmatter; model overridden by .sdd/config.yml)
+agents/           one subagent per phase: triage, plan, implement, reviewer, learning (model and effort in the frontmatter; model overridden by .sdd/config.yml)
 gates/            one checklist per Review Gate (completeness, spec-compliance, test-strategy, design-architecture, code-quality, security, regression, docs) + README with the common rules
 hooks/            PreToolUse hooks: protect docs/constitution.md and approved spec/design/ADRs (also inside issue worktrees); deny push to main, force-push, history rewrites
 templates/        constitution, config, learning, commits, spec, design, adr, gate-result, comments/{en,es}, issue-forms/{en,es}, examples/constitution.ddd-ts.md
@@ -88,6 +88,12 @@ Two hooks the plugin ships (`SubagentStart`, `SubagentStop`, matcher `^sdd-facto
 ## Guarantees
 
 Hooks enforce, in the main checkout and in every issue worktree: `docs/constitution.md` changes only during a Constitution-type issue; approved `spec.md`, `design.md` and ADRs cannot be edited while their issue is in implementation or review; no `git push` to `main`, no force-push, no rebase / amend / reset --hard.
+
+## Upgrading from 2.x
+
+- `.sdd/config.yml`: replace `models.spec`, `models.design` and `models.task` with one `models.plan`; in `gates.delegated`, `Spec`, `Design` and `Task` become `Plan`. `sdd config validate` lists what is missing.
+- Issues in flight: an issue labelled `sdd:spec`, `sdd:design` or `sdd:task` (or their `-approved`) has no state in 3.0. Relabel it `sdd:ready` to re-plan it, or `sdd:plan-approved` when its spec, design and Task are already approved. `sdd state ensure-labels` creates the new labels.
+- Existing `spec.md` and `design.md` move to the new templates when an issue next touches them: scenarios inside each requirement, Components with a Location column instead of Layout.
 
 ## Releasing a change
 

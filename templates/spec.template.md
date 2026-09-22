@@ -2,7 +2,7 @@
 
 module-id: <MODULE>          ← prefix for requirement IDs, e.g. OT
 domain: <domain>
-status: draft | approved   ← flipped to approved by the next phase when the human sets spec-approved
+status: draft | approved   ← flipped to approved by /sdd when the human sets plan-approved
 
 <!-- A Spec describes WHAT the system does, in the language a business reader uses. It never says HOW.
      Does not belong here (it belongs in design.md or in the constitution): tenants and isolation,

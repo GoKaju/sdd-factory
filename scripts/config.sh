@@ -3,7 +3,7 @@
 # A small YAML subset is enough: nested maps by indentation, scalars, lists of scalars, comments.
 #
 #   sdd config path                          → prints the path (exit 1 if the file does not exist)
-#   sdd config get <key>                     → prints a scalar, or a list one item per line (dot keys: models.spec, gates.delegated)
+#   sdd config get <key>                     → prints a scalar, or a list one item per line (dot keys: models.plan, gates.delegated)
 #   sdd config set <key> <value>...          → sets a scalar (one value) or a list (several values, or none = empty list); keeps comments
 #   sdd config show                          → prints the whole file
 #   sdd config init [--from-constitution]    → creates .sdd/config.yml from the template if missing; --from-constitution migrates
@@ -113,8 +113,7 @@ def render(ind, key, values, path):
 
 VALID = {
   "language": ("scalar", ["en", "es"]),
-  "models.triage": ("scalar", ["haiku", "sonnet", "opus", "inherit"]), "models.spec": ("scalar", ["haiku", "sonnet", "opus", "inherit"]),
-  "models.design": ("scalar", ["haiku", "sonnet", "opus", "inherit"]), "models.task": ("scalar", ["haiku", "sonnet", "opus", "inherit"]),
+  "models.triage": ("scalar", ["haiku", "sonnet", "opus", "inherit"]), "models.plan": ("scalar", ["haiku", "sonnet", "opus", "inherit"]),
   "models.implement": ("scalar", ["haiku", "sonnet", "opus", "inherit"]), "models.reviewer": ("scalar", ["haiku", "sonnet", "opus", "inherit"]),
   "models.learning": ("scalar", ["haiku", "sonnet", "opus", "inherit"]),
   "gates.delegated": ("list", None), "gates.warnings_at_final": ("scalar", ["human", "merge", "rework"]), "gates.rework_budget": ("int", None),
@@ -131,7 +130,7 @@ def validate(cfg):
         if kind == "int" and (not isinstance(v, str) or not v.isdigit() or int(v) < 1): problems.append("%s must be a positive integer (got %r)" % (key, v))
     for g in get(cfg, "gates.delegated") or []:
         name = re.sub(r"\s*\(judged\)\s*$", "", g).strip()
-        if name not in ("Intake", "Spec", "Design", "Task", "Final"): problems.append("gates.delegated: unknown gate %r" % g)
+        if name not in ("Intake", "Plan", "Final"): problems.append("gates.delegated: unknown gate %r" % g)
     for c in get(cfg, "commands") or []:
         if c.startswith("<") and c.endswith(">"): problems.append("commands: placeholder still present: " + c)
     return problems
@@ -159,7 +158,7 @@ case "$cmd" in
   show) [ -f "$file" ] || die "no $file: run /sdd-init (or sdd config init)"; cat "$file" ;;
   json) [ -f "$file" ] || die "no $file"; py json < "$file" ;;
   get)
-    [ -n "${1:-}" ] || die "key required, e.g. models.spec"
+    [ -n "${1:-}" ] || die "key required, e.g. models.plan"
     [ -f "$file" ] || die "no $file: run /sdd-init (or sdd config init)"
     py get "$1" < "$file" || die "no key '$1' in $file"
     ;;

@@ -6,7 +6,7 @@
 #   sdd pr ready  <issue>                     → marks the linked PR ready for review
 #   sdd pr branch <issue>                     → prints the linked PR's head branch
 #   sdd pr scope  <issue>                     → docs | code: docs when every changed file is documentation (docs/**, *.md)
-#   sdd pr merge  <issue>                     → squash-merges the linked PR and deletes the branch (Approval Gate 4 granted)
+#   sdd pr merge  <issue>                     → squash-merges the linked PR and deletes the branch (Approval Gate 2 granted)
 #   sdd pr merged <issue>                     → exit 0 when the issue has a merged PR ("Closes #N"), prints its number
 . "$(dirname "$0")/lib.sh"
 

@@ -8,16 +8,14 @@ language: en
 # Model of the subagent that runs each phase: haiku | sonnet | opus | inherit (the session's model).
 models:
   triage: sonnet
-  spec: opus
-  design: opus
-  task: sonnet
+  plan: opus
   implement: opus
   reviewer: opus
   learning: sonnet
 
 gates:
   # Human approval gates /sdd may grant on its own once the artifact is verifiably clean.
-  # Any of: Intake, Spec, Design, Task, Final. Add "(judged)" to require the reviewer's PASS first.
+  # Any of: Intake, Plan (spec + design + Task together), Final. Add "(judged)" to require the reviewer's PASS first.
   # A Constitution issue is never merged by a machine. Empty list = every gate waits for a person.
   delegated: []
   # What a delegated Final does when every gate is PASS but WARNINGs remain:

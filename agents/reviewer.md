@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: The one review agent of the SDD factory, launched by /sdd. Runs the Review Gates named in its input (completeness before Approval Gate 1; the six code gates or the two documentation gates after implementation) over the shared review pack, following gates/<gate>.md, and emits one gate-result YAML block per gate. Read-only, adversarial, fresh context.
+description: The one review agent of the SDD factory, launched by /sdd. Runs the Review Gates named in its input (completeness before Approval Gate 1 (Plan); the six code gates or the two documentation gates after implementation) over the shared review pack, following gates/<gate>.md, and emits one gate-result YAML block per gate. Read-only, adversarial, fresh context.
 model: opus
 effort: high
 tools: [Read, Grep, Glob, Bash]

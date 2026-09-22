@@ -1,6 +1,6 @@
 ---
 name: sdd
-description: Drive one GitHub issue through the whole SDD flow - triage, spec, design, task, implement, review, learning - launching one subagent per phase with the configured model, granting the approval gates .sdd/config.yml delegates, and waiting for the human ones with sdd await (bash polling, no tokens). Resumable - re-run it any time; it continues from the issue's state label.
+description: Drive one GitHub issue through the whole SDD flow - triage, plan (spec + design + Task), implement, review, learning - launching one subagent per phase with the configured model, granting the approval gates .sdd/config.yml delegates, and waiting for the human ones with sdd await (bash polling, no tokens). Resumable - re-run it any time; it continues from the issue's state label.
 argument-hint: "<issue-number>"
 disable-model-invocation: true
 allowed-tools: Bash, Read, Grep, Glob, Agent
@@ -10,7 +10,7 @@ allowed-tools: Bash, Read, Grep, Glob, Agent
 
 You are the **orchestrator** of issue **#N** (the argument; stop if it is missing or not a number). The decision of which phase the issue needs is mechanical (`sdd next N`); your judgement goes to what the rules leave open: verifying artifacts before granting a delegated gate, relaunching a phase with a human's comment, reading a subagent's report, and stopping when a person must decide. You never set `sdd:ready` or an `sdd:*-approved` label that the config does not delegate, never merge a Constitution issue, never push to the default branch, and never do a phase's work yourself: every phase is a subagent.
 
-Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd` (`sdd help` lists its commands). Plugin agents are launched with the Agent tool with `subagent_type: "sdd-factory:<name>"` (`triage`, `spec`, `design`, `task`, `implement`, `reviewer`, `learning`), `model` from `sdd config get models.<name>` (omit it when the value is `inherit`), and a `description` that names both so the person watching sees them: `sdd-factory:spec · #N · opus`. Every launch is logged: `sdd log add N phase-start phase=<p> model=<m> attempt=<k>` before, `sdd log add N phase-end phase=<p> outcome=<o>` after; the plugin's SubagentStart/Stop hooks add the host's own record of agent type, real model, minutes and tokens (`sdd log last N`).
+Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd` (`sdd help` lists its commands). Plugin agents are launched with the Agent tool with `subagent_type: "sdd-factory:<name>"` (`triage`, `plan`, `implement`, `reviewer`, `learning`), `model` from `sdd config get models.<name>` (omit it when the value is `inherit`), and a `description` that names both so the person watching sees them: `sdd-factory:plan · #N · opus`. Every launch is logged: `sdd log add N phase-start phase=<p> model=<m> attempt=<k>` before, `sdd log add N phase-end phase=<p> outcome=<o>` after; the plugin's SubagentStart/Stop hooks add the host's own record of agent type, real model, minutes and tokens (`sdd log last N`).
 
 **Scratch files** (gate-result YAML blocks split from a reviewer's report, heredoc bodies, notes) go under `$(sdd flag dir)/tmp/` outside the repository, never inside the worktree or the checkout.
 
@@ -47,7 +47,7 @@ After each phase, gate or wait, refresh the lock flag and re-read `sdd next N`; 
 Put the worktree on the right branch first (`triage` needs none: the worktree stays detached at the default branch, freshly fetched):
 
 ```bash
-cwd=$(sdd worktree ensure N [<branch>])   # <branch> only when the issue has no PR yet: feat|change/N-<slug> (spec), fix|chore|constitution/N-<slug> (implement)
+cwd=$(sdd worktree ensure N [<branch>])   # <branch> only when the issue has no PR yet: feat|change/N-<slug> (plan of a Feature/Change), fix|chore|constitution/N-<slug> (implement)
 ```
 
 Then launch the phase subagent (`subagent_type: sdd-factory:<phase>`, `model` from config, `description: sdd-factory:<phase> · #N · <model>`) with this prompt shape and wait for it: `issue: N · type: <type> · cwd: <cwd> · sdd: ${CLAUDE_PLUGIN_ROOT}/bin/sdd · lang: <lang>` plus the phase fields below, plus `feedback:` when a human comment is being answered (§4). Read its final ```yaml report. A report with `outcome: failed`, or none, is retried once with `attempt=2` and the failure quoted; a second failure ends the turn with the reason (§6).
@@ -57,22 +57,18 @@ Then launch the phase subagent (`subagent_type: sdd-factory:<phase>`, `model` fr
 | phase | before | subagent fields | after (`outcome: done`) |
 | --- | --- | --- | --- |
 | `triage` | — | — | if a human set `ready` meanwhile leave it; else `sdd state set N triage`. `sdd await mark N`. |
-| `spec` | `branch` if no PR | `branch` | **completeness gate:** `sdd worktree ensure N` again (the PR now exists); launch `reviewer` with `gates: completeness · pack: <cwd>/<spec path> · issue · pr · commit: $(git -C $cwd rev-parse HEAD) · rework_cycle: 0 · cwd`; `sdd gate-result post <pr> <yaml>` for its block. `FAIL` → relaunch `spec` once with `feedback: <the BLOCKERs>`, then re-run the gate and post; whatever the second verdict, continue (the human sees it at Gate 1). Then `sdd state set N spec`. `sdd await mark N`. |
-| `design` | — | `feedback` = escalation comment when coming back from implement | `sdd state set N design`. `sdd await mark N`. |
-| `task` | — | — | `outcome: done` → `sdd state set N task`; `escalated` → `to: design` ⇒ `sdd state set N design` (`to: triage` ⇒ `sdd state set N triage`), log `escalation from=task to=<to>`. `sdd await mark N`. |
-| `implement` | `sdd flag set lock-docs`; Constitution type: `sdd flag set allow-constitution`; `sdd state set N implementing`; in `final-review` with `sdd rework pending N` non-empty: `sdd rework apply N` first. | `mode: task|rework|resume`, `branch` if no PR, `findings` (BLOCKERs of the last cycle) in rework | `done` → `sdd state set N in-review`. `escalated` → `sdd flag clear lock-docs allow-constitution`, `sdd state set N <to>`, log `escalation from=implement to=<to>`. Constitution type: `sdd flag clear allow-constitution` always. |
+| `plan` | `branch` if Feature/Change and no PR | `branch` | Feature/Change: **completeness gate:** `sdd worktree ensure N` again (the PR now exists); launch `reviewer` with `gates: completeness · pack: <cwd>/<spec path> · issue · pr · commit: $(git -C $cwd rev-parse HEAD) · rework_cycle: 0 · cwd`; `sdd gate-result post <pr> <yaml>` for its block. `FAIL` → relaunch `plan` once with `feedback: <the BLOCKERs>`, then re-run the gate and post; whatever the second verdict, continue (the human sees it at Gate 1). Every type, then: `sdd state set N plan`. `escalated` (`to: triage`) → `sdd state set N triage`, log `escalation from=plan to=triage`. `sdd await mark N`. |
+| `implement` | Feature/Change coming from `plan-approved`: record the approval — `status: approved` in the PR's `spec.md` and `design.md` (skip when already `approved`), commit `docs(<module>): plan approved for #N`, push. Then `sdd flag set lock-docs`; Constitution type: `sdd flag set allow-constitution`; `sdd state set N implementing`; in `final-review` with `sdd rework pending N` non-empty: `sdd rework apply N` first. | `mode: task|rework|resume`, `branch` if no PR, `findings` (BLOCKERs of the last cycle) in rework | `done` → `sdd state set N in-review`. `escalated` (`to: plan`) → `sdd flag clear lock-docs allow-constitution`, `sdd state set N plan`, log `escalation from=implement to=plan`, and relaunch `plan` at once with `feedback` = the escalation comment (the approval is asked again at Gate 1). Constitution type: `sdd flag clear allow-constitution` always. |
 | `review` | §5 | — | — |
 
 Never let a phase agent set a state; if a report claims it did, re-read `sdd state get N` and correct it.
 
 ## 3. Grant a delegated gate
 
-Only for a gate the config lists. Verify mechanically **before** `sdd state set`; "the artifact looks fine" is not verification. When `judged: true`, additionally launch `reviewer` (gate set `completeness` for Spec, `docs` for Design and Task, over the artifact plus the issue's original body and author comments) and grant only on `PASS`; on any other verdict comment once on the issue (in `lang`) what was found and treat the gate as `human` (§4). Log every decision: `sdd log add N gate name=<gate> result=granted|withheld why=<...>`.
+Only for a gate the config lists. Verify mechanically **before** `sdd state set`; "the artifact looks fine" is not verification. When `judged: true`, additionally launch `reviewer` (gate sets `completeness` and `docs` for Plan, over the spec, design and Task plus the issue's original body and author comments) and grant only on `PASS`; on any other verdict comment once on the issue (in `lang`) what was found and treat the gate as `human` (§4). Log every decision: `sdd log add N gate name=<gate> result=granted|withheld why=<...>`.
 
 - **Intake** → `sdd comment open N sdd:triage` is `0`, the triage comment names a type and a size, and it carries the `Clarifications`/`Assumptions` sections (empty is fine when the issue raised no question; missing means the clarity pass did not run: relaunch `triage` once) ⇒ `sdd state set N ready`.
-- **Spec** → the PR description's `Open questions` has no unchecked box, every requirement of the spec has a `#### Scenario:`, and the spec has no `TBD`/`TODO`; the last completeness result on the PR (`sdd gate-result list <pr>`) is `PASS` ⇒ `spec-approved`.
-- **Design** → no `NEEDS_HUMAN`, `pending human` or `TBD` in the design; every decision it lists exists as an ADR ⇒ `design-approved`.
-- **Task** → the Task comment exists, has at least one step and none is a question ⇒ `task-approved`.
+- **Plan** → for Feature/Change: the PR description's `Open questions` has no unchecked box; every requirement of the spec has a `#### Scenario:`; no `TBD`/`TODO` in spec or design and no `NEEDS_HUMAN` or `pending human` in the design; every decision the design lists exists as an ADR; the last completeness result on the PR (`sdd gate-result list <pr>`) is `PASS`. For every type: the Task comment exists, has at least one step, none is a question, and (Feature/Change) every step names a design element that appears in the design's Components, Errors or Contracts and a requirement ID of the spec ⇒ `plan-approved`.
 - **Final** → issue not of type Constitution; every gate result of the latest cycle is `PASS` (`sdd gate-result aggregate <pr> <cycle>`); PR ready and mergeable. Then the **`warnings_at_final`** policy over `sdd gate-result warnings <pr> <cycle>`:
   - none → `sdd pr merge N`.
   - `human` → hold: comment on the PR listing the WARNINGs and that a person merges or writes `/rework`; go to §4.
@@ -92,7 +88,7 @@ sdd await N --timeout 590      # blocks up to ~10 min in bash; prints one JSON e
 Loop on `timeout` while `waited < max_wait` (add the minutes each time). On any other event, `sdd log add N wait-end gate=<state> result=<event>` and act:
 
 - `approved` / `state` → the label changed; back to §1.
-- `merge` → a human commented `/approve` at Gate 4: `sdd pr merge N` (never for Constitution: say the person must merge it), then §1 (the PR is merged → §6).
+- `merge` → a human commented `/approve` at Gate 2: `sdd pr merge N` (never for Constitution: say the person must merge it), then §1 (the PR is merged → §6).
 - `rework` → `sdd rework apply N` when the state is `final-review`; otherwise pass the comment as `feedback` to the current phase (relaunch it, §2) and re-mark. Back to §1.
 - `comment` → a human wrote on the issue or the PR. If it is a question or an objection about the current artifact, relaunch the current phase with `feedback: <body>` so the artifact answers it (once per comment; the phase's report says what changed); if it is unrelated ("thanks", a note for later), keep waiting. Never relaunch the same phase more than twice for comments in one wait; the third time, end the turn (§6).
 - `merged` / `closed` / `pr-closed` → §6.
@@ -101,7 +97,7 @@ When `waited >= max_wait`: end the turn (§6) with "waiting for <who> to <what>;
 
 ## 5. Review (you coordinate; the reviewer judges; implement fixes)
 
-State `in-review` or `rework` (or `design-approved` with a complete Task: a document-only amendment — first record the approval: `status: approved` in `design.md`, commit, push). `pr=$(sdd pr find N)`, `cwd=$(sdd worktree ensure N)`, `cycle` = highest cycle in `sdd gate-result list $pr` plus one (0 if none), `scope=$(sdd pr scope N)`.
+State `in-review` or `rework` (or `plan-approved` with a complete Task: a document-only amendment — first record the approval: `status: approved` in `spec.md` and `design.md`, commit, push). `pr=$(sdd pr find N)`, `cwd=$(sdd worktree ensure N)`, `cycle` = highest cycle in `sdd gate-result list $pr` plus one (0 if none), `scope=$(sdd pr scope N)`.
 
 1. **Deterministic checks first** (skip when `scope` is `docs`): `cd $cwd && sdd ci`. Red → post one result `gate: deterministic-checks, status: BLOCKED` with the failing command, `sdd state set N rework`, and launch `implement` in `rework` mode with that finding (§2); then start §5 again.
 2. **Pack.** `pack=$(cd $cwd && sdd review-pack build N $cycle)`.
@@ -122,7 +118,7 @@ Reviewers are read-only and adversarial; nobody argues with a BLOCKER: it is fix
 ## Rules
 
 - Mechanical decisions stay in `sdd next`; if you disagree with a `run` line, hold it and say why, never launch something else.
-- One subagent per phase, always `subagent_type: sdd-factory:<phase>` with fresh context and the configured model; you never write spec, design, Task, code or gate results yourself. Never fall back to `general-purpose` or to doing the phase inline.
+- One subagent per phase, always `subagent_type: sdd-factory:<phase>` with fresh context and the configured model; you never write spec, design, Task, code or gate results yourself (recording `status: approved` is the one mechanical edit you make). Never fall back to `general-purpose` or to doing the phase inline.
 - Everything happens in the issue worktree; the human's checkout is never touched.
 - A delegated gate is granted only after §3's verification; WARNINGs never become BLOCKERs by your judgement.
 - Never `sdd state set` to `ready` or `*-approved` for a gate that is not delegated (a human's `/approve` is applied by `sdd await`, not by you); never merge a Constitution issue; never push to the default branch; never edit approved documents.
