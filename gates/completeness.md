@@ -72,7 +72,7 @@ issue: <issue number>
 pr: <pr number, or null>
 commit: <head sha of the PR, or null>
 status: PASS | FAIL | NEEDS_HUMAN | BLOCKED
-rework_cycle: <integer from your input; 0 if unknown>
+rework_cycle: plan
 requirements:                  # one entry per requirement ID in the Spec
   <MODULE>-NNN: PASS | FAIL
 findings:

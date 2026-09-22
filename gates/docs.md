@@ -1,10 +1,10 @@
-# Gates for a documentation-only PR · design-architecture (coherence) + code-quality (clarity)
+# Gate for a documentation-only PR · structure, read as coherence and clarity
 
-The PR changes **only documents**: `docs/constitution.md`, `docs/blueprint.md`, a `spec.md`, a `design.md`, ADRs, templates or pointer files. There is no code and no test to judge, so `spec-compliance`, `test-strategy`, `security` and `regression` are skipped mechanically by the skill (`sdd gate-result skip`), and two gates run here: `design-architecture`, read as *coherence of the documents with each other and with the constitution*, and `code-quality`, read as *clarity and hygiene of the prose*. Emit two YAML blocks, in that order, both following `templates/gate-result.template.yaml`.
+The PR changes **only documents**: `docs/constitution.md`, `docs/blueprint.md`, a `spec.md`, a `design.md`, ADRs, templates or pointer files. There is no code and no test to judge, so `behaviour` and `risk` are skipped mechanically by the skill (`sdd gate-result skip`), and the `structure` gate runs with this checklist instead of `structure.md`: Part 1 is the *coherence of the documents with each other and with the constitution*, Part 2 the *clarity and hygiene of the prose*. Emit one YAML block, `gate: structure`, following the common schema of `gates/README.md`.
 
 ---
 
-## Gate 1 · design-architecture — coherence
+## Part 1 · coherence
 
 **Question:** do the changed documents say one consistent thing, and does it match what the issue asked for?
 
@@ -38,7 +38,7 @@ Two rules that grant and forbid the same crossing are a contradiction and BLOCKE
 
 ---
 
-## Gate 2 · code-quality — clarity and hygiene
+## Part 2 · clarity and hygiene
 
 **Question:** can a newcomer read these documents and act on them without asking?
 
@@ -51,4 +51,4 @@ Two rules that grant and forbid the same crossing are a contradiction and BLOCKE
 
 ## Output
 
-Two blocks, `gate: design-architecture` then `gate: code-quality`, same `issue`, `pr`, `commit`, `rework_cycle`; schema as in `templates/gate-result.template.yaml`. `NEEDS_HUMAN` when two documents genuinely conflict and the issue does not say which wins.
+One block, `gate: structure`, with the findings of both parts. `NEEDS_HUMAN` when two documents genuinely conflict and the issue does not say which wins.

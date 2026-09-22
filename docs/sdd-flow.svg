@@ -72,7 +72,7 @@
         <text x="968" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">implement</text>
 
         <rect x="1080" y="240" width="128" height="72" rx="6" fill="rgba(20,71,230,0.08)" stroke="#1447e6" stroke-width="1"/>
-        <text x="1144" y="272" fill="#0a0a0a" font-size="12" font-weight="600">Review · 6 gates</text>
+        <text x="1144" y="272" fill="#0a0a0a" font-size="12" font-weight="600">Review · 3 gates</text>
         <text x="1144" y="290" fill="#737373" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">review</text>
       </g>
 

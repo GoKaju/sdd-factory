@@ -59,7 +59,7 @@ gh issue view "$one" --repo "$r" --json number,title,labels,updatedAt \
       if [ -n "$("$S/rework.sh" pending "$n" 2>/dev/null || true)" ]; then action=run; what=implement; reason="human asked for changes with /rework"
       elif [ "$type" != Constitution ] && [ -n "$(delegated_mode Final)" ]; then
         action=approve; what=Final; [ "$(delegated_mode Final)" = judged ] && judged=true
-        pr_n="$("$S/pr.sh" find "$n" 2>/dev/null || true)"; cyc="$("$S/gate-result.sh" list "${pr_n:-0}" 2>/dev/null | wc -l | tr -d ' ')"; cyc=$(( cyc > 0 ? (cyc - 1) / 6 : 0 ))
+        pr_n="$("$S/pr.sh" find "$n" 2>/dev/null || true)"; cyc="$("$S/gate-result.sh" last "${pr_n:-0}" 2>/dev/null || true)"; cyc="${cyc:-0}"
         warn_n="$("$S/gate-result.sh" warnings "${pr_n:-0}" "$cyc" 2>/dev/null | grep -c . || true)"
         reason="Final delegated; every gate must be PASS; $warn_n WARNING(s), policy $(warnings_policy)"
       else reason="human merges the PR or comments /rework (Gate 2)"; fi ;;

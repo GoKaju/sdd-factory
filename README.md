@@ -1,6 +1,6 @@
 # sdd-factory
 
-A **Spec-Driven Development** factory for Claude Code, packaged as a plugin: typed GitHub issues, triage, one plan step (spec + design + Task, approved together), implementation, six adversarial Review Gates with bounded rework, and a single rule file per project (`docs/constitution.md`).
+A **Spec-Driven Development** factory for Claude Code, packaged as a plugin: typed GitHub issues, triage, one plan step (spec + design + Task, approved together), implementation, a mechanical check plus three adversarial Review Gates in parallel with incremental, bounded rework, and a single rule file per project (`docs/constitution.md`).
 
 One command drives one issue end to end: `/sdd <issue-number>`. It launches a fresh subagent per phase with the model you configured, grants the approval gates you delegated after verifying the artifact, waits for the ones you kept **without spending tokens** (`sdd await`: bash polling of GitHub), runs the review, applies rework, and leaves a learning document per issue. Re-run it any time: it resumes from the issue's state label.
 
@@ -37,11 +37,11 @@ Every issue moves left to right. `/sdd N` reads the issue's `sdd:<state>` label,
 
 | `sdd next` says | `/sdd` does |
 | --- | --- |
-| `run <phase>` | launches the phase subagent (`triage`, `plan`, `implement`; `review` is coordinated by `/sdd` itself: `sdd ci`, review pack, `reviewer` subagent, aggregate, rework) and sets the next state from its report |
+| `run <phase>` | launches the phase subagent (`triage`, `plan`, `implement`; `review` is coordinated by `/sdd` itself: `sdd ci`, `sdd review-check`, review pack, three `reviewer` subagents in parallel, aggregate, rework) and sets the next state from its report |
 | `approve <gate>` | the gate is delegated in `.sdd/config.yml`: verifies the artifact mechanically (and with the `reviewer` when `(judged)`), grants it or withholds it with a comment |
 | `human` | the gate is a person's: `sdd await N` polls GitHub in bash until a label changes, someone comments `/approve` (write permission), `/rework`, or anything else; a human comment relaunches the current phase with it as feedback |
 
-Approvals stay on GitHub: a label (`sdd:ready`, `sdd:plan-approved`) or a `/approve` comment on the issue. At Gate 2 the human merges the PR, comments `/approve` (the factory squash-merges), or comments `/rework` with one bullet per change, which becomes Task steps for the implement phase. On a review `FAIL` the issue loops back to implement with the BLOCKER findings, at most `gates.rework_budget` times.
+Approvals stay on GitHub: a label (`sdd:ready`, `sdd:plan-approved`) or a `/approve` comment on the issue. At Gate 2 the human merges the PR, comments `/approve` (the factory squash-merges), or comments `/rework` with one bullet per change, which becomes Task steps for the implement phase. Review runs in this order each cycle: `sdd ci` (red build → rework); `sdd review-check`, the **mechanical** gate, bash only (tests skipped or focused, `TODO`/`FIXME`, files outside the design's Locations, requirement IDs no test cites, missing blueprint exemplars); then three reviewers in parallel with fresh context: **behaviour** (the code does what the Spec says and the tests prove it), **structure** (built as design, constitution and blueprint say, and simply) and **risk** (security and regression). All results of a cycle live in one PR comment with a summary table. On `FAIL` the issue loops back to implement with the BLOCKER findings, at most `gates.rework_budget` times. From cycle 1 on the review is **incremental**: previous BLOCKERs are checked first, new BLOCKERs may only point at the delta since the last reviewed commit, and a gate that passed with no change since is carried over, so rework converges. Implement may **dispute** a BLOCKER once with evidence; the next reviewer withdraws it or upholds it, and an upheld dispute goes to a person instead of another rework.
 
 Triage is where clarity is cheapest: the `triage` agent runs a clarity pass over actors, triggers, inputs, outcomes, rejections, edge cases, existing data, deletion semantics, scope and terminology, asks every question a later phase would otherwise guess (each with a proposed answer), and records the author's answers as **Clarifications** that the spec must honour and the completeness gate verifies.
 
@@ -52,7 +52,7 @@ The **plan** phase writes, in one pass like an OpenSpec proposal, everything the
 | Place | Holds |
 | --- | --- |
 | Issue | intent, triage comment, Task comment with checklist, `sdd:<state>` label |
-| Draft PR | `spec.md`, `design.md`, ADRs, code, gate results as comments, `.sdd/learning/<N>.md` |
+| Draft PR | `spec.md`, `design.md`, ADRs, code, gate results (one comment per review cycle, plus one for the plan), `.sdd/learning/<N>.md` |
 | `docs/` on `main` | approved, merged truth: `docs/<domain>/<module>/{spec,design}.md` (the current state of the module, never its history) and `docs/adrs/NNNN-*.md` (one immutable file per decision; reversals supersede) |
 | `docs/constitution.md` | the only **rule** file, short: Identity, Stack, Rules (one line each, stable IDs, only what a review blocks on), Amendments. `CLAUDE.md` points to it and to the blueprint |
 | `docs/blueprint.md` | how a module is **built**, shown by example: module layout and, per kind of element and test, its location, file name, shape and a real exemplar file. Diverging from it is a WARNING; changes through a Constitution issue |
@@ -65,11 +65,11 @@ The **plan** phase writes, in one pass like an OpenSpec proposal, everything the
 
 ```
 .claude-plugin/   plugin.json, marketplace.json
-bin/sdd           the one CLI: sdd state|type|org-types|comment|pr|gate-result|review-pack|rework|flag|ci|next|await|worktree|log|config
+bin/sdd           the one CLI: sdd state|type|org-types|comment|pr|gate-result|review-check|review-pack|rework|flag|ci|next|await|worktree|log|config
 scripts/          the bash behind each sdd command (gh + jq + git + python3 for JSON/YAML)
 skills/           sdd (the orchestrator), sdd-init, sdd-config, sdd-status
 agents/           one subagent per phase: triage, plan, implement, reviewer, learning (model and effort in the frontmatter; model overridden by .sdd/config.yml)
-gates/            one checklist per Review Gate (completeness, spec-compliance, test-strategy, design-architecture, code-quality, security, regression, docs) + README with the common rules
+gates/            one checklist per Review Gate (completeness, behaviour, structure, risk, docs) + README with the common rules, the incremental cycle and the result schema
 hooks/            PreToolUse hooks: protect docs/constitution.md and approved spec/design/ADRs (also inside issue worktrees); deny push to main, force-push, history rewrites
 templates/        constitution, blueprint, config, learning, commits, spec, design, adr, gate-result, comments/{en,es}, issue-forms/{en,es}, examples/{constitution,blueprint}.ddd-ts.md
 ```
