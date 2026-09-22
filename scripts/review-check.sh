@@ -5,7 +5,8 @@
 #   sdd review-check <issue> <cycle>   → YAML (gate: mechanical) on stdout; post it with `sdd gate-result post`
 #
 # BLOCKER: `skip`/`only`-style markers added to tests (constitution Q3) · TODO/FIXME/HACK/XXX added to code.
-# WARNING: test files deleted · files changed outside the Locations of the affected design · requirement IDs of the
+# WARNING: added comments, docstrings or document lines that read as Spanish (constitution C1: the repository is English;
+#          string literals are skipped, end-user messages may be translated) · test files deleted · files changed outside the Locations of the affected design · requirement IDs of the
 #          affected specs that no test file cites · exemplar paths of docs/blueprint.md that do not exist.
 . "$(dirname "$0")/lib.sh"
 S="$(dirname "$0")"
@@ -25,6 +26,26 @@ issue, pr, head, cycle, diff_file, status_file = sys.argv[1:]
 TEST = re.compile(r"(\.test\.|\.spec\.|_test\.|(^|/)tests?/|(^|/)__tests__/|(^|/)test_[^/]+$)")
 SKIP = re.compile(r"(\b(it|test|describe|context)\.(skip|only|todo)\(|\b(xit|xdescribe|xtest|fit|fdescribe)\(|@pytest\.mark\.(skip|xfail)|\bt\.Skip\(|@Disabled\b|@Ignore\b|\bpending\()")
 TODO = re.compile(r"\b(TODO|FIXME|HACK|XXX)\b")
+# Spanish in added prose: comments and docstrings of code files, every line of documents. String literals are not prose.
+SPANISH_WORDS = {"que", "para", "los", "las", "del", "una", "con", "por", "cuando", "esto", "este", "esta", "pero", "como",
+                 "porque", "también", "según", "debe", "sino", "está", "son", "más", "aquí", "donde", "cada", "entre", "hasta",
+                 "el", "la", "al", "se", "su", "sus", "lo", "le", "hay", "sin", "sobre", "desde", "usuario", "mensaje"}
+DOC = re.compile(r"(\.md|\.mdx|\.rst|\.txt|\.adoc)$")
+LANG_SKIP = re.compile(r"(^\.github/ISSUE_TEMPLATE/|(^|/)(locales?|i18n|translations?|lang)/|\.(json|ya?ml|po|properties|csv|svg|html?)$)")
+COMMENT = re.compile(r"^\s*(//+|#+(?![!\[])|/\*+|\*+(?!/)|\"\"\"|\'\'\'|<!--|--(?!-)|;+)\s?(.*)$")
+TRAILING = re.compile(r"\s(//|#)\s+(.+)$")
+def prose(path, text):
+    if path.endswith("spec.md") and text.lstrip().startswith("|"): return ""   # Rejections rows carry end-user messages
+    if DOC.search(path): return text
+    m = COMMENT.match(text)
+    if m: return m.group(2)
+    m = TRAILING.search(text)
+    if m and text[:m.start()].count('"') % 2 == 0 and text[:m.start()].count("'") % 2 == 0: return m.group(2)
+    return ""
+def spanish(t):
+    words = re.findall(r"[a-záéíóúñü]+", t.lower())
+    hits = sum(w in SPANISH_WORDS for w in words)
+    return bool(re.search(r"[¿¡]", t)) or hits >= 2 or (hits >= 1 and bool(re.search(r"[áéíóúñ]", t.lower())))
 IGNORE = re.compile(r"(^docs/|^\.sdd/|\.md$|(^|/)(pnpm-lock\.yaml|package-lock\.json|yarn\.lock|bun\.lockb?|Cargo\.lock|poetry\.lock|uv\.lock|go\.sum|composer\.lock|Gemfile\.lock)$)")
 
 findings = []
@@ -32,7 +53,7 @@ def add(sev, loc, desc, action, req=None):
     findings.append((sev, loc, desc, action, req))
 
 # added lines per file, with their new line numbers
-cur, line = None, 0
+cur, line, lang_hits = None, 0, {}
 for raw in open(diff_file, encoding="utf-8", errors="replace"):
     if raw.startswith("+++ "):
         cur = raw[6:].rstrip("\n") if raw.startswith("+++ b/") else None; continue
@@ -46,7 +67,15 @@ for raw in open(diff_file, encoding="utf-8", errors="replace"):
     elif not IGNORE.search(cur) and TODO.search(text):
         add("BLOCKER", "%s:%d" % (cur, line), "Work marker added to code: `%s`." % text.strip()[:120],
             "Do the work now or remove the marker; open work is tracked in the Issue.")
+    if not LANG_SKIP.search(cur) and not cur.startswith(".sdd/") and spanish(prose(cur, text)):
+        lang_hits.setdefault(cur, []).append((line, text.strip()[:100]))
     line += 1
+
+for path, hits in lang_hits.items():
+    ln, sample = hits[0]
+    more = " (and %d more line(s) in this file)" % (len(hits) - 1) if len(hits) > 1 else ""
+    add("WARNING", "%s:%d" % (path, ln), "Reads as Spanish: `%s`%s. The repository is English (C1)." % (sample.replace("`", "'"), more),
+        "Rewrite it in English; only end-user message strings may use another language.")
 
 changed, deleted = [], []
 for raw in open(status_file):

@@ -2,7 +2,7 @@
 # Created by /sdd-init, edited with /sdd-config (or by hand). Versioned: every collaborator runs the same factory.
 # Rules of the project live in docs/constitution.md; nothing here is a rule.
 
-# Prose of tracker comments, issue forms and PR bodies: en | es
+# Prose on GitHub only (tracker comments, issue forms, PR bodies): en | es. Everything in the repository is English (constitution C1).
 language: en
 
 # Model of the subagent that runs each phase: haiku | sonnet | opus | inherit (the session's model).

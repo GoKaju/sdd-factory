@@ -8,7 +8,7 @@ templates/issue-forms/
 └── es/   feature.yml · change.yml · bug.yml · task.yml · config.yml
 ```
 
-`sdd-init` reads **`Language`** from the constitution's Identity section (`en` or `es`) and copies
+`sdd-init` reads `language` from `.sdd/config.yml` (`en` or `es`) and copies
 that set into `.github/ISSUE_TEMPLATE/`. The forms are written for **non-technical authors**: the
 questions are about the problem, the expected outcome and concrete examples, never about
 implementation. The `type:` key of each form assigns the organization's native Issue Type on
@@ -20,4 +20,4 @@ created by `sdd-init` (organization admin and `admin:org` scope required).
 A `Constitution` Issue has no form: it is opened by hand, typed `Constitution`, and describes the
 amendment and its motivation. It is the only Issue type allowed to edit `docs/constitution.md`.
 
-Triage and Task comments use `templates/comments/<lang>/` and are written entirely in the same `Language`, headings included, per rule C4 of the constitution.
+Triage and Task comments use `templates/comments/<lang>/` and are written entirely in that language, headings included. What lands in the repository (code and `docs/`) is always English (constitution C1).

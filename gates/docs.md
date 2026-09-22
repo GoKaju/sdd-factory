@@ -46,7 +46,7 @@ Two rules that grant and forbid the same crossing are a contradiction and BLOCKE
 - Duplicated statements inside one document, or the same rule in two places: WARNING.
 - Ambiguous quantifiers ("usually", "when possible", "should" where a rule is meant): WARNING in a rule, BLOCKER in a requirement.
 - Placeholders left behind (`<...>`, `TBD`, `TODO`, `???`): BLOCKER in a constitution or spec, WARNING in a design.
-- Prose follows the language configured in `.sdd/config.yml`; rule IDs, identifiers and paths stay as they are. A mixed-language sentence is WARNING.
+- Every document in the repository is English (constitution C1), whatever `.sdd/config.yml` says: a document or section in another language is BLOCKER, a mixed-language sentence WARNING. Only the `Message to the user` column of a spec's Rejections is in the users' language.
 - Formatting that breaks the template's structure (missing section, uneven table, skipped heading level): WARNING; pure style: NIT.
 
 ## Output

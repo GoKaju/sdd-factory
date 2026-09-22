@@ -21,7 +21,7 @@ Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd` (`sdd help` lists its comma
 2b. **Blueprint.** If `docs/blueprint.md` does not exist, copy `templates/blueprint.template.md` there. When the repository already has code, fill it from what it shows: the module layout of an existing module, one row per kind of element you find (location pattern, file-name pattern, base class or shape) with a **real file** as exemplar, and one exemplar per kind of test. Describe only what the code already does consistently; where modules disagree, leave the row as a `<placeholder>` and list it for the human. A repository without code keeps the placeholders (the first Feature fills them through a Constitution issue).
 
 3. **Config, assisted.** `sdd config init` creates `.sdd/config.yml` from the template. Then fill it with the human, one question at a time when the repository does not answer it:
-   - `language` (en | es) — from the constitution or the issue templates if any; else ask.
+   - `language` (en | es) — the language of GitHub prose only (comments, forms, PR bodies); from the issue templates if any, else ask. Say that the repository itself, `docs/` included, is always English.
    - `commands` — read the package manifest scripts and `.github/workflows/*.yml`; propose the install / lint / typecheck / build / test lines in CI order and confirm them; `sdd config set commands "<cmd1>" "<cmd2>" ...`.
    - `models.*` — keep the defaults unless the human wants otherwise; say what they are.
    - `gates.delegated` — default none; explain in two lines what delegating means (the factory grants the gate after mechanical verification; `(judged)` adds the reviewer) and ask which, if any.

@@ -28,7 +28,7 @@ The only rule file in the repository; `CLAUDE.md` points here. Rules are one lin
 - **Q1** <test-double policy: what may be faked, what may never be mocked>
 - **Q2** Every requirement has a test asserting its observable outcome; every rejection is asserted by its exact name.
 - **Q3** Deleting, skipping or weakening a test is a BLOCKER unless the Spec changed.
-- **C1** Everything inside code is English — identifiers, comments, test names, logs and developer-facing error text; only end-user messages and prose documents use the language configured in `.sdd/config.yml`.
+- **C1** Everything in the repository is English — code, identifiers, comments, docstrings, test names, logs, developer-facing error text, READMEs and every document under `docs/` (constitution, blueprint, specs, designs, ADRs), so documents carry straight into code. Only end-user messages and tracker prose (issue and PR comments, PR descriptions, issue forms) use the language configured in `.sdd/config.yml`.
 - **W1** Branch from `main`, Draft PR immediately with `Closes #N`; never push to `main`. Conventional Commits; never rewrite published history.
 - **W2** Spec, Design, ADRs, the Blueprint and this Constitution change only through their own Issue types; agents never edit them in passing.
 - **W3** Every architecturally significant decision is one immutable ADR under `docs/adrs/`; a reversal supersedes, never edits.
