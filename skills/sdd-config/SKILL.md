@@ -18,7 +18,7 @@ Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd`. Reference template with ev
 - `validate` → `sdd config validate` and explain each problem with the fix.
 - `<key>` alone → print the current value and the allowed values, ask for the new one.
 - `<key> <value...>` → `sdd config set <key> <value...>` (several values for a list key: `gates.delegated Intake "Plan (judged)"`, `commands "pnpm install --frozen-lockfile" "pnpm test"`; no value for an empty list), then `sdd config validate`.
-- Missing file → `sdd config init --from-constitution`, then proceed as `show`.
+- Missing file → `sdd config init`, then proceed as `show`.
 
 ## Keys
 

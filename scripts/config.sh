@@ -6,8 +6,7 @@
 #   sdd config get <key>                     → prints a scalar, or a list one item per line (dot keys: models.plan, gates.delegated)
 #   sdd config set <key> <value>...          → sets a scalar (one value) or a list (several values, or none = empty list); keeps comments
 #   sdd config show                          → prints the whole file
-#   sdd config init [--from-constitution]    → creates .sdd/config.yml from the template if missing; --from-constitution migrates
-#                                              Language, Rework budget, Delegated gates, Warnings at Final and Commands from docs/constitution.md
+#   sdd config init                          → creates .sdd/config.yml from the template if missing
 #   sdd config validate                      → checks keys and values; exit 1 with one line per problem
 set -euo pipefail
 die() { printf 'sdd: %s\n' "$*" >&2; exit 1; }
@@ -172,19 +171,6 @@ case "$cmd" in
   init)
     mkdir -p "$(dirname "$file")"
     if [ -f "$file" ]; then printf 'exists   %s\n' "$file"; else cp "$tpl" "$file"; printf 'created  %s\n' "$file"; fi
-    if [ "${1:-}" = "--from-constitution" ] && [ -f "$root/docs/constitution.md" ]; then
-      c="$root/docs/constitution.md"
-      lang="$(grep -oE '\*\*Language:\*\*[[:space:]]*(en|es)' "$c" | grep -oE '(en|es)$' | head -1 || true)"
-      [ -n "$lang" ] && "$0" set language "$lang"
-      budget="$(grep -oE '\*\*Rework budget:\*\*[[:space:]]*[0-9]+' "$c" | grep -oE '[0-9]+$' | head -1 || true)"
-      [ -n "$budget" ] && "$0" set gates.rework_budget "$budget"
-      pol="$(grep -oE '\*\*Warnings at Final:\*\*[[:space:]]*(rework|merge|human)' "$c" | grep -oE '(rework|merge|human)$' | head -1 || true)"
-      [ -n "$pol" ] && "$0" set gates.warnings_at_final "$pol"
-      del="$(grep -oE '\*\*Delegated gates:\*\*[^—]*' "$c" | head -1 | sed 's/\*\*Delegated gates:\*\*//; s/[`*]//g' | tr ',;·' '\n\n\n' | sed 's/^ *//; s/ *$//' | grep -E '^(Intake|Spec|Design|Task|Final)( \(judged\))?$' || true)"
-      if [ -n "$del" ]; then set -- ; while read -r g; do set -- "$@" "$g"; done <<< "$del"; "$0" set gates.delegated "$@"; fi
-      cmds="$(awk '/^## Commands/{s=1;next} s&&/^## /{exit} s&&/^```/{f=!f;next} s&&f' "$c" | sed -E 's/[[:space:]]+#.*$//' | grep -vE '^[[:space:]]*(#|$)' || true)"
-      if [ -n "$cmds" ]; then set -- ; while IFS= read -r l; do set -- "$@" "$l"; done <<< "$cmds"; "$0" set commands "$@"; fi
-    fi
     ;;
-  *) sed -n '2,12p' "$0"; exit 1 ;;
+  *) sed -n '2,10p' "$0"; exit 1 ;;
 esac

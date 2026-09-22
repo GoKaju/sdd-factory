@@ -90,13 +90,6 @@ Two hooks the plugin ships (`SubagentStart`, `SubagentStop`, matcher `^sdd-facto
 
 Hooks enforce, in the main checkout and in every issue worktree: `docs/constitution.md` and `docs/blueprint.md` change only during a Constitution-type issue; approved `spec.md`, `design.md` and ADRs cannot be edited while their issue is in implementation or review; no `git push` to `main`, no force-push, no rebase / amend / reset --hard.
 
-## Upgrading from 2.x
-
-- `.sdd/config.yml`: replace `models.spec`, `models.design` and `models.task` with one `models.plan`; in `gates.delegated`, `Spec`, `Design` and `Task` become `Plan`. `sdd config validate` lists what is missing.
-- Issues in flight: an issue labelled `sdd:spec`, `sdd:design` or `sdd:task` (or their `-approved`) has no state in 3.0. Relabel it `sdd:ready` to re-plan it, or `sdd:plan-approved` when its spec, design and Task are already approved. `sdd state ensure-labels` creates the new labels.
-- Existing `spec.md` and `design.md` move to the new templates when an issue next touches them: scenarios inside each requirement, Components with a Location column instead of Layout.
-- Constitution: run `/sdd-init` to add `docs/blueprint.md` (and the `@docs/blueprint.md` line in `CLAUDE.md`), then open a Constitution issue that moves folder, naming and base-class conventions from the constitution to the blueprint and renumbers Workflow as W1–W3 (the hooks cite W1 for history and pushes, W2 for protected documents).
-
 ## Releasing a change
 
 Every PR bumps `version` in `.claude-plugin/plugin.json` (patch for fixes, minor for new behaviour, major for breaking changes). `claude plugin update` reinstalls only when the version differs from the installed one, so a merged PR without a bump never reaches anyone.
