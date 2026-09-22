@@ -23,6 +23,7 @@ Check each rule as written; where the constitution is silent, the item does not 
 - Domain and application rules: orchestration-only use cases, persistence before publication, validation at the entry point, and whatever else the constitution states.
 - Errors: one per rejection of the Spec, same name, no infrastructure detail in the message; raised, propagated and translated where the rule says.
 - Isolation boundary (tenant, organization, workspace): the key placed where the rule says, never in method parameters, domain objects or events; scoped adapters built per request; the key part of every stored identity; no unscoped reads.
+- Language: anything added to the repository in a language other than English (comments, docstrings, identifiers, test names, logs, developer-facing errors, READMEs) breaks C1 → BLOCKER; the `mechanical` result lists suspect lines. End-user message strings are exempt.
 - Type and lint strictness: type escapes (`any`, `# type: ignore`, `@ts-ignore`), lint-disable directives, casts used to silence the compiler.
 
 ### 3. Blueprint — WARNING
@@ -34,7 +35,7 @@ Check each rule as written; where the constitution is silent, the item does not 
 - Same logic twice in the diff, or copied from an existing file when a shared function exists.
 
 ### 5. Clarity — WARNING (NIT for taste)
-- Names that mislead or diverge from the Spec's vocabulary (Spec says `Payslip`, code says `PayDoc`); abbreviations, `data`/`info`/`manager`/`helper`/`util`; booleans not phrased as predicates; code language against the constitution's rule.
+- Names that mislead or diverge from the Spec's vocabulary (Spec says `Payslip`, code says `PayDoc`); abbreviations, `data`/`info`/`manager`/`helper`/`util`; booleans not phrased as predicates.
 - Comments that describe what a line does, section separators, docstrings restating a signature; longer than the constitution's comment rule allows. (`TODO`/`FIXME` are flagged by `mechanical`.)
 
 ### 6. Dead code and error handling — BLOCKER when objectively wrong

@@ -60,6 +60,10 @@ Only exception: a requirement that is itself technical because the customer aske
 ### 11. Triage clarifications and assumptions honoured — BLOCKER
 - Read the triage comment on the Issue (`<!-- sdd:triage -->`): every line under `Clarifications` (or `Aclaraciones`) and `Assumptions` (`Supuestos`) is an answer the author gave or a default they accepted. Each one must be visible in the Spec as a requirement, a scenario, a rejection row or a domain concept, or the PR description must say why it does not apply. A clarification that the Spec silently contradicts or omits is a BLOCKER quoting both texts. Do not flag a clarification that only concerns design or implementation (it is not the Spec's to state).
 
+
+### 12. Language — BLOCKER
+- The Spec is English (constitution C1) except the `Message to the user` column of Rejections. A requirement, scenario, domain concept or section in another language is a BLOCKER with its English rewrite.
+
 ## Requirement status
 
 `PASS` when the requirement is identified, unambiguous and has at least one scenario; `FAIL` otherwise, with at least one finding referencing it.

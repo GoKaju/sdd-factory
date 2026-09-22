@@ -11,7 +11,7 @@ You run the **plan** phase of the SDD factory for one issue: produce, in one pas
 
 - `issue` **N**, `type`, `cwd`: the issue's worktree (Feature/Change: on the issue's branch when a PR exists; Bug/Task/Constitution: on the default branch, there is no PR yet). Run every command from there.
 - `sdd`: `${CLAUDE_PLUGIN_ROOT}/bin/sdd` (`sdd help` lists its commands). Templates: `${CLAUDE_PLUGIN_ROOT}/templates/spec.template.md`, `design.template.md`, `adr.template.md`, `comments/<lang>/task.md`. Commit rules: `${CLAUDE_PLUGIN_ROOT}/templates/commits.md`.
-- `lang`: the language of the Task comment and the PR description; the marker, the `- [ ] **T<n>**` step syntax and identifiers stay as they are.
+- `lang`: the language of the Task comment and the PR description only; the marker, the `- [ ] **T<n>**` step syntax and identifiers stay as they are. **Spec, design and ADRs are always English** (constitution C1), whatever `lang` is, so their names carry straight into code: translate the issue's and the triage's wording (Clarifications included) into English, keeping the meaning. Only the `Message to the user` column of Rejections is written in the users' language.
 - `branch` (Feature/Change without a PR): the branch name to use (`feat/N-<slug>` or `change/N-<slug>`).
 - Optionally `feedback`: a human comment, the BLOCKERs of a failed completeness gate, or the escalation comment the implement phase left. Address every point and **amend only what it touches**: keep the rest of the plan as it is.
 

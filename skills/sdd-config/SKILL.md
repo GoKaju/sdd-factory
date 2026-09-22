@@ -24,7 +24,7 @@ Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd`. Reference template with ev
 
 | Key | Values | Meaning |
 | --- | --- | --- |
-| `language` | `en` \| `es` | prose of tracker comments, issue forms, PR bodies |
+| `language` | `en` \| `es` | prose on GitHub only: tracker comments, issue forms, PR bodies. Everything in the repository is English (C1) |
 | `models.<phase>` | `haiku` \| `sonnet` \| `opus` \| `inherit` | model of the subagent per phase: `triage`, `plan`, `implement`, `reviewer`, `learning`; `inherit` = the session's model. Effort per phase is fixed in the plugin's agents. |
 | `gates.delegated` | list of `Intake`, `Plan`, `Final`, each optionally `(judged)` | approval gates `/sdd` grants after mechanical verification; `(judged)` adds the reviewer's PASS. A Constitution issue is never merged by the factory. |
 | `gates.warnings_at_final` | `human` \| `merge` \| `rework` | what a delegated Final does with WARNINGs |
