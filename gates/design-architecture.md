@@ -4,7 +4,7 @@
 
 ## Procedure
 
-1. Read the constitution's architecture, domain, error and naming rules; then `design.md`, then `spec.md`. Read the ADRs the design links and the ones the PR adds.
+1. Read the constitution's rules and the blueprint (`docs/blueprint.md`, in the pack); then `design.md`, then `spec.md`. Read the ADRs the design links and the ones the PR adds.
 2. Read the diff, then every changed file **in full** plus its neighbors (package index, mappers, wiring, tests): a violation often lives in the file that was not changed.
 3. Walk the checklist. Cite `path:line` and give the concrete fix.
 
@@ -21,7 +21,6 @@ Check each architecture rule of the constitution as written. Typical checks:
 - Dependency direction between the packages or layers the constitution names (grep imports across package boundaries).
 - Modules that must not import each other and how they may communicate instead.
 - Code that must not know the runtime, framework, cloud SDK or storage driver (grep those imports in the protected layers).
-- Placement of files by kind and the folder rules (flat folders, one unit per folder).
 
 ### C. Domain and application rules — BLOCKER when the constitution states the rule
 Verify each domain rule of the constitution as written: base classes to extend, factory and rehydration contracts, immutability and validation of value objects, absence of serialization on domain objects, orchestration-only services, plain commands and queries, persistence before publication, read side served by projections. Where the constitution has no such rule, do not invent one; report over-engineering under E instead.
@@ -31,6 +30,9 @@ Verify each domain rule of the constitution as written: base classes to extend, 
 
 ### E. Isolation boundary — BLOCKER when the constitution has a tenancy or isolation rule
 - The boundary key (tenant, organization, workspace) is placed where the rule says (typically adapter construction, never method parameters, domain objects or events); scoped adapters built per request, never shared; the key is part of every stored identity and unique constraint; no unscoped reads.
+
+### F0. Blueprint — WARNING
+- An element placed, named or shaped differently from the blueprint's row for its kind (location, file name, base class or shape), or built unlike its exemplar, when the design does not fix it otherwise. A kind the blueprint does not list → NIT proposing a Constitution issue to add it. Never BLOCKER: the blueprint is convention; only a constitution rule blocks.
 
 ### F. Naming and conventions — WARNING (NIT for pure style)
 - File and identifier conventions the constitution states; language of identifiers, comments, test names and logs (the constitution's code-language rule); named exports or module surface rules.

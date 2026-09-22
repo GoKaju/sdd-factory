@@ -1,6 +1,6 @@
 ---
 name: sdd-init
-description: Initialize a repository for the SDD factory - constitution, .sdd/config.yml (assisted), CLAUDE.md pointer, state labels, organization Issue Types and issue forms. Run once per project; idempotent.
+description: Initialize a repository for the SDD factory - constitution, blueprint, .sdd/config.yml (assisted), CLAUDE.md pointer, state labels, organization Issue Types and issue forms. Run once per project; idempotent.
 argument-hint: "[project-name]"
 disable-model-invocation: true
 allowed-tools: Bash, Read, Write, Edit, Grep, Glob, AskUserQuestion
@@ -8,7 +8,7 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, AskUserQuestion
 
 # /sdd-init [project-name]
 
-Initialize the current repository for Spec-Driven Development with the sdd-factory plugin. Idempotent: re-running adds what is missing and never overwrites an existing `docs/constitution.md` or `.sdd/config.yml`.
+Initialize the current repository for Spec-Driven Development with the sdd-factory plugin. Idempotent: re-running adds what is missing and never overwrites an existing `docs/constitution.md`, `docs/blueprint.md` or `.sdd/config.yml`.
 
 Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd` (`sdd help` lists its commands). Templates live in `${CLAUDE_PLUGIN_ROOT}/templates/`.
 
@@ -16,7 +16,9 @@ Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd` (`sdd help` lists its comma
 
 1. **Preconditions.** `gh auth status` succeeds; the repository has a GitHub remote; the owner is an **organization** (native Issue Types do not exist on personal accounts). If the owner is a user account, stop and explain. `jq` and `python3` are installed.
 
-2. **Constitution.** If `docs/constitution.md` does not exist, copy `templates/constitution.template.md` there and fill in what the repository reveals: project name (the argument or the repo name), runtime and persistence if obvious from dependencies. Leave every unknown as its `<placeholder>` and list the placeholders at the end so the human fills them. Do not invent rules: the `## Rules` blocks carry placeholders the team writes (or copies from `templates/examples/`); only the Workflow block, C1 and Q3 are the framework's own and stay as they are. If an existing constitution still carries a `## Commands` block or `Language` / `Rework budget` / `Delegated gates` / `Warnings at Final` lines (v1 layout), leave the file alone here: step 3 migrates the values and you then propose the cleanup as a Constitution issue.
+2. **Constitution.** If `docs/constitution.md` does not exist, copy `templates/constitution.template.md` there and fill in what the repository reveals: project name (the argument or the repo name), the Stack table if obvious from dependencies. Leave every unknown as its `<placeholder>` and list the placeholders at the end so the human fills them. Do not invent rules: the rule lines with placeholders are the team's to write (or to copy from `templates/examples/`); only the Workflow lines, C1 and Q3 are the framework's own and stay as they are. Keep it to rules a review blocks on; conventions go to the blueprint (step 2b).
+
+2b. **Blueprint.** If `docs/blueprint.md` does not exist, copy `templates/blueprint.template.md` there. When the repository already has code, fill it from what it shows: the module layout of an existing module, one row per kind of element you find (location pattern, file-name pattern, base class or shape) with a **real file** as exemplar, and one exemplar per kind of test. Describe only what the code already does consistently; where modules disagree, leave the row as a `<placeholder>` and list it for the human. A repository without code keeps the placeholders (the first Feature fills them through a Constitution issue). If an existing constitution still carries a `## Commands` block or `Language` / `Rework budget` / `Delegated gates` / `Warnings at Final` lines (v1 layout), leave the file alone here: step 3 migrates the values and you then propose the cleanup as a Constitution issue.
 
 3. **Config, assisted.** `sdd config init --from-constitution` creates `.sdd/config.yml` from the template (and migrates v1 values when present). Then fill it with the human, one question at a time when the repository does not answer it:
    - `language` (en | es) — from the constitution or the issue templates if any; else ask.
@@ -29,6 +31,7 @@ Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd` (`sdd help` lists its comma
 4. **Pointer file.** Write `CLAUDE.md` with exactly:
    ```
    @docs/constitution.md
+   @docs/blueprint.md
    ```
    If it exists with other content, do not overwrite: show the diff and ask.
 

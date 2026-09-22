@@ -4,7 +4,7 @@
 
 ## Procedure
 
-1. Read the constitution's code rules and the Spec (its vocabulary is the naming reference).
+1. Read the constitution's code rules, the blueprint's naming conventions and the Spec (its vocabulary is the naming reference).
 2. Read the diff, then each changed file in full and the sibling files it duplicates or could reuse.
 3. Walk the checklist; cite `path:line` and give the simpler alternative.
 

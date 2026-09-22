@@ -73,7 +73,7 @@ Only for a gate the config lists. Verify mechanically **before** `sdd state set`
   - none → `sdd pr merge N`.
   - `human` → hold: comment on the PR listing the WARNINGs and that a person merges or writes `/rework`; go to §4.
   - `merge` → `sdd pr merge N` and one PR comment listing the accepted WARNINGs.
-  - `rework` → WARNINGs located under `docs/` cannot go to rework (W3): list them in a PR comment as input for a Change. For the rest, if `cycle + 1 < budget`, write **one** PR comment starting with `/rework` and one bullet per code WARNING (`<gate> · <location> · <what to change>`), then `sdd rework apply N` (state → `rework`, the loop launches implement). Budget exhausted or only docs WARNINGs → fall back to `human`. Never file a `/rework` for a NIT.
+  - `rework` → WARNINGs located under `docs/` cannot go to rework (W2): list them in a PR comment as input for a Change. For the rest, if `cycle + 1 < budget`, write **one** PR comment starting with `/rework` and one bullet per code WARNING (`<gate> · <location> · <what to change>`), then `sdd rework apply N` (state → `rework`, the loop launches implement). Budget exhausted or only docs WARNINGs → fall back to `human`. Never file a `/rework` for a NIT.
 - When a check fails: do not grant; comment once on the issue why the gate was withheld; continue as `human`.
 
 ## 4. Wait for a human (no tokens)

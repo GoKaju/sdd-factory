@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Claude Code PreToolUse (Write|Edit): protects the constitution and, while an issue is being implemented,
+# Claude Code PreToolUse (Write|Edit): protects the constitution and the blueprint and, while an issue is being implemented,
 # the approved spec.md / design.md files.
 #
 # Flags (files under ~/.sdd/<owner>-<repo>/, written by /sdd via `sdd flag`):
@@ -17,11 +17,11 @@ root="$(repo_top_of "$path")"
 rel="${path#"$root"/}"
 
 case "$rel" in
-  docs/constitution.md)
-    has_flag allow-constitution || block "docs/constitution.md changes only through a Constitution-type issue (/sdd sets the flag while implementing one). Rule W3."
+  docs/constitution.md|docs/blueprint.md)
+    has_flag allow-constitution || block "$rel changes only through a Constitution-type issue (/sdd sets the flag while implementing one). Rule W2."
     ;;
   docs/*/*/spec.md|docs/*/*/design.md|docs/adrs/*.md)
-    has_flag lock-docs && block "$rel is approved and the issue is in implementation/review. Stop and reclassify the issue as Change instead of editing spec, design or ADRs in passing. Rule W3."
+    has_flag lock-docs && block "$rel is approved and the issue is in implementation/review. Stop and reclassify the issue as Change instead of editing spec, design or ADRs in passing. Rule W2."
     ;;
 esac
 exit 0

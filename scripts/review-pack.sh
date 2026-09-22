@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the shared review pack for an issue's PR, so the Review Gate agents read one file instead of
-# each exploring the repository: constitution, issue + comments (triage, Task), affected spec/design
+# each exploring the repository: constitution and blueprint, issue + comments (triage, Task), affected spec/design
 # (approved version on the base branch and PR version), the full PR diff, touched files and test stats.
 #
 #   sdd review-pack build <issue> [cycle]   → prints the pack path (~/.sdd/<owner>-<repo>/review-pack-<issue>.md)
@@ -27,6 +27,7 @@ fence() { printf '```%s\n' "${1:-}"; cat; printf '\n```\n'; }
   printf -- '- This pack is the primary input of every Review Gate. Open repository files only for what it lacks (code surrounding a hunk, a file the diff references but does not contain).\n'
 
   section "Constitution (docs/constitution.md)"; cat docs/constitution.md
+  [ -f docs/blueprint.md ] && { section "Blueprint (docs/blueprint.md)"; cat docs/blueprint.md; }
   section "Issue #$issue with comments (triage and Task included)"; gh issue view "$issue" --comments
 
   # Changed spec/design: the PR version in full, plus a unified diff against the approved version

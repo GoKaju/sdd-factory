@@ -1,6 +1,6 @@
 # Gates for a documentation-only PR · design-architecture (coherence) + code-quality (clarity)
 
-The PR changes **only documents**: `docs/constitution.md`, a `spec.md`, a `design.md`, ADRs, templates or pointer files. There is no code and no test to judge, so `spec-compliance`, `test-strategy`, `security` and `regression` are skipped mechanically by the skill (`sdd gate-result skip`), and two gates run here: `design-architecture`, read as *coherence of the documents with each other and with the constitution*, and `code-quality`, read as *clarity and hygiene of the prose*. Emit two YAML blocks, in that order, both following `templates/gate-result.template.yaml`.
+The PR changes **only documents**: `docs/constitution.md`, `docs/blueprint.md`, a `spec.md`, a `design.md`, ADRs, templates or pointer files. There is no code and no test to judge, so `spec-compliance`, `test-strategy`, `security` and `regression` are skipped mechanically by the skill (`sdd gate-result skip`), and two gates run here: `design-architecture`, read as *coherence of the documents with each other and with the constitution*, and `code-quality`, read as *clarity and hygiene of the prose*. Emit two YAML blocks, in that order, both following `templates/gate-result.template.yaml`.
 
 ---
 
@@ -13,7 +13,8 @@ The PR changes **only documents**: `docs/constitution.md`, a `spec.md`, a `desig
 - The version bump follows the change: removing or rewording a rule so that something previously forbidden is allowed is a **major**; added rules are a **minor**; wording only is a **patch**. Mismatch is BLOCKER.
 - The change is exactly what the issue body describes: a rule the issue does not mention, added or removed, is BLOCKER; a rule the issue announces and the diff lacks is BLOCKER.
 - No model names, runner settings, provider names or costs inside the constitution: orchestrator policy does not live here (WARNING if descriptive, BLOCKER if it acts as a rule).
-- Identity, Decisions and Verification stay consistent with the Rules. `CLAUDE.md` remains a pointer only.
+- Identity and Stack stay consistent with the Rules. `CLAUDE.md` remains a pointer only.
+- Constitution and blueprint stay apart: a prose rule inside the blueprint ("never", "must") belongs in the constitution (WARNING); a folder, naming or base-class convention inside the constitution belongs in the blueprint (WARNING). Every exemplar path the blueprint names exists in the repository (BLOCKER when missing).
 
 ### Spec and design changes — BLOCKER unless noted
 - Every requirement keeps its stable ID; renumbered or reused IDs are BLOCKER.

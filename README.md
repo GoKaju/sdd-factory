@@ -54,7 +54,8 @@ The **plan** phase writes, in one pass like an OpenSpec proposal, everything the
 | Issue | intent, triage comment, Task comment with checklist, `sdd:<state>` label |
 | Draft PR | `spec.md`, `design.md`, ADRs, code, gate results as comments, `.sdd/learning/<N>.md` |
 | `docs/` on `main` | approved, merged truth: `docs/<domain>/<module>/{spec,design}.md` (the current state of the module, never its history) and `docs/adrs/NNNN-*.md` (one immutable file per decision; reversals supersede) |
-| `docs/constitution.md` | the only **rule** file: Identity, Rules (one line each, stable IDs), Decisions, Verification. `CLAUDE.md` just points to it |
+| `docs/constitution.md` | the only **rule** file, short: Identity, Stack, Rules (one line each, stable IDs, only what a review blocks on), Amendments. `CLAUDE.md` points to it and to the blueprint |
+| `docs/blueprint.md` | how a module is **built**, shown by example: module layout and, per kind of element and test, its location, file name, shape and a real exemplar file. Diverging from it is a WARNING; changes through a Constitution issue |
 | `.sdd/config.yml` | how the factory **operates**: language, model per phase, delegated gates, warnings policy, rework budget, await limits, check commands (`sdd ci`) |
 | `.sdd/learning/<N>.md` | one learning document per issue, for the people improving the project's rules and this plugin: metrics per phase, findings, escalations, frictions with concrete suggestions. `/sdd` never reads them |
 | `.sdd/worktrees/issue-<N>/` | git worktree per issue (git-ignored): `/sdd` moves in at start and every phase works there; your checkout stays untouched; two issues can run in two sessions |
@@ -70,14 +71,14 @@ skills/           sdd (the orchestrator), sdd-init, sdd-config, sdd-status
 agents/           one subagent per phase: triage, plan, implement, reviewer, learning (model and effort in the frontmatter; model overridden by .sdd/config.yml)
 gates/            one checklist per Review Gate (completeness, spec-compliance, test-strategy, design-architecture, code-quality, security, regression, docs) + README with the common rules
 hooks/            PreToolUse hooks: protect docs/constitution.md and approved spec/design/ADRs (also inside issue worktrees); deny push to main, force-push, history rewrites
-templates/        constitution, config, learning, commits, spec, design, adr, gate-result, comments/{en,es}, issue-forms/{en,es}, examples/constitution.ddd-ts.md
+templates/        constitution, blueprint, config, learning, commits, spec, design, adr, gate-result, comments/{en,es}, issue-forms/{en,es}, examples/{constitution,blueprint}.ddd-ts.md
 ```
 
 ## Design choices
 
 - **One entry point, mechanical decisions.** A person starts each issue with `/sdd N`; nothing scans the tracker. `sdd next N` is the state machine of that one issue and `sdd await N` the waiting: both bash, both free. The `/sdd` skill spends tokens only to read a subagent's report, verify an artifact, and decide what a human comment means.
 - **One subagent per phase, fresh context.** Each phase reads only what it needs and ends with a YAML report; `/sdd` owns every state transition. The reviewer never shares context with the agent it judges.
-- **Rules and operation apart.** The constitution changes through a Constitution issue; the config changes with `/sdd-config`. The gates check the constitution's rules as written and skip what it does not state; nothing in the framework names a folder layout, a language or a package manager.
+- **Rules, conventions and operation apart.** The constitution states the few rules a review blocks on; the blueprint shows how things are built with real exemplar files, which an agent copies better than it follows prose; both change through a Constitution issue, while the config changes with `/sdd-config`. The gates check the constitution's rules as written and skip what it does not state; nothing in the framework names a folder layout, a language or a package manager.
 - **Documents are the current truth.** Spec and design never carry history; decisions are ADRs; deltas live in the PR description; drift is fixed in code, never by editing the document.
 - **Humans hold the gates** unless they delegate them explicitly, gate by gate. A Constitution issue is never merged by the factory.
 
@@ -87,13 +88,14 @@ Two hooks the plugin ships (`SubagentStart`, `SubagentStop`, matcher `^sdd-facto
 
 ## Guarantees
 
-Hooks enforce, in the main checkout and in every issue worktree: `docs/constitution.md` changes only during a Constitution-type issue; approved `spec.md`, `design.md` and ADRs cannot be edited while their issue is in implementation or review; no `git push` to `main`, no force-push, no rebase / amend / reset --hard.
+Hooks enforce, in the main checkout and in every issue worktree: `docs/constitution.md` and `docs/blueprint.md` change only during a Constitution-type issue; approved `spec.md`, `design.md` and ADRs cannot be edited while their issue is in implementation or review; no `git push` to `main`, no force-push, no rebase / amend / reset --hard.
 
 ## Upgrading from 2.x
 
 - `.sdd/config.yml`: replace `models.spec`, `models.design` and `models.task` with one `models.plan`; in `gates.delegated`, `Spec`, `Design` and `Task` become `Plan`. `sdd config validate` lists what is missing.
 - Issues in flight: an issue labelled `sdd:spec`, `sdd:design` or `sdd:task` (or their `-approved`) has no state in 3.0. Relabel it `sdd:ready` to re-plan it, or `sdd:plan-approved` when its spec, design and Task are already approved. `sdd state ensure-labels` creates the new labels.
 - Existing `spec.md` and `design.md` move to the new templates when an issue next touches them: scenarios inside each requirement, Components with a Location column instead of Layout.
+- Constitution: run `/sdd-init` to add `docs/blueprint.md` (and the `@docs/blueprint.md` line in `CLAUDE.md`), then open a Constitution issue that moves folder, naming and base-class conventions from the constitution to the blueprint and renumbers Workflow as W1–W3 (the hooks cite W1 for history and pushes, W2 for protected documents).
 
 ## Releasing a change
 
@@ -101,4 +103,4 @@ Every PR bumps `version` in `.claude-plugin/plugin.json` (patch for fixes, minor
 
 ## Adding a gate
 
-Write `gates/<name>.md` (question, procedure, checklist with severities, output schema), list it in the constitution's Verification, and name it in the `gates:` input of the reviewer. `sdd gate-result aggregate` treats every posted result the same way.
+Write `gates/<name>.md` (question, procedure, checklist with severities, output schema), and name it in the `gates:` input of the reviewer. `sdd gate-result aggregate` treats every posted result the same way.

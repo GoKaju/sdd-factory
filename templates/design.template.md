@@ -18,11 +18,11 @@ Three lines, no more:
 
 ## Components
 
-One row per element the code must have, named in the constitution's vocabulary (aggregate, value object, use case, port, adapter, handler… only the kinds the constitution defines). **Location** fixes the file or folder of every element whose placement or file name the constitution's rules do not determine; write `per rules` when they do. The Task and the implement phase never choose a name or a place: they take it from here.
+One row per element the code must have; **Kind** is one of the kinds of `docs/blueprint.md`. **Location** fixes the file or folder of every element whose placement or file name the blueprint does not determine; write `per blueprint` when it does. The Task and the implement phase never choose a name or a place: they take it from here.
 
 | Component | Kind | Responsibility | Location | Requirements |
 | --- | --- | --- | --- | --- |
-| `<Name>` | <kind> | <what it does or enforces, one line> | `<path>` · per rules | <MODULE>-NNN |
+| `<Name>` | <kind> | <what it does or enforces, one line> | `<path>` · per blueprint | <MODULE>-NNN |
 
 Design notes: one line each, under the table of the section they belong to (Components, Errors, Contracts), for choices that are not ADRs, citing the requirement or rule they follow.
 

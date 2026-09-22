@@ -4,7 +4,7 @@
 
 ## Procedure
 
-1. Read the Spec, the Design and the constitution's test rules and test exemplars (if it names any; hold new tests to that standard).
+1. Read the Spec, the Design, the constitution's test rules and the blueprint's test exemplars (hold new tests to that standard; diverging from an exemplar is a WARNING).
 2. From the diff, list every test file added, modified and **deleted**; for each, the added cases, removed cases and modified assertions. Recover deleted bodies with `git show origin/<base>:<path>`.
 3. Build the requirement table. For each `<MODULE>-NNN`, locate the test(s) proving it: grep the ID literally, then search by behavior. A requirement is proven only when a test drives the behavior and asserts its observable outcome.
 4. Review new or modified tests against the checklist; classify every removed or weakened test as JUSTIFIED or SUSPICIOUS.
