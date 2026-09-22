@@ -9,7 +9,8 @@ status: draft | approved   ← flipped to approved by the next phase when the hu
      persistence, repositories, views or read models, events and their delivery, idempotency mechanics,
      concurrency control, HTTP/API/frontend, test doubles, class or file names, layer names.
      "Out of scope" lists business capabilities deliberately left out, never deferred technical decisions.
-     Rejections are named here (business reason + message); the design maps them to domain errors. -->
+     Rejections are named here (business reason + message); the design maps them to domain errors.
+     The spec is the current state of the module: no open questions, decisions or history (they go to the PR description). -->
 
 ## Purpose
 
@@ -28,7 +29,7 @@ status: draft | approved   ← flipped to approved by the next phase when the hu
 
 ## Requirements
 
-Every requirement has a stable ID `<MODULE>-NNN`. IDs are never reused or renumbered. Use EARS where it adds precision:
+Every requirement is `### <MODULE>-NNN <short name>`: a stable ID, never reused or renumbered, and a name for the reader. The statement uses EARS where it adds precision; an invariant that always holds is a requirement too (`THE SYSTEM SHALL …`).
 
 ```text
 WHEN <trigger>, THE SYSTEM SHALL <response>.
@@ -37,17 +38,19 @@ WHILE <state>, THE SYSTEM SHALL <response>.
 WHERE <feature is enabled>, THE SYSTEM SHALL <behavior>.
 ```
 
-### <MODULE>-001
+Every requirement has at least one `#### Scenario:` with a concrete input and its observable outcome. Edge cases (empty, boundary, duplicate, repeated, out of order…) are scenarios of the requirement they affect.
+
+### <MODULE>-001 <short name>
 WHEN <…>,
 THE SYSTEM SHALL <…>.
 
-### <MODULE>-002
-IF <…>,
-THEN THE SYSTEM SHALL <…>.
+#### Scenario: <happy path>
+- **WHEN** <concrete input>
+- **THEN** <observable outcome>
 
-## Business rules
-
-- **BR-1:** <invariant that always holds, in business language>
+#### Scenario: <edge case>
+- **WHEN** <boundary input>
+- **THEN** <observable outcome, or the rejection by name: `<SomethingNotAllowed>`>
 
 ## Rejections
 
@@ -58,16 +61,3 @@ One row per business reason the system refuses a request. The name is part of th
 | `<SomethingNotAllowed>` | <when it happens, in business terms> | <what the user reads> | <MODULE>-NNN |
 
 When one request breaks several rules at once, state which rejection wins (a fixed checking order).
-
-## Edge cases
-
-- <boundary, empty, duplicate, concurrent, out-of-order…> → <expected behavior, referencing a requirement ID>
-
-## Acceptance criteria
-
-- [ ] <MODULE>-001: <observable check>
-- [ ] <MODULE>-002: <observable check>
-
-## Open questions
-
-- <only questions still open right now; anything here blocks Approval Gate 1. Answered questions, decisions and their rationale go to the PR description, never here: the spec is the current truth, not its history>

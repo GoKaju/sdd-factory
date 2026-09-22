@@ -11,7 +11,7 @@
 ## Checklist
 
 ### A. Conformance to design.md — BLOCKER
-- Every element the Design names (components, aggregates, services, use cases, ports, adapters, events, endpoints, files named in Layout) exists with that name, in that place.
+- Every element the Design names (each row of Components with its Location, each Error, each Contract) exists with that name, in that place.
 - No element the Design does not declare: a new port, event, use case, table or entry point is BLOCKER; a purely internal helper is WARNING.
 - Decisions recorded in the linked ADRs are honored. A decision reversed in code without a superseding ADR is a deviation.
 - Any element implemented differently from the Design (placement, collaborator, shape, name) without the design amended in the same PR through the design phase → BLOCKER. A note in the PR body does not count: merged code and design must say the same thing.
@@ -39,7 +39,7 @@ Verify each domain rule of the constitution as written: base classes to extend, 
 - A service or abstraction whose only job is orchestration the caller could do (a "finder" that loads by id or throws NotFound); abstractions with a single implementation and no port role; indirection not traceable to a requirement or a rule. Propose the simpler shape.
 
 ### H. Scope — WARNING
-- Files changed outside the module's Layout and boundary declared in `design.md` without a reason in the PR body → WARNING naming each file.
+- Files changed outside the Locations and Boundary declared in `design.md` without a reason in the PR body → WARNING naming each file.
 
 ### I. Design document hygiene (when the PR edits design.md) — WARNING, NIT if minor
 - Sentences that restate a constitution rule instead of a module-specific decision; a file inventory or test list in the design; errors whose names do not match the Spec's Rejections; any narration of history ("changed after…", "not in this change").

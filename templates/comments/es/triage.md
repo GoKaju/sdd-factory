@@ -31,7 +31,7 @@
 
 ### Aclaraciones
 <!-- Respuestas del autor, una línea cada una, con sus palabras cuando son cortas. Son entradas de la spec: cada una se convierte
-     en requisito, rechazo o criterio de aceptación, y la gate de completitud lo comprueba. Nunca se borran en ejecuciones posteriores. -->
+     en requisito, escenario o rechazo, y la gate de completitud lo comprueba. Nunca se borran en ejecuciones posteriores. -->
 - <pregunta> → <respuesta>
 
 ### Supuestos

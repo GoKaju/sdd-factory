@@ -13,7 +13,7 @@
 
 ### 1. Coverage of the Spec — BLOCKER
 - Every requirement ID has at least one test asserting its observable outcome. Example: Spec `OT-003: IF the policy defines no percentage, THEN THE SYSTEM SHALL reject the calculation.` Tests found: "calculates overtime", "applies the percentage". Result: FAIL, the rejection is not tested.
-- Happy paths, failure paths, every edge case listed in the Spec, every business rule, every acceptance criterion, every rejection (asserting the **exact** refusal, not a generic failure), and the regression scenarios named in the Task.
+- Every scenario of the Spec (happy paths, failure paths and edge cases), every rejection (asserting the **exact** refusal, not a generic failure), and the regression scenarios named in the Task.
 
 ### 2. What each layer must cover — BLOCKER when the constitution has the rule, WARNING otherwise
 Apply the constitution's test rules as written. Typical rules and how to check them:

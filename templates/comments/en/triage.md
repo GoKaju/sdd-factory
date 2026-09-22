@@ -31,7 +31,7 @@
 
 ### Clarifications
 <!-- Answers the author gave, one line each, in their words when short. Inputs for the spec: each becomes a requirement,
-     rejection or acceptance criterion; the completeness gate checks it did. Never removed in later runs. -->
+     rejection or scenario; the completeness gate checks it did. Never removed in later runs. -->
 - <question> → <answer>
 
 ### Assumptions

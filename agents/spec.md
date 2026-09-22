@@ -16,16 +16,16 @@ You run the **spec** phase of the SDD factory for one issue: produce the specifi
 
 ## Steps
 
-1. **Context.** Read `docs/constitution.md`, the issue (`gh issue view N --comments`) and its triage comment (`sdd comment get N sdd:triage`) for the affected `docs/<domain>/<module>/`. The triage's **Clarifications** and **Assumptions** are the author's decisions: list them before writing and make every one visible in the spec (requirement, rejection row, domain concept or acceptance criterion). One you believe does not belong in the spec is explained in the PR description, never dropped; the completeness gate checks this.
+1. **Context.** Read `docs/constitution.md`, the issue (`gh issue view N --comments`) and its triage comment (`sdd comment get N sdd:triage`) for the affected `docs/<domain>/<module>/`. The triage's **Clarifications** and **Assumptions** are the author's decisions: list them before writing and make every one visible in the spec (requirement, scenario, rejection row or domain concept). One you believe does not belong in the spec is explained in the PR description, never dropped; the completeness gate checks this.
 2. **Branch and Draft PR.** If `sdd pr find N` is empty: you are on `branch` (created by /sdd from the default branch); `sdd pr open N <branch> "<type>: <title>"` after the first commit. Otherwise the worktree is already on `sdd pr branch N`.
 3. **Spec.** New module: copy the template to `docs/<domain>/<module>/spec.md`; existing: edit it.
-   - Every requirement has a stable ID `<MODULE>-NNN`; never renumber or reuse. New requirements take the next number; a Change edits the text of existing IDs and marks superseded ones `Removed` rather than deleting them.
+   - Every requirement is `### <MODULE>-NNN <short name>`: a stable ID, never renumbered or reused, plus a name for the reader. New requirements take the next number; a Change edits the text of existing IDs and marks superseded ones `Removed` rather than deleting them.
    - Observable behavior, not implementation. EARS forms where they add precision.
    - **Business language only.** The reader is the person who opened the Issue. Never: tenant, isolation, repository, persistence, database, fake, view, projection, event, publish, consumer, idempotent, concurrency, lock, HTTP, API, endpoint, frontend, test, class, layer, aggregate, use case. Restate as what the user observes or move it to `design.md`. Isolation between customers is the constitution's concern; the spec reads as if a single customer existed.
    - **Out of scope** lists excluded business capabilities, never deferred technical decisions. **Domain concepts** are business nouns only.
    - **Rejections, not errors.** Every business reason to refuse a request is one row of the Rejections table (stable English name, condition, user message, requirement ID) plus the checking order. The spec never says "error", "exception" or "class".
-   - Edge cases and acceptance criteria per requirement.
-   - **The spec is the current state of the module; git is the history.** `## Open questions` holds only what is open right now (normally nothing; anything there blocks Gate 1). Decisions taken while writing and notes for Design go to the **PR description** (`gh pr edit --body`), never into the spec. Set `status: draft`.
+   - **Scenarios inside each requirement.** Every requirement has at least one `#### Scenario:` (`- **WHEN** <concrete input>` / `- **THEN** <observable outcome>`); its edge cases (empty, boundary, duplicate, repeated, out of order) are more scenarios of the same requirement. Invariants and business rules are requirements too, with their parameters stated. No separate acceptance-criteria, edge-case or business-rule sections.
+   - **The spec is the current state of the module; git is the history.** It has no open-questions section: a question still open goes to the PR description under `## Open questions` as an unchecked box (normally none; any unchecked box blocks Gate 1). Decisions taken while writing and notes for Design also go to the **PR description** (`gh pr edit --body`), never into the spec. Set `status: draft`.
 4. **Feedback.** When `feedback` is given, address every point: fix the spec, or answer in the PR description why not. Never loop on your own review; `/sdd` runs the completeness gate after you.
 5. **Commit and push** per `templates/commits.md`: `docs(<module>): spec for #N`. Never push the default branch. Leave no uncommitted change.
 
@@ -44,7 +44,7 @@ pr: <PR number>
 branch: <branch>
 spec: docs/<domain>/<module>/spec.md
 requirements: [<IDs added or changed>]
-open_questions: <number of unchecked items under Open questions>
+open_questions: <number of unchecked boxes under Open questions in the PR description>
 summary: <one sentence for the human>
 reason: <only when failed>
 ```

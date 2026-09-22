@@ -9,7 +9,7 @@ Issue number; PR number if the Draft PR exists; path `docs/<domain>/<module>/spe
 ## Checklist
 
 ### 1. Stable identifiers — BLOCKER
-- Every requirement has an ID `<MODULE>-NNN` (uppercase module code, three-digit number). IDs are unique.
+- Every requirement is a heading `### <MODULE>-NNN <short name>` (uppercase module code, three-digit number). IDs are unique.
 - An ID present in the approved version never names a different requirement now (compare with `git show`). Superseded requirements are marked `Removed`, never deleted or renumbered.
 - A sentence with SHALL / MUST / NEVER and no ID is an unidentified requirement.
 
@@ -21,26 +21,26 @@ Flag any requirement two competent engineers could implement differently:
 - A transformation that does not say what comes in, what goes out and what is rejected.
 - EARS (`WHEN … THE SYSTEM SHALL …`) is recommended, not mandatory; never flag a clear sentence for not using it.
 
-### 3. Acceptance criteria — BLOCKER
-- The section exists; every requirement has at least one observable, testable criterion (concrete input and expected outcome, not a restatement). Criteria describe behavior, never implementation.
+### 3. Scenarios — BLOCKER
+- Every requirement has at least one `#### Scenario:` with a concrete input (`WHEN`) and an observable outcome (`THEN`), not a restatement of the requirement. Scenarios describe behavior, never implementation. A scenario that refuses names the rejection from the table.
 
 ### 4. Edge cases — WARNING; BLOCKER when the edge case changes the happy path
-For each requirement: empty or absent input, boundaries (zero, negative, maximum, exactly at the limit), duplicates, repeated invocation, unavailable dependency, invalid state transition. List the missing ones in `required_action`.
+For each requirement, a scenario for: empty or absent input, boundaries (zero, negative, maximum, exactly at the limit), duplicates, repeated invocation, unavailable dependency, invalid state transition, wherever they apply. List the missing ones in `required_action`.
 
 ### 5. Conflicts — BLOCKER
-- Two requirements that cannot both hold; a requirement contradicting a business rule or a dependency Spec.
+- Two requirements (or two scenarios) that cannot both hold; a requirement contradicting a dependency Spec.
 - Do NOT evaluate the constitution's technical rules against the Spec: they apply to design and code, and raising them here pushes design vocabulary into the Spec.
 - A requirement contradicting an existing `design.md` with no note of which one changes. **Exception:** in a Change-type issue the Spec is expected to contradict the current Design; report it as a NIT listing the design sections to amend.
 
-### 6. Business rules and rejections — WARNING
-- Every rule a requirement relies on (limits, formulas, ordering, uniqueness) states its parameters.
+### 6. Rules and rejections — WARNING
+- Every rule a requirement relies on (limits, formulas, ordering, uniqueness) is itself a requirement and states its parameters.
 - Every business reason to refuse a request is one row of `## Rejections`: stable English name, condition, message to the user, requirement ID; the checking order is stated when several apply.
 
 ### 7. Open questions and placeholders — BLOCKER
-- `## Open questions` is empty or absent. No `TBD`, `TODO`, `???`, `to be defined`, `pending`, `<placeholder>` anywhere (grep for them; a plain word "todo" in Spanish prose is not a placeholder).
+- The PR description's `## Open questions` has no unchecked box, and the Spec has no open-questions section. No `TBD`, `TODO`, `???`, `to be defined`, `pending`, `<placeholder>` anywhere (grep for them; a plain word "todo" in Spanish prose is not a placeholder).
 
 ### 8. History in the spec — WARNING
-- Answered questions, decisions taken while writing, rationale, corrections from earlier cycles or notes for Design anywhere in the document. The spec is the current truth; that history belongs to the Issue and the PR description.
+- Open or answered questions, decisions taken while writing, rationale, corrections from earlier cycles or notes for Design anywhere in the document. The spec is the current truth; that history belongs to the Issue and the PR description.
 
 ### 9. Scope — WARNING
 - Purpose, Scope and Out of scope exist and agree. Anything the Issue asks for and the Spec omits is a WARNING quoting the Issue.
@@ -58,11 +58,11 @@ The Spec is written for the person who opened the Issue: WHAT, never HOW. Anywhe
 Only exception: a requirement that is itself technical because the customer asked for it ("data is exported as CSV").
 
 ### 11. Triage clarifications and assumptions honoured — BLOCKER
-- Read the triage comment on the Issue (`<!-- sdd:triage -->`): every line under `Clarifications` (or `Aclaraciones`) and `Assumptions` (`Supuestos`) is an answer the author gave or a default they accepted. Each one must be visible in the Spec as a requirement, a rejection row, a domain concept or an acceptance criterion, or the PR description must say why it does not apply. A clarification that the Spec silently contradicts or omits is a BLOCKER quoting both texts. Do not flag a clarification that only concerns design or implementation (it is not the Spec's to state).
+- Read the triage comment on the Issue (`<!-- sdd:triage -->`): every line under `Clarifications` (or `Aclaraciones`) and `Assumptions` (`Supuestos`) is an answer the author gave or a default they accepted. Each one must be visible in the Spec as a requirement, a scenario, a rejection row or a domain concept, or the PR description must say why it does not apply. A clarification that the Spec silently contradicts or omits is a BLOCKER quoting both texts. Do not flag a clarification that only concerns design or implementation (it is not the Spec's to state).
 
 ## Requirement status
 
-`PASS` when the requirement is identified, unambiguous and has an acceptance criterion; `FAIL` otherwise, with at least one finding referencing it.
+`PASS` when the requirement is identified, unambiguous and has at least one scenario; `FAIL` otherwise, with at least one finding referencing it.
 
 ## Output
 

@@ -1,106 +1,48 @@
 # Design — <Module name>
 
 spec: ./spec.md
-variant: full | light
 status: draft | approved   ← flipped to approved by the next phase when the human sets design-approved
-
-Pick ONE variant. Delete the other. Sections are optional: keep only what applies.
 
 <!-- A Design records DECISIONS specific to this module. It never restates rules that already live in
      docs/constitution.md; when a decision exists because of a rule, cite the rule ID in parentheses
-     ("Today enters through the Clock port (D5)"). Every element must trace to requirement IDs. -->
+     ("Today enters through the Clock port (D5)"). Every element must trace to requirement IDs.
+     The design is the current state of the module: what this change touches, leaves out or risks goes to the PR description.
+     Sections with nothing to say are written as "none", never deleted. -->
 
----
+## Boundary
 
-## Variant A — Full (domain model)
-
-Use when the change touches the domain model, use cases or module boundaries. The sections below are the usual ones for a domain model; delete the ones your constitution does not contemplate and rename them to your vocabulary.
-
-### Bounded Context
 Three lines, no more:
-- **Context:** `<name>` — owns <aggregates>.
-- **Relations:** <none | consumes/publishes which events with which contexts>.
-- **Multi-tenant:** <yes | no>. (How isolation is implemented is the constitution's T rules; do not restate them.)
+- **Module:** `<name>` — owns <what>.
+- **Relations:** <none | which modules it uses or serves, and through what>.
+- **Per customer:** <yes | no>. (How isolation is implemented is the constitution's concern; do not restate it.)
 
-### Domain Model
+## Components
 
-#### Aggregates
-| Aggregate | Identity | Invariants enforced | Events recorded |
-| --- | --- | --- | --- |
+One row per element the code must have, named in the constitution's vocabulary (aggregate, value object, use case, port, adapter, handler… only the kinds the constitution defines). **Location** fixes the file or folder of every element whose placement or file name the constitution's rules do not determine; write `per rules` when they do. The Task and the implement phase never choose a name or a place: they take it from here.
 
-#### Entities
-#### Value Objects
-| VO | Validates | Optional? (`fromOptional`) |
-| --- | --- | --- |
+| Component | Kind | Responsibility | Location | Requirements |
+| --- | --- | --- | --- | --- |
+| `<Name>` | <kind> | <what it does or enforces, one line> | `<path>` · per rules | <MODULE>-NNN |
 
-#### Domain Services
-#### Domain Events
-| Event | Emitted when | Payload | Consumers |
-| --- | --- | --- | --- |
+Design notes: one line each, under the table of the section they belong to (Components, Errors, Contracts), for choices that are not ADRs, citing the requirement or rule they follow.
 
-#### Domain Errors
+## Errors
+
 One per row of the spec's "Rejections" table, same name. Messages in **English**; the client shows and translates the spec's user message. Context values go in params, not in the message. Extra errors (invariants not visible to the user) are listed too.
-| Error | Rejection (spec) | Thrown when | Params |
+
+| Error | Rejection (spec) | Raised by | Params |
 | --- | --- | --- | --- |
 
-### Application
+## Contracts
 
-#### Use Cases
-| Use case | Command / Query | Returns | Requirements covered |
+What other modules or clients see: API or RPC procedures, events published or consumed, persisted formats, files. `none` when the module exposes nothing.
+
+| Contract | Kind | Shape | Requirements |
 | --- | --- | --- | --- |
 
-#### Ports
-| Port | Kind (repository / read repository / publisher / …) | Fake |
-| --- | --- | --- |
+## Decisions
 
-### Infrastructure
-
-#### Persistence
-<tables / keys / indexes; tenant key placement; migrations>
-
-#### Adapters
-| Port | Implementation | Runtime |
-| --- | --- | --- |
-
-#### External services
-
-### Interface
-
-#### API / RPC
-| Procedure | Auth level | Input schema | Output view |
-| --- | --- | --- | --- |
-
-#### Events published / consumed
-
-### Layout
-The placement decisions specific to this module, and **every file-level name the naming rules do not determine** (e.g. "domain grouped by aggregate: `domain/task/`, `domain/task-list/`, `domain/shared/`"; "one mapper per direction: `task-record-mapper.ts`, `task-view-mapper.ts`"; "contract test suite `src/testing/task-view-repository-contract.ts`, excluded from coverage, applied by every adapter test"). No exhaustive inventory of files whose names follow from the rules.
-
-### Decisions
 <!-- One line per ADR this design relies on; the decision itself lives in docs/adrs/. An ADR only for a decision that is
      not already fixed by a rule, a requirement or an earlier ADR, is cross-cutting, is costly to reverse and was genuinely
-     open (see the ADR template). Usually zero or one. Every other choice is a one-line design note inside the section it
-     belongs to, citing the rule or requirement it follows. -->
-- [ADR-<NNNN>](../../adrs/<NNNN>-<slug>.md) — <decision in one line> · or "none"
-
----
-
-## Variant B — Light
-
-Use for reporting, integrations, tooling, or changes with no domain-model impact.
-
-### Change summary
-<what changes technically, in one paragraph>
-
-### Affected components
-| Component | Change | Requirements covered |
-| --- | --- | --- |
-
-### Contracts touched
-<API, events, schemas, files — or "none">
-
-### Decisions
-<!-- One line per ADR this design relies on; the decision itself lives in docs/adrs/. An ADR only for a decision that is
-     not already fixed by a rule, a requirement or an earlier ADR, is cross-cutting, is costly to reverse and was genuinely
-     open (see the ADR template). Usually zero or one. Every other choice is a one-line design note inside the section it
-     belongs to, citing the rule or requirement it follows. -->
+     open (see the ADR template). Usually zero or one. Every other choice is a design note in the section it belongs to. -->
 - [ADR-<NNNN>](../../adrs/<NNNN>-<slug>.md) — <decision in one line> · or "none"

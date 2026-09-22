@@ -41,14 +41,14 @@ fence() { printf '```%s\n' "${1:-}"; cat; printf '\n```\n'; }
     section "$f — ADR in this PR"; cat "$f"
   done
   # spec/design of modules whose code the PR touches but whose documents it does not edit: a module is
-  # affected when a path prefix named in its design's Layout section (or its docs folder) matches a changed file.
+  # affected when a path prefix named in its design's Components section (Location column) or its docs folder matches a changed file.
   for f in docs/*/*/design.md docs/*/*/spec.md; do
     [ -f "$f" ] || continue
     printf '%s\n' "$files" | grep -qx "$f" && continue
     d="$(dirname "$f")"; design="$d/design.md"; hit=""
     printf '%s\n' "$files" | grep -q "^$d/" && hit=1
     if [ -z "$hit" ] && [ -f "$design" ]; then
-      for prefix in $(awk '/^### Layout/{on=1;next} /^### /{on=0} on' "$design" | grep -oE '`[A-Za-z0-9_./-]+/[A-Za-z0-9_./-]*`' | tr -d '`' | sort -u); do
+      for prefix in $(awk '/^## Components/{on=1;next} /^## /{on=0} on' "$design" | grep -oE '`[A-Za-z0-9_./-]+/[A-Za-z0-9_./-]*`' | tr -d '`' | sort -u); do
         printf '%s\n' "$files" | grep -q "^$prefix" && { hit=1; break; }
       done
     fi

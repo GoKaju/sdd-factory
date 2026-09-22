@@ -14,7 +14,7 @@
 ### Missing behavior — BLOCKER
 - A requirement with no implementing code; partial implementation (the `WHEN` branch exists, the `IF … THEN` rejection does not; a listed state unhandled).
 - A business-rule parameter (limit, percentage, ordering, uniqueness scope) hardcoded differently from the Spec.
-- An acceptance criterion the code cannot produce; an edge case listed in the Spec with no handling.
+- A scenario of the Spec the code cannot produce (edge-case scenarios included).
 - A rejection of the Spec's table with no corresponding refusal in code, or with a different user message.
 
 ### Unauthorized behavior — BLOCKER when observable, WARNING when internal
