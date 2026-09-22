@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Builds the shared review pack for an issue's PR, so the Review Gate agents read one file instead of
-# each exploring the repository: constitution, issue + comments (triage, Task), affected spec/design
+# each exploring the repository: constitution and blueprint, issue + comments (triage, Task), affected spec/design
 # (approved version on the base branch and PR version), the full PR diff, touched files and test stats.
 #
-#   sdd review-pack build <issue> [cycle]   → prints the pack path (~/.sdd/<owner>-<repo>/review-pack-<issue>.md)
+#   sdd review-pack build <issue> [cycle]   → prints the pack path; from cycle 1 on it adds the previous cycle's findings,
+#                                             implement's disputes and the delta since the commit that cycle reviewed.
+#                                             Built after `sdd review-check`, whose result it includes (~/.sdd/<owner>-<repo>/review-pack-<issue>.md)
 #   sdd review-pack path  <issue>           → prints the path without building
 . "$(dirname "$0")/lib.sh"
 S="$(dirname "$0")"
@@ -26,7 +28,19 @@ fence() { printf '```%s\n' "${1:-}"; cat; printf '\n```\n'; }
   printf -- '- repo: %s\n- head: %s\n- base: %s\n- built: %s\n' "$r" "$head" "$base" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf -- '- This pack is the primary input of every Review Gate. Open repository files only for what it lacks (code surrounding a hunk, a file the diff references but does not contain).\n'
 
+  section "Mechanical checks (cycle $cycle)"; "$S/gate-result.sh" show "$pr" "$cycle" || true
+  if [ "$cycle" -gt 0 ] 2>/dev/null; then
+    prev=$((cycle - 1)); since="$("$S/gate-result.sh" commit "$pr" "$prev" || true)"
+    section "Previous cycle ($prev): findings and disputes"; "$S/gate-result.sh" show "$pr" "$prev" || true
+    printf '\n- reviewed_since: %s\n' "${since:-unknown}"
+    if [ -n "$since" ] && git cat-file -e "$since" 2>/dev/null; then
+      section "Delta since $since (the only code a new BLOCKER may point at)"
+      git diff "$since..$head" -- . ':(exclude)*.lock' ':(exclude)*-lock.*' ':(exclude)go.sum' | head -c 400000 | fence diff
+      section "Files changed in the delta"; git diff --name-only "$since..$head" | fence
+    fi
+  fi
   section "Constitution (docs/constitution.md)"; cat docs/constitution.md
+  [ -f docs/blueprint.md ] && { section "Blueprint (docs/blueprint.md)"; cat docs/blueprint.md; }
   section "Issue #$issue with comments (triage and Task included)"; gh issue view "$issue" --comments
 
   # Changed spec/design: the PR version in full, plus a unified diff against the approved version
@@ -41,14 +55,14 @@ fence() { printf '```%s\n' "${1:-}"; cat; printf '\n```\n'; }
     section "$f — ADR in this PR"; cat "$f"
   done
   # spec/design of modules whose code the PR touches but whose documents it does not edit: a module is
-  # affected when a path prefix named in its design's Layout section (or its docs folder) matches a changed file.
+  # affected when a path prefix named in its design's Components section (Location column) or its docs folder matches a changed file.
   for f in docs/*/*/design.md docs/*/*/spec.md; do
     [ -f "$f" ] || continue
     printf '%s\n' "$files" | grep -qx "$f" && continue
     d="$(dirname "$f")"; design="$d/design.md"; hit=""
     printf '%s\n' "$files" | grep -q "^$d/" && hit=1
     if [ -z "$hit" ] && [ -f "$design" ]; then
-      for prefix in $(awk '/^### Layout/{on=1;next} /^### /{on=0} on' "$design" | grep -oE '`[A-Za-z0-9_./-]+/[A-Za-z0-9_./-]*`' | tr -d '`' | sort -u); do
+      for prefix in $(awk '/^## Components/{on=1;next} /^## /{on=0} on' "$design" | grep -oE '`[A-Za-z0-9_./-]+/[A-Za-z0-9_./-]*`' | tr -d '`' | sort -u); do
         printf '%s\n' "$files" | grep -q "^$prefix" && { hit=1; break; }
       done
     fi

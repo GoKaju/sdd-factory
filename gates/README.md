@@ -1,25 +1,58 @@
 # Review Gates
 
-One file per gate. Each file is a self-contained checklist the `reviewer` agent follows to emit **one gate-result YAML block** (schema: `templates/gate-result.template.yaml`). `/sdd` launches the reviewer with the gate set each moment needs.
+One file per gate. Each is a self-contained checklist the `reviewer` agent follows to emit **one gate-result YAML block** (schema below and in `templates/gate-result.template.yaml`). `/sdd` launches one reviewer per gate, in parallel, each with fresh context.
 
-| Gate | File | When |
-| --- | --- | --- |
-| `completeness` | `completeness.md` | before Approval Gate 1, on `spec.md` |
-| `spec-compliance` | `spec-compliance.md` | code PR |
-| `test-strategy` | `test-strategy.md` | code PR |
-| `design-architecture` | `design-architecture.md` | code PR |
-| `code-quality` | `code-quality.md` | code PR |
-| `security` | `security.md` | code PR |
-| `regression` | `regression.md` | code PR |
-| `design-architecture` + `code-quality` as document coherence and clarity | `docs.md` | documentation-only PR (the other four are skipped mechanically) |
+| Gate | File | When | Who |
+| --- | --- | --- | --- |
+| `completeness` | `completeness.md` | after the plan phase, before Approval Gate 1, on `spec.md` (cycle `plan`) | reviewer |
+| `mechanical` | — (`sdd review-check`) | every code review cycle, before the reviewers | bash, no tokens |
+| `behaviour` | `behaviour.md` | code PR: the code does what the Spec says and the tests prove it | reviewer |
+| `structure` | `structure.md` | code PR: built as design, constitution and blueprint say, and simply | reviewer |
+| `risk` | `risk.md` | code PR: security and regression | reviewer |
+| `structure` (documents) | `docs.md` | documentation-only PR: coherence and clarity; `behaviour` and `risk` are skipped | reviewer |
 
 ## Common rules (apply to every gate; not repeated inside the files)
 
-- **Authority.** `docs/constitution.md` is binding; its `## Rules` are the checks. Where a gate item says "if the constitution has a rule about X", apply it only when such a rule exists, as written; where the constitution is silent, the item does not apply. Hierarchy: Constitution → Spec → Design → Task → Code. Code is never evidence that a document is wrong.
-- **Input.** The review pack (`sdd review-pack build <issue>` → `~/.sdd/<owner>-<repo>/review-pack-<issue>.md`) is the primary input: constitution, issue with triage and Task, affected spec/design (PR version and diff against the approved one), touched files, test stats, full diff. Open repository files only for what the pack lacks (code around a hunk, a file the diff references). For `completeness` there is no pack: read the spec, the issue and the base-branch version.
-- **Read-only.** Never modify files. Allowed commands: `git diff*`, `git log*`, `git show*`, `git status*`, `gh pr view*`, `gh pr diff*`, `gh issue view*`, and reading files. No installs, scanners, network calls.
-- **Adversarial.** The producing agent was optimized to finish; you are optimized to find what it missed, added or quietly changed. Cite `path:line` and quote the offending text. Describe the concrete problem, never the abstract category.
-- **Severity.** `BLOCKER` fails the gate and must point at a constitution rule, a spec requirement, a design element, or something objectively wrong. `WARNING` is reported and acknowledged by the human at Approval Gate 4. `NIT` is informational. Style the formatter owns is never a finding.
-- **Status.** `FAIL` iff at least one BLOCKER. `NEEDS_HUMAN` when the verdict hinges on a decision or fact only a human has (say which). `BLOCKED` when the gate cannot run (missing PR, spec or design; red build). `PASS` otherwise, with `findings: []` when clean.
-- **Output.** Exactly one ```yaml block per gate, nothing after it. Every gate's block carries `gate`, `issue`, `pr`, `commit`, `status`, `rework_cycle`, `requirements` (mandatory for `completeness`, `spec-compliance`, `test-strategy`; optional elsewhere), `findings`, `evidence`.
-- **Several gates in one run.** One reading, independent verdicts: each gate keeps its own checklist and severity; sharing the reading MUST NOT soften any verdict. The same fact may be a BLOCKER for one gate and a WARNING for another; that is expected.
+- **Authority.** `docs/constitution.md` is binding; its `## Rules` are the checks. `docs/blueprint.md` is the convention reference: diverging from it is at most a WARNING. Where a gate item says "when the constitution has the rule", apply it only when such a rule exists, as written; never invent one. Hierarchy: Constitution → Spec → Design → Task → code.
+- **Input.** The review pack (`sdd review-pack build <issue> <cycle>`) is the primary input: constitution, blueprint, issue with triage and Task, affected spec and design, the `mechanical` result, touched files, test stats and the diff; in cycles ≥ 1 also the previous cycle's findings, implement's disputes and the delta since the previous review. Open repository files only for what the pack lacks. For `completeness` the input is the spec.
+- **Mechanical first.** What `sdd review-check` already reported (added `skip`/`only` markers, `TODO`/`FIXME`, files outside the design's Locations, requirement IDs no test cites, missing blueprint exemplars) is not repeated; use it as a lead.
+- **Read-only.** Never modify files. Allowed commands: `git diff*`, `git log*`, `git show*`, `git status*`, `gh pr view*`, `gh pr diff*`, `gh issue view*`, and reading files. No installs, scanners or network calls.
+- **Adversarial.** The producing agent was optimized to finish; you are optimized to find what it missed, added or quietly changed. Cite `path:line`, quote the offending text, and describe the concrete problem, never the abstract category.
+- **Severity.** `BLOCKER` fails the gate and must point at a constitution rule, a spec requirement, a design element, or something objectively wrong. `WARNING` is reported and acknowledged by the human at Approval Gate 2. `NIT` is informational. Style the formatter owns is never a finding.
+- **Status.** `FAIL` iff at least one BLOCKER. `NEEDS_HUMAN` when the verdict hinges on a decision or fact only a human has (say which), or a disputed BLOCKER is upheld. `BLOCKED` when the gate cannot run (missing PR, spec or design; red build). `PASS` otherwise, with `findings: []` when clean.
+
+## Cycles ≥ 1: incremental review
+
+A rework cycle does not review the PR from scratch; it closes the previous cycle and judges what changed since.
+
+1. **Previous BLOCKERs.** For each BLOCKER of the previous cycle of your gate: resolved → one NIT with `carried: fixed`; still there → the same BLOCKER with `carried: not-fixed`.
+2. **Disputes.** For each finding implement disputed (pack section "Disputes"), rule on the evidence: `disputed: withdrawn` (drop the finding) or `disputed: upheld` (keep it as BLOCKER; the gate's status becomes `NEEDS_HUMAN` for that finding and it is never sent to rework again). A finding cannot be disputed twice.
+3. **The delta.** Judge only the changes since `reviewed_since` (the pack's "Delta" section) with the full checklist. A new BLOCKER must be located in the delta; a problem you notice late in code the previous cycle already reviewed is at most a WARNING (`carried: new`), so review converges.
+4. A gate that `PASS`ed in the previous cycle and whose delta is empty is carried over by `/sdd` without a reviewer run.
+
+## Output
+
+Exactly one ```yaml block per gate, nothing after it:
+
+```yaml
+gate: <completeness | behaviour | structure | risk>
+issue: <issue number>
+pr: <pr number, or null>
+commit: <head sha reviewed>
+status: PASS | FAIL | NEEDS_HUMAN | BLOCKED
+rework_cycle: <0, 1, 2… ; plan for completeness>
+reviewed_since: <sha>          # cycle ≥ 1 only
+requirements:                  # REQUIRED for completeness and behaviour: every ID in the affected Spec(s)
+  <MODULE>-NNN: PASS | FAIL
+findings:
+  - severity: BLOCKER | WARNING | NIT
+    requirement: <MODULE>-NNN  # omit when not bound to one requirement
+    location: <path>:<line>
+    description: >
+      What is wrong, quoting the text or code and the rule, requirement or design element it breaks.
+    required_action: The concrete change that closes the finding.
+    carried: fixed | not-fixed | new   # cycle ≥ 1 only
+    disputed: upheld | withdrawn       # only for a disputed finding
+evidence:
+  - <every file you inspected>
+```

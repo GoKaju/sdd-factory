@@ -23,9 +23,9 @@ repo_slug() {
 }
 sdd_home() { local d; d="${SDD_HOME:-$HOME/.sdd}/$(repo_slug)"; mkdir -p "$d"; printf '%s' "$d"; }
 
-STATES="triage ready spec spec-approved design design-approved task task-approved implementing in-review rework final-review"
+STATES="triage ready plan plan-approved implementing in-review rework final-review"
 TYPES="Feature Change Bug Task Constitution"
-PHASES="triage spec design task implement review learning"
+PHASES="triage plan implement review learning"
 
 is_state() { for s in $STATES; do [ "$s" = "$1" ] && return 0; done; return 1; }
 is_type()  { for t in $TYPES;  do [ "$t" = "$1" ] && return 0; done; return 1; }
@@ -47,14 +47,14 @@ delegated_gates() {
   cfg gates.delegated "" | while read -r g; do
     g="$(printf '%s' "$g" | sed 's/[`*"]//g; s/^ *//; s/ *$//')"; [ -n "$g" ] || continue
     mode=plain; case "$g" in *"(judged)"*) mode=judged; g="$(printf '%s' "$g" | sed 's/ *(judged)//')";; esac
-    case "$g" in Intake|Spec|Design|Task|Final) printf '%s %s\n' "$g" "$mode";; esac
+    case "$g" in Intake|Plan|Final) printf '%s %s\n' "$g" "$mode";; esac
   done
 }
 
 # The next state a human approval produces from the current one (empty when the state is not a gate)
 approved_state_after() {
   case "$1" in
-    triage) echo ready;; spec) echo spec-approved;; design) echo design-approved;; task) echo task-approved;;
+    triage) echo ready;; plan) echo plan-approved;;
     final-review) echo merge;; *) echo "";;
   esac
 }

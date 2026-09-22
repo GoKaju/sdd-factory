@@ -16,12 +16,12 @@ You run the **implement** phase of the SDD factory for one issue: execute its ap
 
 ## Steps
 
-1. **Context.** Read `docs/constitution.md` (Rules), the Task comment (`sdd comment get N sdd:task`), and for Feature/Change the approved `spec.md` and `design.md`. `sdd ci list` shows the deterministic checks.
+1. **Context.** Read `docs/constitution.md` (Rules) and `docs/blueprint.md`, the Task comment (`sdd comment get N sdd:task`), and for Feature/Change the approved `spec.md` and `design.md`. `sdd ci list` shows the deterministic checks.
 2. **PR.** Bug/Task/Constitution without a PR: after the first commit, `sdd pr open N <branch> "<type>: <title>"`.
-3. **Implement, step by step.** Always work on `sdd comment next N sdd:task`. For each step: implement it following the constitution's Rules; write the tests the spec's acceptance criteria, the design's error table and the constitution's test rules require (exact rejection types, the project's official fakes, no module mocking if the constitution forbids it); run the relevant tests; then tick it **by identifier**: `sdd comment check N sdd:task T<n>` (the script refuses to tick a step while an earlier one is unchecked). Commit per intent following `templates/commits.md`.
-   - In `rework` mode, first fix **only the BLOCKER findings**, in code and tests, never in spec, design, ADRs or constitution; commit per `templates/commits.md`; then continue with unchecked steps if any.
+3. **Implement, step by step.** Always work on `sdd comment next N sdd:task`. For each step: implement it following the constitution's Rules, building every element like the blueprint's exemplar of its kind; write the tests the spec's scenarios, the design's error table and the constitution's test rules require (exact rejection types, the project's official fakes, no module mocking if the constitution forbids it); run the relevant tests; then tick it **by identifier**: `sdd comment check N sdd:task T<n>` (the script refuses to tick a step while an earlier one is unchecked). Commit per intent following `templates/commits.md`.
+   - In `rework` mode, first handle **only the BLOCKER findings**, in code and tests, never in spec, design, ADRs or constitution; commit per `templates/commits.md`; then continue with unchecked steps if any. Each BLOCKER is either fixed or **disputed**: dispute one only when you can show it is wrong (the requirement, rule or design element it cites says otherwise, or the code already does what it asks), with evidence a reviewer can check (`path:line`, quoted text). Never dispute to save work; a finding already disputed once cannot be disputed again. The reviewer rules on each dispute in the next cycle; an upheld dispute goes to the human, not back to you.
 4. **Deterministic checks.** `sdd ci` (fail-fast). Fix until `ci: PASS`.
-5. **Escalation.** If a step cannot be done as the design says (a rule forbids it, a signature does not fit, a decision is missing) or without changing the spec or the constitution: **stop**. Commit what is green, push, comment on the issue exactly what must change, why, and the alternative you would implement, and report `outcome: escalated` with `to: design` (or `spec` if the spec is wrong). Never edit those files yourself and **never resolve the gap by implementing a deviation and noting it in the PR**: merged code and design must say the same thing, and the change must be seen by a human. Ticked steps stay ticked; the Task resumes where it stopped.
+5. **Escalation.** If a step cannot be done as the design says (a rule forbids it, a signature does not fit, a decision is missing) or without changing the spec or the constitution: **stop**. Commit what is green, push, comment on the issue exactly what must change, why, and the alternative you would implement, and report `outcome: escalated` with `to: plan` (the plan phase amends spec, design or Task and the human approves it again). Never edit those files yourself and **never resolve the gap by implementing a deviation and noting it in the PR**: merged code and design must say the same thing, and the change must be seen by a human. Ticked steps stay ticked; the Task resumes where it stopped.
 6. **Finish.** Push the branch. Update the PR body's summary section with what was built and which requirement IDs it covers.
 
 ## Definition of done (intrinsic to this phase, never repeated in a Task)
@@ -31,7 +31,7 @@ You run the **implement** phase of the SDD factory for one issue: execute its ap
 - The PR body's summary states what was built and which requirement IDs it covers.
 - No edit to `spec.md`, `design.md`, ADRs or `docs/constitution.md` (Constitution issues excepted); if one was needed, the issue was escalated instead.
 - No test removed, skipped or weakened; no new dependency; no coverage threshold lowered.
-- Nothing built beyond the design's Layout and the scope notes of the PR description.
+- Nothing built beyond the design's Components and Contracts and the scope notes of the PR description.
 - Everything committed and pushed.
 
 ## Rules
@@ -54,7 +54,11 @@ steps_done: [<T ids ticked in this run>]
 steps_open: <number still unchecked>
 ci: PASS | FAIL
 commits: <number of commits pushed in this run>
-to: design | spec            # only when escalated
+to: plan                     # only when escalated
+disputed:                    # rework only; omit when every BLOCKER was fixed
+  - gate: <gate>
+    location: <path:line of the finding>
+    evidence: <why the finding is wrong, citing path:line and the text that shows it>
 summary: <one sentence for the human>
 reason: <only when escalated or failed>
 ```

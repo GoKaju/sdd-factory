@@ -1,60 +1,38 @@
 # Constitution — <project name> · v1.0.0
 
-This file is the only rule file in the repository. `CLAUDE.md` points here and contains nothing else. Rules are one line each with a stable ID; the Review Gates of the `sdd-factory` plugin check them exactly as written, so a rule that is not here is not enforced. How the factory *operates* (language, models, delegated gates, rework budget, check commands) is not a rule: it lives in `.sdd/config.yml`.
+The only rule file in the repository; `CLAUDE.md` points here. Rules are one line each with a stable ID and the Review Gates check them exactly as written: a rule that is not here is not enforced. Keep it short: a rule belongs here only when breaking it is a BLOCKER. **How** things are built (folders, base classes, naming, the shape of a test) is shown, not written, in `docs/blueprint.md`. How the factory *operates* (language, models, delegated gates, check commands) lives in `.sdd/config.yml`.
 
 ## Identity
 
 - **Purpose:** <one sentence: what the system does and for whom>
 - **Domains:** <list of `docs/<domain>/` names>
-- **Issue types:** Feature · Change · Bug · Task · Constitution (native tracker types; the type decides the SDD path)
+- **Blueprint:** `docs/blueprint.md`
 
-## Rules
-
-<!-- One rule per line, `<Letter><n>` IDs unique within their block. Add the blocks your stack needs
-     (Architecture, Domain, Errors, Tests, Code…) and keep the Workflow block: it is what the SDD flow relies on.
-     A ready-made rule set for DDD / TypeScript / multi-tenant is in the plugin's templates/examples/. -->
-
-### Architecture
-- **A1** <packages or layers and the allowed dependency direction>
-- **A2** <what may know the runtime, framework, storage; what may not>
-
-### Domain
-- **D1** <how business rules are modelled and where they live>
-
-### Errors
-- **E1** <one named error per rejection of a spec; who throws, who translates>
-
-### Tests
-- **Q1** <test-double policy: what may be faked, what may never be mocked>
-- **Q2** <what every requirement's test must assert: state or result, exact rejection type>
-- **Q3** Deleting, skipping or weakening a test is a BLOCKER unless the Spec changed.
-
-### Code
-- **C1** Everything inside code is English — identifiers, comments, test names, log and developer-facing error text; only end-user messages and prose documents use the language configured in `.sdd/config.yml`.
-- **C2** <typing, lint and comment policy>
-
-### Workflow
-- **W1** Branch from `main`, Draft PR immediately with `Closes #N`; never push to `main`.
-- **W2** Conventional Commits scoped by package; never rewrite published history.
-- **W3** Spec, Design, ADRs and this Constitution change only through their own Issue types; agents never edit them in passing.
-- **W4** Every design decision with alternatives is one immutable ADR under `docs/adrs/`; a reversal supersedes, never edits.
-
-## Decisions
+## Stack
 
 | Concern | Decision |
 | --- | --- |
-| Runtime(s) | <cloud provider / on-premise / desktop> |
-| Persistence | <engine> |
-| Transport / messaging | <HTTP framework, RPC protocol> / <queue, bus, outbox> |
+| Language · runtime | <e.g. TypeScript · Node 22> |
+| Persistence | <engine, or "none"> |
+| Transport · messaging | <HTTP framework, RPC> · <queue, bus, or "none"> |
 | Frontend | <framework, or "none"> |
-| Deployment | <how and from where> |
 
-## Verification
+## Rules
 
-- **Review Gates:** Spec Compliance · Design & Architecture · Test Strategy · Security · Regression · Code Quality
-- **Test exemplars:** <one test file per kind the gates should hold new tests to, or "none yet">
-- The deterministic checks (`sdd ci`), the rework budget and the delegated gates are configured in `.sdd/config.yml` (`/sdd-config`).
+<!-- Only what fails a review when broken; aim for ten to fifteen lines. Keep the IDs; add or drop lines as the project
+     needs. Conventions a reader learns from an example go in docs/blueprint.md, not here. The Workflow block and
+     C1 / Q3 are the framework's own. A filled example for DDD / TypeScript / multi-tenant is in templates/examples/. -->
+
+- **A1** <boundaries: which parts may depend on which, and what the core must never import>
+- **E1** One named error per Rejection of a spec; <who raises it, who translates it for the user>.
+- **Q1** <test-double policy: what may be faked, what may never be mocked>
+- **Q2** Every requirement has a test asserting its observable outcome; every rejection is asserted by its exact name.
+- **Q3** Deleting, skipping or weakening a test is a BLOCKER unless the Spec changed.
+- **C1** Everything inside code is English — identifiers, comments, test names, logs and developer-facing error text; only end-user messages and prose documents use the language configured in `.sdd/config.yml`.
+- **W1** Branch from `main`, Draft PR immediately with `Closes #N`; never push to `main`. Conventional Commits; never rewrite published history.
+- **W2** Spec, Design, ADRs, the Blueprint and this Constitution change only through their own Issue types; agents never edit them in passing.
+- **W3** Every architecturally significant decision is one immutable ADR under `docs/adrs/`; a reversal supersedes, never edits.
 
 ## Amendments
 
-Issue of type `Constitution` + human approval + version bump (major: a rule removed or relaxed; minor: a rule added; patch: wording). Normal Issues never edit this file.
+Issue of type `Constitution` (it also covers `docs/blueprint.md`) + human approval + version bump (major: a rule removed or relaxed; minor: a rule added; patch: wording or blueprint). Normal Issues never edit either file.

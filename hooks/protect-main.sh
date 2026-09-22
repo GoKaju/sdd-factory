@@ -14,7 +14,7 @@ cdir="$(printf '%s' "$flat" | grep -oE "git +-C +['\"]?[^ '\";&|]+" | tail -1 | 
 flat="$(printf '%s' "$flat" | sed -E "s/git +-C +['\"]?[^ '\";&|]+['\"]? +/git /g")"
 
 if printf '%s' "$flat" | grep -Eq '(^|[;&| ])git push'; then
-  printf '%s' "$flat" | grep -Eq 'git push[^;&|]*( -f| --force)' && block "force push is denied. Rule W2."
+  printf '%s' "$flat" | grep -Eq 'git push[^;&|]*( -f| --force)' && block "force push is denied. Rule W1."
   printf '%s' "$flat" | grep -Eq 'git push[^;&|]*(origin|upstream)?[[:space:]]+(main|master)([[:space:]]|$)' && block "push to main is denied; open a PR. Rule W1."
   # `git push` with no refspec while on the default branch: strip every option (-q, -u, --tags, -o …) and see whether a ref remains
   rest="$(printf '%s' "$flat" | sed -E 's/.*git push//; s/[;&|].*$//' | tr ' ' '\n' | grep -vE '^(-.*|origin|upstream)?$' | head -1)"
@@ -28,6 +28,6 @@ if printf '%s' "$flat" | grep -Eq '(^|[;&| ])git push'; then
 fi
 
 printf '%s' "$flat" | grep -Eq '(^|[;&| ])git (rebase|reset --hard|commit --amend|push --force-with-lease)' && \
-  block "rewriting history is denied (rebase, reset --hard, amend). Fix with a new commit. Rule W2."
+  block "rewriting history is denied (rebase, reset --hard, amend). Fix with a new commit. Rule W1."
 
 exit 0

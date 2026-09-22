@@ -1,78 +1,41 @@
-<!-- EXAMPLE rule set: DDD · TypeScript · pnpm workspace · multi-tenant. Copy the blocks you want over the
-     `## Rules` of templates/constitution.template.md; the gates check whatever rules your constitution states. -->
+<!-- EXAMPLE: DDD · TypeScript · pnpm workspace · multi-tenant. Pairs with templates/examples/blueprint.ddd-ts.md:
+     the rules below are what a review BLOCKS on; folders, base classes, naming and test shapes are in the blueprint. -->
 # Constitution — <project name> · v1.0.0
 
-This file is the only rule file in the repository. `CLAUDE.md` points here and contains nothing else. Rules are one line each; how each rule is checked lives in the reviewer agents of the `sdd-factory` plugin, not here.
+The only rule file in the repository; `CLAUDE.md` points here. Rules are one line each with a stable ID and the Review Gates check them exactly as written. **How** things are built is shown in `docs/blueprint.md`. How the factory operates lives in `.sdd/config.yml`.
 
 ## Identity
 
 - **Purpose:** <one sentence: what the system does and for whom>
 - **Domains:** <list of `docs/<domain>/` names>
-- **Issue types:** Feature · Change · Bug · Task · Constitution (native tracker types; the type decides the SDD path)
+- **Blueprint:** `docs/blueprint.md`
 
-## Rules
-
-### Architecture
-- **A1** Packages are `apps/`, `contexts/`, `libs/`; dependencies flow `apps → contexts → libs`, never sideways or upward.
-- **A2** A context never imports another context; contexts communicate only through domain events.
-- **A3** Only `apps/` and `infrastructure/` know the runtime; domain and application never import cloud, OS, HTTP or framework APIs.
-- **A4** Inside a context, `domain/<aggregate>/` holds the aggregate and, in subfolders once there is more than one of a kind, `value-objects/`, `events/`, `errors/`, `ports/`; `infrastructure/<technology>/` groups each adapter family with its `mappers/`; `use-cases/<use-case>/` one folder per use case. No flat folders past five files.
-
-### Domain and application
-- **D1** Every building block extends the shared base: `AggregateRoot`, `Entity`, `ValueObject`, `DomainEvent`, `DomainError`.
-- **D2** Aggregates expose `create()` (invariants, ids, defaults, events) and `rehydrate()` (exact reconstruction, nothing else); both accept only domain objects.
-- **D3** Value Objects are immutable, validate on construction and offer `fromOptional()` for nullable input; never pass `null` to `create()`.
-- **D4** Aggregates expose getters, never serialization methods; persistence mappers read the getters.
-- **D5** Use cases orchestrate only: no id generation, no default derivation, no business rules, no catching domain errors, no `Result` wrappers. Loading an aggregate by id and failing with its NotFound error is orchestration, not a business rule.
-- **D6** Commands and queries are plain data without validation libraries; input is validated at the entry point.
-- **D7** Queries go through read repositories that return Views; a use case never hydrates an aggregate to build a view.
-- **D8** Persist first, publish events after; every event consumer is idempotent.
-
-### Errors
-- **E1** One `DomainError` subclass per scenario, `name` equals the class name, business message in English with context in params, no infrastructure detail; user-facing translation is the client's job.
-- **E2** Domain throws, application propagates, the entry point translates once.
-
-### Multi-tenancy
-- **T1** `tenantId` appears only in infrastructure adapter constructors; never in domain, application, events or method parameters.
-- **T2** Tenant-scoped adapters are built per request and never shared; stateless adapters may be.
-- **T3** The tenant key is part of every record's identity; uniqueness is per tenant; no unscoped reads.
-- **T4** Every repository test proves tenant isolation.
-
-### Tests
-- **Q1** Doubles hierarchy: real object > Fake > stub > spy > mock; every port ships its `InMemory` fake.
-- **Q2** Module mocking is banned; third-party libraries and domain objects are never mocked.
-- **Q3** Assert state or results, not interactions; each use case has at least one zero-mock test.
-- **Q4** Every `DomainError` has a test asserting its exact type.
-- **Q5** Deleting, skipping or weakening a test is a BLOCKER unless the Spec changed.
-
-### Code
-- **C1** Strict typing, no escape hatches, no unused symbols, named exports only (config files excepted).
-- **C2** kebab-case files without type suffixes; infrastructure files are `{technology}-{port}`.
-- **C3** No comments, except one line explaining a non-obvious *why*.
-- **C4** Everything inside code is English — identifiers, comments, test names, log and developer-facing error text; only end-user messages and prose documents use the language configured in `.sdd/config.yml`.
-
-### Workflow
-- **W1** Branch from `main`, Draft PR immediately with `Closes #N`; never push to `main`.
-- **W2** Conventional Commits scoped by package; never rewrite published history.
-- **W3** Shared dependency versions live in the workspace catalog.
-- **W4** Spec, Design and this Constitution change only through their own Issue types; agents never edit them in passing.
-
-## Decisions
+## Stack
 
 | Concern | Decision |
 | --- | --- |
-| Runtime(s) | <cloud provider / on-premise / desktop> |
-| Persistence | <engine>; tenant mapping in each context's `infrastructure/persistence/README.md` |
-| Transport / messaging | <HTTP framework, RPC protocol> / <queue, bus, outbox> |
+| Language · runtime | TypeScript (strict) · <Node version / serverless runtime> |
+| Persistence | <engine> |
+| Transport · messaging | <HTTP framework, RPC> · <queue, bus, outbox> |
 | Frontend | <framework + design system package, or "none"> |
-| Deployment | <serverless / container / monolith / installer>; procedure in `infra/` |
 
-## Verification
+## Rules
 
-- **Review Gates:** Spec Compliance · Design & Architecture · Test Strategy · Security · Regression · Code Quality
-- **Test exemplars:** <domain test> · <zero-mock use-case test> · <tenant-isolation test>
-- Check commands (`pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm coverage`), rework budget and delegated gates: `.sdd/config.yml`.
+- **A1** Dependencies flow `apps → contexts → libs`; a context never imports another context and talks to it only through domain events.
+- **A2** Domain and application never import runtime, framework, cloud, HTTP or storage APIs; only `apps/` and `infrastructure/` do.
+- **D1** Use cases orchestrate only: no business rules, no id generation, no catching domain errors. Business rules live in the domain.
+- **D2** Persist first, publish events after; every event consumer is idempotent.
+- **T1** The tenant is fixed when an infrastructure adapter is built, never passed through domain, application, events or method parameters; the tenant key is part of every stored identity and no read is unscoped.
+- **E1** One named domain error per Rejection of a spec; domain raises, application propagates, the entry point translates once.
+- **Q1** Ports are replaced by their fakes; module mocking is banned and third-party libraries and domain objects are never mocked.
+- **Q2** Every requirement has a test asserting its observable outcome; every rejection is asserted by its exact type; every repository test proves tenant isolation.
+- **Q3** Deleting, skipping or weakening a test is a BLOCKER unless the Spec changed.
+- **C1** Everything inside code is English — identifiers, comments, test names, logs and developer-facing error text; only end-user messages and prose documents use the language configured in `.sdd/config.yml`.
+- **C2** Strict typing without escape hatches; no unused symbols; comments only for a non-obvious *why*.
+- **W1** Branch from `main`, Draft PR immediately with `Closes #N`; never push to `main`. Conventional Commits scoped by package; never rewrite published history.
+- **W2** Spec, Design, ADRs, the Blueprint and this Constitution change only through their own Issue types; agents never edit them in passing.
+- **W3** Every architecturally significant decision is one immutable ADR under `docs/adrs/`; a reversal supersedes, never edits.
 
 ## Amendments
 
-Issue of type `Constitution` + human approval + version bump. Normal Issues never edit this file.
+Issue of type `Constitution` (it also covers `docs/blueprint.md`) + human approval + version bump. Normal Issues never edit either file.

@@ -8,7 +8,7 @@
 **Tipo:** <Feature | Change | Bug | Task> <!-- "(cambiado desde Bug: la petición describe comportamiento nuevo)" cuando se retipa -->
 **Tamaño:** <S | M | L> — <una frase que lo justifique>
 **Esfuerzo:** <Low | Medium | High> sugerido en el campo `Effort` del Issue (pendiente de aceptación humana) · o «la organización no tiene campo Effort»
-**Camino:** <Spec → Design → Task → Implementación → Revisión | Task → Implementación → Revisión>
+**Camino:** <Plan (spec + diseño + Task) → Implementación → Revisión | Plan (Task) → Implementación → Revisión>
 
 ### Completitud
 - Problema: <presente | falta>
@@ -31,7 +31,7 @@
 
 ### Aclaraciones
 <!-- Respuestas del autor, una línea cada una, con sus palabras cuando son cortas. Son entradas de la spec: cada una se convierte
-     en requisito, rechazo o criterio de aceptación, y la gate de completitud lo comprueba. Nunca se borran en ejecuciones posteriores. -->
+     en requisito, escenario o rechazo, y la gate de completitud lo comprueba. Nunca se borran en ejecuciones posteriores. -->
 - <pregunta> → <respuesta>
 
 ### Supuestos

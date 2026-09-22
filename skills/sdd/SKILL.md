@@ -1,6 +1,6 @@
 ---
 name: sdd
-description: Drive one GitHub issue through the whole SDD flow - triage, spec, design, task, implement, review, learning - launching one subagent per phase with the configured model, granting the approval gates .sdd/config.yml delegates, and waiting for the human ones with sdd await (bash polling, no tokens). Resumable - re-run it any time; it continues from the issue's state label.
+description: Drive one GitHub issue through the whole SDD flow - triage, plan (spec + design + Task), implement, review, learning - launching one subagent per phase with the configured model, granting the approval gates .sdd/config.yml delegates, and waiting for the human ones with sdd await (bash polling, no tokens). Resumable - re-run it any time; it continues from the issue's state label.
 argument-hint: "<issue-number>"
 disable-model-invocation: true
 allowed-tools: Bash, Read, Grep, Glob, Agent
@@ -10,7 +10,7 @@ allowed-tools: Bash, Read, Grep, Glob, Agent
 
 You are the **orchestrator** of issue **#N** (the argument; stop if it is missing or not a number). The decision of which phase the issue needs is mechanical (`sdd next N`); your judgement goes to what the rules leave open: verifying artifacts before granting a delegated gate, relaunching a phase with a human's comment, reading a subagent's report, and stopping when a person must decide. You never set `sdd:ready` or an `sdd:*-approved` label that the config does not delegate, never merge a Constitution issue, never push to the default branch, and never do a phase's work yourself: every phase is a subagent.
 
-Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd` (`sdd help` lists its commands). Plugin agents are launched with the Agent tool with `subagent_type: "sdd-factory:<name>"` (`triage`, `spec`, `design`, `task`, `implement`, `reviewer`, `learning`), `model` from `sdd config get models.<name>` (omit it when the value is `inherit`), and a `description` that names both so the person watching sees them: `sdd-factory:spec · #N · opus`. Every launch is logged: `sdd log add N phase-start phase=<p> model=<m> attempt=<k>` before, `sdd log add N phase-end phase=<p> outcome=<o>` after; the plugin's SubagentStart/Stop hooks add the host's own record of agent type, real model, minutes and tokens (`sdd log last N`).
+Conventions: `sdd` = `${CLAUDE_PLUGIN_ROOT}/bin/sdd` (`sdd help` lists its commands). Plugin agents are launched with the Agent tool with `subagent_type: "sdd-factory:<name>"` (`triage`, `plan`, `implement`, `reviewer`, `learning`), `model` from `sdd config get models.<name>` (omit it when the value is `inherit`), and a `description` that names both so the person watching sees them: `sdd-factory:plan · #N · opus`. Every launch is logged: `sdd log add N phase-start phase=<p> model=<m> attempt=<k>` before, `sdd log add N phase-end phase=<p> outcome=<o>` after; the plugin's SubagentStart/Stop hooks add the host's own record of agent type, real model, minutes and tokens (`sdd log last N`).
 
 **Scratch files** (gate-result YAML blocks split from a reviewer's report, heredoc bodies, notes) go under `$(sdd flag dir)/tmp/` outside the repository, never inside the worktree or the checkout.
 
@@ -47,7 +47,7 @@ After each phase, gate or wait, refresh the lock flag and re-read `sdd next N`; 
 Put the worktree on the right branch first (`triage` needs none: the worktree stays detached at the default branch, freshly fetched):
 
 ```bash
-cwd=$(sdd worktree ensure N [<branch>])   # <branch> only when the issue has no PR yet: feat|change/N-<slug> (spec), fix|chore|constitution/N-<slug> (implement)
+cwd=$(sdd worktree ensure N [<branch>])   # <branch> only when the issue has no PR yet: feat|change/N-<slug> (plan of a Feature/Change), fix|chore|constitution/N-<slug> (implement)
 ```
 
 Then launch the phase subagent (`subagent_type: sdd-factory:<phase>`, `model` from config, `description: sdd-factory:<phase> · #N · <model>`) with this prompt shape and wait for it: `issue: N · type: <type> · cwd: <cwd> · sdd: ${CLAUDE_PLUGIN_ROOT}/bin/sdd · lang: <lang>` plus the phase fields below, plus `feedback:` when a human comment is being answered (§4). Read its final ```yaml report. A report with `outcome: failed`, or none, is retried once with `attempt=2` and the failure quoted; a second failure ends the turn with the reason (§6).
@@ -57,27 +57,23 @@ Then launch the phase subagent (`subagent_type: sdd-factory:<phase>`, `model` fr
 | phase | before | subagent fields | after (`outcome: done`) |
 | --- | --- | --- | --- |
 | `triage` | — | — | if a human set `ready` meanwhile leave it; else `sdd state set N triage`. `sdd await mark N`. |
-| `spec` | `branch` if no PR | `branch` | **completeness gate:** `sdd worktree ensure N` again (the PR now exists); launch `reviewer` with `gates: completeness · pack: <cwd>/<spec path> · issue · pr · commit: $(git -C $cwd rev-parse HEAD) · rework_cycle: 0 · cwd`; `sdd gate-result post <pr> <yaml>` for its block. `FAIL` → relaunch `spec` once with `feedback: <the BLOCKERs>`, then re-run the gate and post; whatever the second verdict, continue (the human sees it at Gate 1). Then `sdd state set N spec`. `sdd await mark N`. |
-| `design` | — | `feedback` = escalation comment when coming back from implement | `sdd state set N design`. `sdd await mark N`. |
-| `task` | — | — | `outcome: done` → `sdd state set N task`; `escalated` → `to: design` ⇒ `sdd state set N design` (`to: triage` ⇒ `sdd state set N triage`), log `escalation from=task to=<to>`. `sdd await mark N`. |
-| `implement` | `sdd flag set lock-docs`; Constitution type: `sdd flag set allow-constitution`; `sdd state set N implementing`; in `final-review` with `sdd rework pending N` non-empty: `sdd rework apply N` first. | `mode: task|rework|resume`, `branch` if no PR, `findings` (BLOCKERs of the last cycle) in rework | `done` → `sdd state set N in-review`. `escalated` → `sdd flag clear lock-docs allow-constitution`, `sdd state set N <to>`, log `escalation from=implement to=<to>`. Constitution type: `sdd flag clear allow-constitution` always. |
+| `plan` | `branch` if Feature/Change and no PR | `branch` | Feature/Change: **completeness gate:** `sdd worktree ensure N` again (the PR now exists); launch `reviewer` with `gate: completeness · pack: <cwd>/<spec path> · issue · pr · commit: $(git -C $cwd rev-parse HEAD) · rework_cycle: plan · cwd`; `sdd gate-result post <pr> <yaml>` for its block. `FAIL` → relaunch `plan` once with `feedback: <the BLOCKERs>`, then re-run the gate and post; whatever the second verdict, continue (the human sees it at Gate 1). Every type, then: `sdd state set N plan`. `escalated` (`to: triage`) → `sdd state set N triage`, log `escalation from=plan to=triage`. `sdd await mark N`. |
+| `implement` | Feature/Change coming from `plan-approved`: record the approval — `status: approved` in the PR's `spec.md` and `design.md` (skip when already `approved`), commit `docs(<module>): plan approved for #N`, push. Then `sdd flag set lock-docs`; Constitution type: `sdd flag set allow-constitution`; `sdd state set N implementing`; in `final-review` with `sdd rework pending N` non-empty: `sdd rework apply N` first. | `mode: task|rework|resume`, `branch` if no PR, `findings` (BLOCKERs of the last cycle) in rework | `done` → `sdd state set N in-review`. `escalated` (`to: plan`) → `sdd flag clear lock-docs allow-constitution`, `sdd state set N plan`, log `escalation from=implement to=plan`, and relaunch `plan` at once with `feedback` = the escalation comment (the approval is asked again at Gate 1). Constitution type: `sdd flag clear allow-constitution` always. |
 | `review` | §5 | — | — |
 
 Never let a phase agent set a state; if a report claims it did, re-read `sdd state get N` and correct it.
 
 ## 3. Grant a delegated gate
 
-Only for a gate the config lists. Verify mechanically **before** `sdd state set`; "the artifact looks fine" is not verification. When `judged: true`, additionally launch `reviewer` (gate set `completeness` for Spec, `docs` for Design and Task, over the artifact plus the issue's original body and author comments) and grant only on `PASS`; on any other verdict comment once on the issue (in `lang`) what was found and treat the gate as `human` (§4). Log every decision: `sdd log add N gate name=<gate> result=granted|withheld why=<...>`.
+Only for a gate the config lists. Verify mechanically **before** `sdd state set`; "the artifact looks fine" is not verification. When `judged: true`, additionally launch `reviewer` (two reviewers: `gate: completeness`, and `gate: structure` with `checklist: docs`, over the spec, design and Task plus the issue's original body and author comments) and grant only on `PASS`; on any other verdict comment once on the issue (in `lang`) what was found and treat the gate as `human` (§4). Log every decision: `sdd log add N gate name=<gate> result=granted|withheld why=<...>`.
 
 - **Intake** → `sdd comment open N sdd:triage` is `0`, the triage comment names a type and a size, and it carries the `Clarifications`/`Assumptions` sections (empty is fine when the issue raised no question; missing means the clarity pass did not run: relaunch `triage` once) ⇒ `sdd state set N ready`.
-- **Spec** → the spec's `Open questions` has no unchecked item and no `TBD`/`TODO`; the last completeness result on the PR (`sdd gate-result list <pr>`) is `PASS` ⇒ `spec-approved`.
-- **Design** → no `NEEDS_HUMAN`, `pending human` or `TBD` in the design; every decision it lists exists as an ADR ⇒ `design-approved`.
-- **Task** → the Task comment exists, has at least one step and none is a question ⇒ `task-approved`.
-- **Final** → issue not of type Constitution; every gate result of the latest cycle is `PASS` (`sdd gate-result aggregate <pr> <cycle>`); PR ready and mergeable. Then the **`warnings_at_final`** policy over `sdd gate-result warnings <pr> <cycle>`:
+- **Plan** → for Feature/Change: the PR description's `Open questions` has no unchecked box; every requirement of the spec has a `#### Scenario:`; no `TBD`/`TODO` in spec or design and no `NEEDS_HUMAN` or `pending human` in the design; every decision the design lists exists as an ADR; the completeness result on the PR (`sdd gate-result list <pr> plan`) is `PASS`. For every type: the Task comment exists, has at least one step, none is a question, and (Feature/Change) every step names a design element that appears in the design's Components, Errors or Contracts and a requirement ID of the spec ⇒ `plan-approved`.
+- **Final** → issue not of type Constitution; every gate result of the latest cycle is `PASS` (`sdd gate-result aggregate <pr> $(sdd gate-result last <pr>)`); PR ready and mergeable. Then the **`warnings_at_final`** policy over `sdd gate-result warnings <pr> <cycle>`:
   - none → `sdd pr merge N`.
   - `human` → hold: comment on the PR listing the WARNINGs and that a person merges or writes `/rework`; go to §4.
   - `merge` → `sdd pr merge N` and one PR comment listing the accepted WARNINGs.
-  - `rework` → WARNINGs located under `docs/` cannot go to rework (W3): list them in a PR comment as input for a Change. For the rest, if `cycle + 1 < budget`, write **one** PR comment starting with `/rework` and one bullet per code WARNING (`<gate> · <location> · <what to change>`), then `sdd rework apply N` (state → `rework`, the loop launches implement). Budget exhausted or only docs WARNINGs → fall back to `human`. Never file a `/rework` for a NIT.
+  - `rework` → WARNINGs located under `docs/` cannot go to rework (W2): list them in a PR comment as input for a Change. For the rest, if `cycle + 1 < budget`, write **one** PR comment starting with `/rework` and one bullet per code WARNING (`<gate> · <location> · <what to change>`), then `sdd rework apply N` (state → `rework`, the loop launches implement). Budget exhausted or only docs WARNINGs → fall back to `human`. Never file a `/rework` for a NIT.
 - When a check fails: do not grant; comment once on the issue why the gate was withheld; continue as `human`.
 
 ## 4. Wait for a human (no tokens)
@@ -92,26 +88,29 @@ sdd await N --timeout 590      # blocks up to ~10 min in bash; prints one JSON e
 Loop on `timeout` while `waited < max_wait` (add the minutes each time). On any other event, `sdd log add N wait-end gate=<state> result=<event>` and act:
 
 - `approved` / `state` → the label changed; back to §1.
-- `merge` → a human commented `/approve` at Gate 4: `sdd pr merge N` (never for Constitution: say the person must merge it), then §1 (the PR is merged → §6).
+- `merge` → a human commented `/approve` at Gate 2: `sdd pr merge N` (never for Constitution: say the person must merge it), then §1 (the PR is merged → §6).
 - `rework` → `sdd rework apply N` when the state is `final-review`; otherwise pass the comment as `feedback` to the current phase (relaunch it, §2) and re-mark. Back to §1.
 - `comment` → a human wrote on the issue or the PR. If it is a question or an objection about the current artifact, relaunch the current phase with `feedback: <body>` so the artifact answers it (once per comment; the phase's report says what changed); if it is unrelated ("thanks", a note for later), keep waiting. Never relaunch the same phase more than twice for comments in one wait; the third time, end the turn (§6).
 - `merged` / `closed` / `pr-closed` → §6.
 
 When `waited >= max_wait`: end the turn (§6) with "waiting for <who> to <what>; re-run `/sdd N` afterwards".
 
-## 5. Review (you coordinate; the reviewer judges; implement fixes)
+## 5. Review (you coordinate; the reviewers judge; implement fixes)
 
-State `in-review` or `rework` (or `design-approved` with a complete Task: a document-only amendment — first record the approval: `status: approved` in `design.md`, commit, push). `pr=$(sdd pr find N)`, `cwd=$(sdd worktree ensure N)`, `cycle` = highest cycle in `sdd gate-result list $pr` plus one (0 if none), `scope=$(sdd pr scope N)`.
+State `in-review` or `rework` (or `plan-approved` with a complete Task: a document-only amendment — first record the approval: `status: approved` in `spec.md` and `design.md`, commit, push). `pr=$(sdd pr find N)`, `cwd=$(sdd worktree ensure N)`, `cycle=$(sdd gate-result next $pr)`, `scope=$(sdd pr scope N)`. Every result of the cycle lands in one PR comment that `sdd gate-result post` edits in place.
 
-1. **Deterministic checks first** (skip when `scope` is `docs`): `cd $cwd && sdd ci`. Red → post one result `gate: deterministic-checks, status: BLOCKED` with the failing command, `sdd state set N rework`, and launch `implement` in `rework` mode with that finding (§2); then start §5 again.
-2. **Pack.** `pack=$(cd $cwd && sdd review-pack build N $cycle)`.
-3. **Gates.** Launch `reviewer` with `gates: code` (or `docs`), `pack`, `issue`, `pr`, `commit: $(git -C $cwd rev-parse HEAD)`, `rework_cycle: $cycle`, `cwd`. When the diff exceeds ~1500 lines you may launch three reviewers in parallel: `spec-compliance,test-strategy` · `design-architecture,code-quality` · `security,regression`. Split the returned blocks into one file each and `sdd gate-result post $pr <file>`. For `scope` `docs` also `sdd gate-result skip $pr <gate> $cycle "documentation-only change"` for `spec-compliance`, `test-strategy`, `security` and `regression`.
-4. **Aggregate.** `verdict=$(sdd gate-result aggregate $pr $cycle)`; `sdd log add N review cycle=$cycle verdict=$verdict`.
-   - `PASS` → `sdd state set N final-review`, `sdd pr ready N`, `sdd flag clear lock-docs`. Short PR comment: gates, WARNINGs the human must acknowledge. Then **learning** (§5b), then §1 (Final delegated → §3; else §4).
-   - `NEEDS_HUMAN` / `BLOCKED` → `sdd state set N final-review`; comment on the issue what needs a person; learning (§5b); §4.
-   - `FAIL` → if `cycle + 1 >= budget`: `sdd state set N final-review`, comment "NEEDS_HUMAN: rework budget exhausted" with the remaining BLOCKERs, learning, §4. Otherwise `sdd state set N rework` and launch `implement` in `rework` mode with the BLOCKER findings (§2); the loop brings the issue back here with `cycle + 1`.
+1. **Deterministic checks** (skip when `scope` is `docs`): `cd $cwd && sdd ci`. Red → no gate result is posted and the cycle is not consumed: `sdd log add N review cycle=$cycle ci=FAIL`, `sdd state set N rework`, launch `implement` in `rework` mode with the failing command and its output as the one finding (§2); then start §5 again with the same cycle.
+2. **Mechanical checks** (skip when `scope` is `docs`): `sdd review-check N $cycle > <scratch>/mechanical.yaml` and `sdd gate-result post $pr <scratch>/mechanical.yaml`. No tokens; its BLOCKERs count like any gate's.
+3. **Pack.** `pack=$(cd $cwd && sdd review-pack build N $cycle)` (from cycle 1 on it carries the previous findings, the disputes and the delta).
+4. **Gates, in parallel.** In one message launch three `reviewer` subagents, one per gate: `gate: behaviour` · `gate: structure` · `gate: risk`, each with `pack`, `issue`, `pr`, `commit: $(git -C $cwd rev-parse HEAD)`, `rework_cycle: $cycle`, `cwd`, and from cycle 1 on `reviewed_since: $(sdd gate-result commit $pr $((cycle-1)))`. Post each returned block with `sdd gate-result post $pr <file>`.
+   - Cycle ≥ 1: a gate that was `PASS` in the previous cycle, with no dispute of its findings and an empty delta (`git -C $cwd diff --quiet <reviewed_since> HEAD`), is not re-run: `sdd gate-result carry $pr <gate> $((cycle-1)) $cycle`.
+   - `scope` `docs`: launch only `gate: structure` with `checklist: docs`, and `sdd gate-result skip $pr <gate> $cycle "documentation-only change"` for `mechanical`, `behaviour` and `risk`.
+5. **Aggregate.** `verdict=$(sdd gate-result aggregate $pr $cycle)`; `sdd log add N review cycle=$cycle verdict=$verdict`.
+   - `PASS` → `sdd state set N final-review`, `sdd pr ready N`, `sdd flag clear lock-docs`. The cycle comment already lists the gates and WARNINGs; add nothing. Then **learning** (§5b), then §1 (Final delegated → §3; else §4).
+   - `NEEDS_HUMAN` / `BLOCKED` → `sdd state set N final-review`; comment on the issue what needs a person (upheld disputes: quote the finding and implement's evidence); learning (§5b); §4.
+   - `FAIL` → if `cycle + 1 >= budget`: `sdd state set N final-review`, comment "NEEDS_HUMAN: rework budget exhausted" with the remaining BLOCKERs, learning, §4. Otherwise `sdd state set N rework` and launch `implement` in `rework` mode with the BLOCKER findings of this cycle, excluding those marked `disputed: upheld` (§2). When its report lists `disputed:`, write them to a file and `sdd gate-result dispute $pr $cycle <file>` before the next cycle. The loop brings the issue back here with `cycle + 1`.
 
-Reviewers are read-only and adversarial; nobody argues with a BLOCKER: it is fixed by implement or escalated to the human as `NEEDS_HUMAN`. Never let anyone edit spec, design, ADRs or the constitution to make a gate pass on a code change.
+Reviewers are read-only and adversarial. A BLOCKER is fixed by implement, or disputed once with evidence and then ruled on by the next cycle's reviewer; an upheld dispute goes to the human as `NEEDS_HUMAN`, never back to rework. Never let anyone edit spec, design, ADRs or the constitution to make a gate pass on a code change.
 
 **5b. Learning.** Every time the issue enters `final-review`, launch `learning` with `issue`, `pr`, `cwd`, and `notes` (your observations of this run). It writes and commits `.sdd/learning/N.md` on the PR branch. Log it like any phase.
 
@@ -122,7 +121,7 @@ Reviewers are read-only and adversarial; nobody argues with a BLOCKER: it is fix
 ## Rules
 
 - Mechanical decisions stay in `sdd next`; if you disagree with a `run` line, hold it and say why, never launch something else.
-- One subagent per phase, always `subagent_type: sdd-factory:<phase>` with fresh context and the configured model; you never write spec, design, Task, code or gate results yourself. Never fall back to `general-purpose` or to doing the phase inline.
+- One subagent per phase, always `subagent_type: sdd-factory:<phase>` with fresh context and the configured model; you never write spec, design, Task, code or gate results yourself (recording `status: approved` is the one mechanical edit you make). Never fall back to `general-purpose` or to doing the phase inline.
 - Everything happens in the issue worktree; the human's checkout is never touched.
 - A delegated gate is granted only after §3's verification; WARNINGs never become BLOCKERs by your judgement.
 - Never `sdd state set` to `ready` or `*-approved` for a gate that is not delegated (a human's `/approve` is applied by `sdd await`, not by you); never merge a Constitution issue; never push to the default branch; never edit approved documents.

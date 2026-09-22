@@ -4,7 +4,7 @@
      For the people who maintain this project's rules and the plugin. /sdd never reads it. Facts only; numbers come from `sdd log summary`. -->
 
 - **PR:** #<pr> · **cycles of review:** <n> · **wall clock:** <min> min · **waited for humans:** <min> min · **tokens:** <in>/<out> (cache <w>/<r>) · **cost:** <usd or "not priced">
-- **Path:** <Spec → Design → Task → Implement → Review | Task → Implement → Review> · **delegated gates granted:** <list or none>
+- **Path:** <Plan (spec + design + Task) → Implement → Review | Plan (Task) → Implement → Review> · **delegated gates granted:** <list or none>
 
 ## Metrics
 
@@ -13,9 +13,7 @@
 | Phase | Runs | Minutes | Model (real) | Tokens in/out | Cache w/r | Cost | Outcomes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | triage | | | | | | | |
-| spec | | | | | | | |
-| design | | | | | | | |
-| task | | | | | | | |
+| plan | | | | | | | |
 | implement | | | | | | | |
 | reviewer | | | | | | | |
 | learning | | | | | | | |

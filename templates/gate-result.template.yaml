@@ -8,17 +8,18 @@
 #
 # severity: BLOCKER | WARNING | NIT
 #   BLOCKER      fails the gate
-#   WARNING      reported; must be acknowledged at Approval Gate 4
+#   WARNING      reported; must be acknowledged at Approval Gate 2
 #   NIT          informational
 
-gate: completeness | spec-compliance | design-architecture | test-strategy | security | regression | code-quality
+gate: completeness | mechanical | behaviour | structure | risk
 issue: 123
 pr: 45
 commit: <sha>
 status: PASS
-rework_cycle: 0
+rework_cycle: 0                    # 0, 1, 2… for the code review; plan for the completeness gate
+reviewed_since: <sha>              # cycle ≥ 1 only: the head commit the previous cycle reviewed (the delta starts there)
 
-# Required for spec-compliance and test-strategy; optional elsewhere.
+# Required for completeness and behaviour; optional elsewhere.
 requirements:
   OT-001: PASS
   OT-002: PASS
@@ -32,6 +33,9 @@ findings:
       No test covers rejection when the overtime policy
       does not define a percentage.
     required_action: Add a test asserting the exact domain error for OT-003.
+    # cycle ≥ 1 only:
+    # carried: fixed | not-fixed | new      fixed = a BLOCKER of the previous cycle now resolved (report it as NIT)
+    # disputed: upheld | withdrawn          only for a finding implement disputed; upheld → NEEDS_HUMAN, never rework
 
   - severity: WARNING
     location: contexts/payroll/src/infrastructure/persistence/d1-overtime-repository.ts:42
