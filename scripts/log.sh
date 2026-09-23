@@ -34,15 +34,13 @@ EOF
     ;;
   current) printf '%s\n' "$issue" > "$home/current-issue"; printf 'current issue: #%s\n' "$issue" ;;
   show) [ -f "$f" ] && cat "$f" || true ;;
-  last|summary)
+  last)
     [ -f "$f" ] || { echo "no run log for #$issue"; exit 0; }
-    if [ "$cmd" = last ]; then
-      # the SubagentStop hook may still be writing: wait up to ~10 s for the stop record of the phase asked for
-      for _ in 1 2 3 4 5; do "$0" _last "$issue" "${1:-}" | grep -q '^no finished subagent' || break; sleep 2; done
-      "$0" _last "$issue" "${1:-}"; exit 0
-    fi
-    ;&
-  _last)
+    # the SubagentStop hook may still be writing: wait up to ~10 s for the stop record of the phase asked for
+    for _ in 1 2 3 4 5; do "$0" _last "$issue" "${1:-}" | grep -q '^no finished subagent' || break; sleep 2; done
+    "$0" _last "$issue" "${1:-}"
+    ;;
+  summary|_last)
     [ "$cmd" = _last ] && cmd=last
     [ -f "$f" ] || { echo "no run log for #$issue"; exit 0; }
     python3 - "$cmd" "$f" "$(pricing_json)" "${1:-}" <<'EOF'

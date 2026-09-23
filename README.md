@@ -6,7 +6,7 @@ One command drives one issue end to end: `/sdd <issue-number>`. It launches a fr
 
 ## Requirements
 
-- Claude Code, `gh` authenticated, `jq`, `python3`, `git`, bash.
+- Claude Code, `gh` authenticated, `jq`, `python3`, `git`, bash 3.2 or later (the scripts avoid bash-4 features so macOS's default `/bin/bash` works).
 - The repository belongs to a **GitHub organization** (native Issue Types are organization-level). Creating the `Change` and `Constitution` types needs `gh auth refresh -h github.com -s admin:org` once.
 
 ## Install
