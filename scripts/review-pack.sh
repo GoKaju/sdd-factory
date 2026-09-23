@@ -41,7 +41,7 @@ fence() { printf '```%s\n' "${1:-}"; cat; printf '\n```\n'; }
   fi
   section "Constitution (docs/constitution.md)"; cat docs/constitution.md
   [ -f docs/blueprint.md ] && { section "Blueprint (docs/blueprint.md)"; cat docs/blueprint.md; }
-  section "Issue #$issue with comments (triage and Task included)"; gh issue view "$issue" --comments
+  section "Issue #$issue with comments (triage and Task included)"; "$S/issue.sh" show "$issue"
 
   # Changed spec/design: the PR version in full, plus a unified diff against the approved version
   # (instead of two full copies: the approved text is recoverable from the diff and halves the pack).

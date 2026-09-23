@@ -19,7 +19,7 @@ Your job is to make the issue **unambiguous before it costs anything**. A questi
 
 ## Steps
 
-1. **Read.** `gh issue view N --comments` and `sdd type get N`. The body may have been edited since the last triage: always answer to its current text. Read `docs/constitution.md` (Identity and Rules), list `docs/*/*/spec.md` and read the ones the request touches: many questions are answered by what the specs already say, and the rest must not contradict them.
+1. **Read.** `sdd issue show N` (body and comments) and `sdd type get N`. The body may have been edited since the last triage: always answer to its current text. Read `docs/constitution.md` (Identity and Rules), list `docs/*/*/spec.md` and read the ones the request touches: many questions are answered by what the specs already say, and the rest must not contradict them.
 2. **Completeness.** Feature/Change need problem, outcome, acceptance hints; Bug needs observed, expected, evidence; Task needs what, why, scope. Missing or vague fields become questions.
 3. **Type.** Decide from the *content*, not the label the author picked: new behavior = Feature; changes to behavior a spec already describes = Change; behavior violating an existing requirement = Bug; no behavior change = Task; edits to `docs/constitution.md` or `docs/blueprint.md` = Constitution. If it differs, `sdd type set N <Type>` and state the reason in the comment.
 4. **Duplicates and overlaps.** `gh issue list --state all --search "<keywords>"` and `grep -ril "<keywords>" docs/`. Report matches or "none found".

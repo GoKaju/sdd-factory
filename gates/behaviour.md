@@ -15,7 +15,7 @@
 - A requirement with no implementing code; partial implementation (the `WHEN` branch exists, the `IF … THEN` rejection does not; a listed state unhandled).
 - A scenario of the Spec the code cannot produce (edge-case scenarios included).
 - A business-rule parameter (limit, percentage, ordering, uniqueness scope) hardcoded differently from the Spec.
-- A rejection of the Spec's table with no corresponding refusal in code, or with a different user message.
+- A rejection of the Spec's table with no corresponding refusal in code. The user message is checked only where this repository renders it (an entry point, a translation table); when the design leaves rendering to a client or a later entry point, the message is not a finding.
 
 ### 2. Unauthorized behavior — BLOCKER when observable, WARNING when internal
 - Code paths, entry points, events, fields, states or error types no requirement calls for; "while I was here" changes; features the Issue mentioned but the Spec did not adopt.
@@ -45,6 +45,9 @@ Justification means "the Spec changed" (cite the ID) or "the production code was
 
 ### 8. Test structure — NIT (WARNING when it diverges from the blueprint's row for that kind of test, or from its exemplar when it names one)
 - One group per unit under test; case names start with a verb, no implementation detail; shared fixtures through builders; no real database, network or filesystem in unit tests unless the constitution allows it.
+
+### 9. Ambiguity already known — NIT
+- Where the Spec is ambiguous (a gap the completeness gate reported at plan time, or one you find now) and the code takes one reasonable reading, report it as a NIT naming the reading taken, never as a WARNING or BLOCKER against the code. The fix belongs to the Spec, through a Change.
 
 ## Requirement status
 
