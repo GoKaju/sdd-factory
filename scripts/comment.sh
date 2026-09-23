@@ -10,9 +10,16 @@
 #                                                      earlier step is still unchecked (steps are done in order)
 #   sdd comment next   <issue> <marker>           → prints the id of the first unchecked step (empty if none)
 #   sdd comment open   <issue> <marker>           → prints the number of unchecked boxes
+#   sdd comment note   <issue|pr> <file|->        → posts a NEW comment prefixed with <!-- sdd:note -->: every comment /sdd
+#                                                      writes itself goes this way, so `sdd await` never reads it as human input
 . "$(dirname "$0")/lib.sh"
 
-cmd="${1:-}"; need_issue "${2:-}"; issue="$2"; marker="${3:-}"; [ -n "$marker" ] || die "marker required (e.g. sdd:task)"
+cmd="${1:-}"; need_issue "${2:-}"; issue="$2"
+if [ "$cmd" = note ]; then
+  src="${3:--}"; tmp="$(mktemp)"; { printf '<!-- sdd:note -->\n'; if [ "$src" = - ]; then cat; else cat "$src"; fi; } > "$tmp"
+  gh api -X POST "repos/$(repo)/issues/$issue/comments" -F body=@"$tmp" --jq .html_url; rm -f "$tmp"; exit 0
+fi
+marker="${3:-}"; [ -n "$marker" ] || die "marker required (e.g. sdd:task)"
 r="$(repo)"; tag="<!-- $marker -->"
 
 find_id() { gh api "repos/$r/issues/$issue/comments" --paginate --jq ".[] | select(.body | startswith(\"$tag\")) | .id" | head -1; }
