@@ -1,8 +1,8 @@
 <!-- EXAMPLE: DDD · TypeScript · pnpm workspace. Pairs with templates/examples/constitution.ddd-ts.md.
-     Replace every exemplar path with a real file of your repository (or "none yet"). -->
+     The written conventions stand on their own; replace each exemplar with a real file of your repository, or `—` while there is none. -->
 # Blueprint — <project name>
 
-How a module of this repository is built, shown by example. The constitution holds the rules; this file holds the conventions. Every row points to a real file; new elements copy the exemplar of their kind. The design names a file only when this blueprint does not determine it. Not following the blueprint is a WARNING; breaking a constitution rule is a BLOCKER.
+How a module of this repository is built. The constitution holds the rules; this file holds the conventions. Each row is a written convention; when it names an exemplar, new elements copy it. The design names a file only when this blueprint does not determine it. Not following the blueprint is a WARNING; breaking a constitution rule is a BLOCKER.
 
 ## Module layout
 

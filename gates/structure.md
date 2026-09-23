@@ -27,7 +27,7 @@ Check each rule as written; where the constitution is silent, the item does not 
 - Type and lint strictness: type escapes (`any`, `# type: ignore`, `@ts-ignore`), lint-disable directives, casts used to silence the compiler.
 
 ### 3. Blueprint — WARNING
-- An element placed, named or shaped differently from the blueprint's row for its kind (location, file name, base class or shape), or built unlike its exemplar, when the design does not fix it otherwise. A kind the blueprint does not list → NIT proposing a Constitution issue to add it. Never BLOCKER.
+- An element placed, named or shaped differently from the blueprint's row for its kind (location, file name, base class or shape), or built unlike its exemplar when the row names one, when the design does not fix it otherwise. A kind the blueprint does not list → NIT proposing a Constitution issue to add it. Never BLOCKER.
 
 ### 4. Simplicity — WARNING (NIT when arguable)
 - A service or abstraction whose only job is orchestration the caller could do; interfaces with a single implementation and no port role; helpers, base classes or utilities used once; indirection not traceable to a requirement or a rule.

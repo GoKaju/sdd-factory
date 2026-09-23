@@ -1,10 +1,10 @@
 # Blueprint — <project name>
 
-How a module of this repository is built, shown by example. The constitution holds the rules; this file holds the conventions a reader learns by looking: where each kind of element lives, what it is named, what it extends, what its test looks like. Every row points to a **real file** in the repository that compiles and passes its tests, so the blueprint cannot drift from the code. Agents build new elements by copying the exemplar of their kind; the design names a file only when this blueprint does not determine it (`per blueprint` otherwise). Not following the blueprint is a WARNING; breaking a constitution rule is a BLOCKER.
+How a module of this repository is built. The constitution holds the rules; this file holds the conventions: where each kind of element lives, what it is named, what it extends or looks like, what its test looks like. Each row is a **written convention** on its own (Location, File name, Extends / shape). The **Exemplar** is optional: when a real file in the repository already follows the row, name it, and agents copy it; write `—` when there is none yet, and agents follow the written convention. The design names a file only when this blueprint does not determine it (`per blueprint` otherwise). Not following the blueprint is a WARNING; breaking a constitution rule is a BLOCKER.
 
 <!-- Keep it to one screen. No prose rules: when something must never happen, it is a constitution rule.
-     No exemplar yet for a kind? Write "none yet" and fill it with the first issue that creates one (through a
-     Constitution issue). A filled example for DDD / TypeScript is in templates/examples/. -->
+     Write the convention of every row even without code; add an exemplar when one exists (a later Constitution issue can
+     add it once the first element of that kind is merged). A filled example for DDD / TypeScript is in templates/examples/. -->
 
 ## Module layout
 
@@ -20,10 +20,10 @@ The vocabulary the design's Components table uses. One row per kind of element t
 
 | Kind | Location | File name | Extends / shape | Exemplar |
 | --- | --- | --- | --- | --- |
-| <kind> | `<folder pattern>` | `<name pattern>` | <base class, interface or "plain"> | `<path/to/real/file>` |
+| <kind> | `<folder pattern>` | `<name pattern>` | <base class, interface or "plain"> | `<path/to/real/file>` · — |
 
 ## Tests
 
 | Kind of test | Location | Exemplar |
 | --- | --- | --- |
-| <unit of the core> | `<pattern>` | `<path/to/real/test>` |
+| <unit of the core> | `<pattern>` | `<path/to/real/test>` · — |
