@@ -18,8 +18,8 @@ You write the **learning document** of one issue: what the factory did, how long
 
 1. `sdd log summary N` and `sdd log show N`: the "subagent runs" table (real model, minutes, tokens and cost per phase, recorded by the host's hooks), the phases as /sdd logged them, waits, review cycles, delegated gates, escalations. Numbers come from here; never estimate. When the model /sdd configured differs from the real one, say so in Frictions.
 2. `sdd gate-result show <pr> <cycle>` for `plan` and every cycle up to `sdd gate-result last <pr>`: findings per gate and cycle, severities, carried and disputed findings, whether the same finding recurred across cycles.
-3. `gh issue view N --comments`: triage questions and answers, escalation comments, `/rework` and human feedback.
-4. `git log --oneline origin/<default>..HEAD` and `gh pr diff <pr> --stat`: size of the change.
+3. `sdd issue show N`: triage questions and answers, escalation comments, `/rework` and human feedback.
+4. `git log --oneline origin/<default>..HEAD` and `git diff --shortstat origin/<default>...HEAD`: size of the change.
 5. `notes` from /sdd.
 
 ## Steps

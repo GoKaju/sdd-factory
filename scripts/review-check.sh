@@ -5,9 +5,13 @@
 #   sdd review-check <issue> <cycle>   → YAML (gate: mechanical) on stdout; post it with `sdd gate-result post`
 #
 # BLOCKER: `skip`/`only`-style markers added to tests (constitution Q3) · TODO/FIXME/HACK/XXX added to code.
-# WARNING: added comments, docstrings or document lines that read as Spanish (constitution C1: the repository is English;
-#          string literals are skipped, end-user messages may be translated) · test files deleted · files changed outside the Locations of the affected design · requirement IDs of the
-#          affected specs that no test file cites · exemplar paths of docs/blueprint.md that do not exist.
+# WARNING: added comments, docstrings or document lines that read as Spanish (constitution C1; string literals are skipped)
+#          · test files deleted · files below a folder changed outside the Locations of the affected design (root-level
+#          config files and tool folders are exempt) · blueprint exemplars that do not exist, when this PR edits the
+#          blueprint or deletes the exemplar.
+# NIT:     one line listing the requirement IDs no test cites literally (a lead for the behaviour gate, not a defect).
+# From cycle 1 on, a finding a reviewer ruled `disputed: withdrawn` in an earlier cycle (same location) is not reported
+# again; one ruled `disputed: upheld` stays, marked, and turns the status into NEEDS_HUMAN instead of FAIL.
 . "$(dirname "$0")/lib.sh"
 S="$(dirname "$0")"
 need_issue "${1:-}"; issue="$1"; cycle="${2:-0}"
@@ -18,13 +22,15 @@ git fetch -q origin "$base" 2>/dev/null || true
 head="$(git rev-parse HEAD)"
 diff="$(mktemp)"; git diff --unified=0 --no-color "origin/$base...HEAD" > "$diff"
 status="$(mktemp)"; git diff --name-status "origin/$base...HEAD" > "$status"
+rulings="$(mktemp)"; c=0; while [ "$c" -lt "$cycle" ] 2>/dev/null; do "$S/gate-result.sh" show "$pr" "$c" >> "$rulings" || true; c=$((c + 1)); done
 
-python3 - "$issue" "$pr" "$head" "$cycle" "$diff" "$status" <<'PY'
+python3 - "$issue" "$pr" "$head" "$cycle" "$diff" "$status" "$rulings" <<'PY'
 import os, re, subprocess, sys
-issue, pr, head, cycle, diff_file, status_file = sys.argv[1:]
+issue, pr, head, cycle, diff_file, status_file, rulings_file = sys.argv[1:]
 
 TEST = re.compile(r"(\.test\.|\.spec\.|_test\.|(^|/)tests?/|(^|/)__tests__/|(^|/)test_[^/]+$)")
-SKIP = re.compile(r"(\b(it|test|describe|context)\.(skip|only|todo)\(|\b(xit|xdescribe|xtest|fit|fdescribe)\(|@pytest\.mark\.(skip|xfail)|\bt\.Skip\(|@Disabled\b|@Ignore\b|\bpending\()")
+# bare calls only: `TaskStatus.pending(`, `model.fit(` or `suite.test.skip(` are not test markers
+SKIP = re.compile(r"((?<![\w.$])(it|test|describe|context)\.(skip|only|todo)\(|(?<![\w.$])(xit|xdescribe|xtest|fit|fdescribe|pending)\(|@pytest\.mark\.(skip|xfail)|\bt\.Skip\(|@Disabled\b|@Ignore\b)")
 TODO = re.compile(r"\b(TODO|FIXME|HACK|XXX)\b")
 # Spanish in added prose: comments and docstrings of code files, every line of documents. String literals are not prose.
 SPANISH_WORDS = {"que", "para", "los", "las", "del", "una", "con", "por", "cuando", "esto", "este", "esta", "pero", "como",
@@ -48,6 +54,7 @@ def spanish(t):
     return bool(re.search(r"[¿¡]", t)) or hits >= 2 or (hits >= 1 and bool(re.search(r"[áéíóúñ]", t.lower())))
 IGNORE = re.compile(r"(^docs/|^\.sdd/|\.md$|(^|/)(pnpm-lock\.yaml|package-lock\.json|yarn\.lock|bun\.lockb?|Cargo\.lock|poetry\.lock|uv\.lock|go\.sum|composer\.lock|Gemfile\.lock)$)")
 
+ROOT_OR_TOOLING = re.compile(r"(^[^/]+$|^\.(github|claude|vscode|husky|devcontainer|changeset)/)")   # tsconfig.json, package.json, CI, editor
 findings = []
 def add(sev, loc, desc, action, req=None):
     findings.append((sev, loc, desc, action, req))
@@ -104,27 +111,41 @@ for d in sorted({os.path.dirname(p) for p in subprocess.run(["git", "ls-files", 
 prefixes = [l for locs in modules.values() for l in locs]
 if prefixes:
     for p in changed:
-        if IGNORE.search(p) or TEST.search(p) or any(p.startswith(l) for l in prefixes): continue
+        if IGNORE.search(p) or TEST.search(p) or ROOT_OR_TOOLING.search(p) or any(p.startswith(l) for l in prefixes): continue
         add("WARNING", p, "File changed outside the Locations and Boundary of the affected design(s).", "Explain it in the PR description, or move the change inside the design's Locations.")
 
 tests = [p for p in subprocess.run(["git", "ls-files"], capture_output=True, text=True).stdout.split("\n") if p and TEST.search(p)]
 corpus = "\n".join(read(p) for p in tests)
 for d in modules:
     spec = read(os.path.join(d, "spec.md"))
-    for rid, title in re.findall(r"^### ([A-Z][A-Z0-9]*-\d{3})\b(.*)$", spec, re.M):
-        if "Removed" in title: continue
-        if not re.search(r"\b%s\b" % re.escape(rid), corpus):
-            add("WARNING", os.path.join(d, "spec.md"), "No test file cites %s." % rid, "Name the requirement ID in the test that proves it (the behaviour gate looks for it by behavior).", rid)
+    ids = [rid for rid, title in re.findall(r"^### ([A-Z][A-Z0-9]*-\d{3})\b(.*)$", spec, re.M) if "Removed" not in title]
+    uncited = [rid for rid in ids if not re.search(r"\b%s\b" % re.escape(rid), corpus)]
+    if uncited:
+        add("NIT", os.path.join(d, "spec.md"), "%d of %d requirement IDs are not cited literally by any test: %s." % (len(uncited), len(ids), ", ".join(uncited)),
+            "None here: the behaviour gate looks for these by behavior. Citing the ID in the test name makes the trace mechanical.")
 
-bp = read("docs/blueprint.md")
+bp = read("docs/blueprint.md") if ("docs/blueprint.md" in changed or deleted) else ""
 for row in re.findall(r"^\|.*\|[ \t]*$", bp, re.M):
     cells = [c.strip() for c in row.strip().strip("|").split("|")]
     if not cells or cells[0] in ("Kind", "Kind of test") or set(cells[0]) <= set("- "): continue
     for p in re.findall(r"`([^`<>]+)`", cells[-1]):
-        if "/" in p and not os.path.exists(p):
+        if "/" in p and not os.path.exists(p) and ("docs/blueprint.md" in changed or p in deleted):
             add("WARNING", "docs/blueprint.md", "Exemplar `%s` does not exist." % p, "Point the blueprint row at an existing file through a Constitution issue.")
 
-status = "FAIL" if any(f[0] == "BLOCKER" for f in findings) else "PASS"
+# rulings of earlier cycles on disputed findings, by location
+rulings = {}
+for chunk in re.split(r"\n\s*- severity:", read(rulings_file)):
+    loc = re.search(r"^\s*location:\s*(\S+)", chunk, re.M); d = re.search(r"^\s*disputed:\s*(withdrawn|upheld)", chunk, re.M)
+    if loc and d: rulings[loc.group(1).strip('"')] = d.group(1)
+kept, upheld = [], set()
+for f in findings:
+    r = rulings.get(f[1])
+    if r == "withdrawn": continue
+    if r == "upheld": upheld.add(f[1])
+    kept.append(f)
+findings = kept
+blocking = [f for f in findings if f[0] == "BLOCKER"]
+status = "PASS" if not blocking else ("NEEDS_HUMAN" if all(f[1] in upheld for f in blocking) else "FAIL")
 q = lambda s: '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 out = ["gate: mechanical", "issue: " + issue, "pr: " + pr, "commit: " + head, "status: " + status, "rework_cycle: " + cycle]
 out.append("findings:" + ("" if findings else " []"))
@@ -132,7 +153,8 @@ for sev, loc, desc, action, req in findings:
     out.append("  - severity: " + sev)
     if req: out.append("    requirement: " + req)
     out += ["    location: " + loc, "    description: >", "      " + desc, "    required_action: " + q(action)]
+    if loc in upheld: out.append("    disputed: upheld")
 out += ["evidence:", "  - git diff origin/<base>...HEAD", "  - docs/blueprint.md"]
 print("\n".join(out))
 PY
-rm -f "$diff" "$status"
+rm -f "$diff" "$status" "$rulings"

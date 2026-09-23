@@ -4,7 +4,7 @@
 
 ## Inputs
 
-Issue number; PR number if the Draft PR exists; path `docs/<domain>/<module>/spec.md`. Also read the sibling `design.md` if present and any spec the Spec names as a dependency. `gh issue view <n> --comments` for the Issue and its triage; `gh pr diff <n>` for the new lines; `git show origin/<base>:<path>` for the previously approved version.
+Issue number; PR number if the Draft PR exists; path `docs/<domain>/<module>/spec.md`. Also read the sibling `design.md` if present and any spec the Spec names as a dependency. `sdd issue show <n>` for the Issue and its triage; `gh pr diff <n>` for the new lines; `git show origin/<base>:<path>` for the previously approved version.
 
 ## Checklist
 
