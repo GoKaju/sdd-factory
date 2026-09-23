@@ -4,7 +4,7 @@
 
 ## Procedure
 
-1. Read the Spec as approved on the base branch AND as it appears in the PR; diff them. Read the Design, the Task comment (`<!-- sdd:task -->`), the constitution's test rules and the blueprint's test exemplars.
+1. Read the Spec as approved on the base branch AND as it appears in the PR; diff them. Read the Design, the Task comment (`<!-- sdd:task -->`), the constitution's test rules and the blueprint's test rows (and their exemplars, when named).
 2. Build the requirement table: every `<MODULE>-NNN` in the affected Spec(s). For each, locate (a) the code that implements it and (b) the test that proves it. Start from the `mechanical` result's list of IDs no test cites, then search by behavior.
 3. Walk the diff hunk by hunk and attribute every behavioral change to a requirement ID. Anything unattributable is unauthorized behavior.
 4. From the diff, list every test file added, modified and **deleted**; recover deleted bodies with `git show origin/<base>:<path>` and classify every removed or weakened test as JUSTIFIED or SUSPICIOUS.
@@ -43,7 +43,7 @@ Justification means "the Spec changed" (cite the ID) or "the production code was
 - Weakened assertions: exact type → generic; assertion removed; state → interaction; fake → mock; loosened matcher without explanation; assertion-free tests. Coverage thresholds lowered or files added to exclusions.
 - For each removed or weakened test, the finding's `description` carries the test name, `Verdict: JUSTIFIED | SUSPICIOUS (bypass)` and the reason. SUSPICIOUS is always BLOCKER.
 
-### 8. Test structure — NIT (WARNING when it diverges from the blueprint's exemplar)
+### 8. Test structure — NIT (WARNING when it diverges from the blueprint's row for that kind of test, or from its exemplar when it names one)
 - One group per unit under test; case names start with a verb, no implementation detail; shared fixtures through builders; no real database, network or filesystem in unit tests unless the constitution allows it.
 
 ## Requirement status

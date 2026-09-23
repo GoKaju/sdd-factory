@@ -14,7 +14,7 @@ The PR changes **only documents**: `docs/constitution.md`, `docs/blueprint.md`, 
 - The change is exactly what the issue body describes: a rule the issue does not mention, added or removed, is BLOCKER; a rule the issue announces and the diff lacks is BLOCKER.
 - No model names, runner settings, provider names or costs inside the constitution: orchestrator policy does not live here (WARNING if descriptive, BLOCKER if it acts as a rule).
 - Identity and Stack stay consistent with the Rules. `CLAUDE.md` remains a pointer only.
-- Constitution and blueprint stay apart: a prose rule inside the blueprint ("never", "must") belongs in the constitution (WARNING); a folder, naming or base-class convention inside the constitution belongs in the blueprint (WARNING). Every exemplar path the blueprint names exists in the repository (BLOCKER when missing).
+- Constitution and blueprint stay apart: a prose rule inside the blueprint ("never", "must") belongs in the constitution (WARNING); a folder, naming or base-class convention inside the constitution belongs in the blueprint (WARNING). The Exemplar column is optional (`—`); every exemplar path the blueprint does name exists in the repository (BLOCKER when missing), and a row without an exemplar still states its convention (Location, File name, shape) or is a WARNING.
 
 ### Spec and design changes — BLOCKER unless noted
 - Every requirement keeps its stable ID; renumbered or reused IDs are BLOCKER.
